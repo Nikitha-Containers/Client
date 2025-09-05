@@ -1,0 +1,246 @@
+@import "../components/variables.scss";
+
+body {
+  margin: 0px;
+}
+
+.bg-light-blue {
+  background-color: #0a85cb;
+}
+
+.Dashboard-con.MuiBox-root.css-0 {
+  height: 90vh;
+  overflow-y: auto;
+}
+
+.css-1ule0da-MuiTableRow-root {
+  background-color: #f5f7f9;
+}
+
+.export-btn {
+  background-color: #3b3b3b;
+  border: #3b3b3b;
+  color: #fff;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 5px 3px 5px 3px;
+  column-gap: 6px;
+  font-size: 16px;
+}
+
+.green-md-btn {
+  background-color: #006028;
+  color: #fff;
+  padding: 5px 14px;
+  font-size: 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-family: "Poppins", sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  column-gap: 10px;
+  border: 1px solid #006028;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  &:hover {
+    background-color: transparent;
+    color: #006028;
+    border-color: #006028;
+  }
+}
+
+.gray-md-btn {
+  background-color: #3b3b3b;
+  color: #fff;
+  padding: 5px 17px 5px 11px;
+  font-size: 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-family: "Poppins", sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  column-gap: 3px;
+  border: 1px solid #3b3b3b;
+  transition: all 0.3s ease;
+  text-decoration: none;
+
+  &:hover {
+    background-color: transparent;
+    color: #3b3b3b;
+    border-color: #3b3b3b;
+  }
+}
+
+.table-title {
+  font-size: 18.5px;
+  font-weight: 500;
+  font-family: "Geist Variable", sans-serif;
+  padding-left: 10px;
+}
+
+.Dashboard-table {
+  .css-1p0wbhh {
+    flex-wrap: nowrap;
+  }
+}
+
+.breadcrump-con {
+  padding: 16px 72px 2px 73px;
+
+  .main-title {
+    font-size: 21px;
+    color: #626262;
+    font-family: $font-sub;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    .main-inner-txts {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      column-gap: 10px;
+    }
+  }
+}
+
+.box-con {
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  }
+}
+
+.page-layout {
+  padding: 7px 71px;
+
+  .card-box {
+    padding: 10px 23px;
+    background-color: black;
+    color: #fff;
+    height: 54px;
+  }
+
+  .inner-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 31px 6px 25px;
+
+    .dash-icon {
+      width: 60px;
+      max-height: 53px;
+      border: 2px solid #fff;
+      padding: 10px;
+      border-radius: 6px;
+    }
+
+    .dash-txt {
+      font-size: 23px;
+      font-family: $font-sub;
+    }
+  }
+}
+
+img.ups-image {
+  width: 300px;
+  height: 267px;
+  object-fit: contain;
+}
+
+.ups-img-con {
+  background-color: #0000004a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  &::before {
+    content: "yy";
+    padding: 10px;
+    background-color: rgba(59, 59, 59, 0.69);
+    color: transparent;
+    z-index: 1;
+  }
+
+  &::after {
+    content: "+";
+    font-size: 60px;
+    color: #fff;
+    z-index: 2;
+    transform: scale(0.8);
+  }
+
+  &:hover::before,
+  &:hover::after {
+    opacity: 1;
+  }
+
+  &:hover::after {
+    transform: scale(1);
+  }
+}
+
+.Box-table-title {
+  padding: 15px 10px 15px 15px;
+  border-bottom: 1px solid #dcdddd;
+  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+}
+
+.Box-table-subtitle {
+  padding: 15px 10px 15px 15px;
+}
+
+.Box-table-content {
+  padding: 20px 10px 26px 15px;
+}
+.Box-table-upload {
+  padding: 3px 10px;
+}
+.Box-table-checkbox {
+  padding: 17px 12px 26px 5px;
+}
+.Box-table-upload {
+  padding-top: 12px;
+}
+
+.Box-table-text {
+  padding: 27px 10px 41px 10px;
+}
+
+.Box-table-upload {
+  padding: 22px 10px 27px 10px;
+}
+
+.Box-table-multiselect {
+  padding: 12px 10px 17px 14px;
+}

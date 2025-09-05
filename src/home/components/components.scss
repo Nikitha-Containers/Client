@@ -1,0 +1,114 @@
+/* Side Menu Style Start Here */
+@import "./variables";
+@import url("https://geisthub.vercel.app/font/variable.css");
+
+.avatar-con {
+  display: flex;
+  align-items: center;
+  padding: 23px 25px 23px 28px;
+  column-gap: 32px;
+  font-family: $font-main;
+  border-bottom: 2px solid $border-color;
+
+  .dept-name {
+    font-size: 17.5px;
+    font-weight: 500;
+    margin-bottom: 5px;
+  }
+
+  .emp-name {
+    font-size: 16px;
+    font-weight: 500;
+  }
+
+  .avatar-img {
+    width: 55px;
+    height: 55px;
+    border-radius: 50%;
+    font-size: 28px;
+    font-weight: 500;
+  }
+}
+
+.side-list {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding-left: 15px !important;
+  font-family: $font-main;
+  row-gap: 15px;
+
+  .pageactive {
+    background-color: rgba(0, 0, 0, 0.04);
+    color: #3b3b3b !important;
+    border-right: 4px solid #3b3b3b;
+
+    .menu-icon {
+      background-color: #03a9f4;
+      border-color: #03a9f4;
+      color: #fff;
+      transition: all 0.3s ease;
+      transform: scale(1.05);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  .list-element {
+    color: $font-gray;
+    column-gap: 15px;
+  }
+
+  .menu-icon {
+    font-size: 30px;
+    background-color: transparent;
+    color: #3b3b3b;
+    padding: 8px;
+    border-radius: 50%;
+    border: 2px solid #3b3b3b;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background-color: #3b3b3b;
+      color: #fff;
+      transform: scale(1.1);
+    }
+  }
+
+  span {
+    font-weight: 600;
+    font-family: "system-ui";
+    font-size: 17px;
+  }
+}
+
+/* Side Menu Style end Here */
+
+// Top bar style start here
+.nav-sub {
+  align-items: baseline;
+  justify-content: space-between;
+
+  img.logo-img {
+    width: 83px;
+    object-fit: contain;
+    padding-left: 15px;
+  }
+
+  .logout-btn {
+    background-color: #0a85cb;
+    color: #fff;
+    padding: 5px 14px;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: $font-sub;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    column-gap: 10px;
+    border: 0px;
+  }
+}
+
+// Top bar style end here
