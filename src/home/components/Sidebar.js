@@ -9,6 +9,7 @@ import DashboardIcon from "@mui/icons-material/Addchart";
 import AssignmentAddIcon from "@mui/icons-material/AssignmentAdd";
 import DesignServicesIcon from "@mui/icons-material/DesignServices";
 import FormatPaintIcon from "@mui/icons-material/FormatPaint";
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import { Link } from "react-router-dom";
 import "../components//components.scss";
 
@@ -156,6 +157,27 @@ const Sidebar = ({ isCollapsed }) => {
           <FormatPaintIcon className="menu-icon" />
           <ListItemText
             primary="Coating Dashboard"
+            sx={{
+              overflow: "hidden",
+              maxWidth: isCollapsed ? 0 : 150,
+              opacity: isCollapsed ? 0 : 1,
+              transition: "max-width 0.3s ease, opacity 0.3s ease",
+              whiteSpace: "nowrap",
+            }}
+          />
+        </ListItem>
+
+        <ListItem
+          button
+          component={Link}
+          to="/admin_dashboard"
+          className={`list-element ${
+            location.pathname === "/admin_dashboard" ? "pageactive" : ""
+          }`}
+        >
+          <AdminPanelSettingsIcon className="menu-icon" />
+          <ListItemText
+            primary="Admin Dashboard"
             sx={{
               overflow: "hidden",
               maxWidth: isCollapsed ? 0 : 150,

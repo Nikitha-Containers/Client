@@ -11,6 +11,7 @@ import PrivateRoute from "./PrivateRouter";
 import EditPlan from "./pages/dashboard/planning/EditPlan";
 import UpsDashboard from "./pages/dashboard/upsDesign/UpsDashboard";
 import CoatingDashboard from "./pages/dashboard/coating/CoatingDashboard";
+import AdminDashboard from "./pages/admin/AdminDashboard";
 
 function Mainlayouts() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -91,6 +92,15 @@ function Mainlayouts() {
               element={
                 <PrivateRoute>
                   <CoatingDashboard />
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/admin_dashboard"
+              element={
+                <PrivateRoute>
+                  <AdminDashboard />
                 </PrivateRoute>
               }
             />
