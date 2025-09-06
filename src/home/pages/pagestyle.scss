@@ -244,3 +244,21 @@ img.ups-image {
 .Box-table-multiselect {
   padding: 12px 10px 17px 14px;
 }
+
+// Loginpage Strle start here
+
+.loginBackgroung:before {
+  content: "r";
+  background-color: #ffffff91;
+  position: absolute;
+  color: #fff;
+  width: 100%;
+  height: 100%;
+}
+
+.innerLoginBox {
+  position: relative;
+  z-index: 2;
+}
+
+// login page style end here
