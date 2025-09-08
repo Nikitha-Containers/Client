@@ -12,6 +12,7 @@ import EditPlan from "./pages/dashboard/planning/EditPlan";
 import UpsDashboard from "./pages/dashboard/upsDesign/UpsDashboard";
 import CoatingDashboard from "./pages/dashboard/coating/CoatingDashboard";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import CreateUser from "./pages/admin/CreateUser";
 
 function Mainlayouts() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -96,6 +97,7 @@ function Mainlayouts() {
               }
             />
 
+            {/* Admin pages start here  */}
             <Route
               path="/admin_dashboard"
               element={
@@ -104,6 +106,16 @@ function Mainlayouts() {
                 </PrivateRoute>
               }
             />
+            <Route
+              path="/create_user"
+              element={
+                <PrivateRoute>
+                  <CreateUser />
+                </PrivateRoute>
+              }
+            />
+
+            {/* Admin pages end here  */}
 
             <Route
               path="/about"

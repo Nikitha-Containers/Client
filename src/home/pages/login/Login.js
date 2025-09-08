@@ -4,7 +4,8 @@ import { styled } from "@mui/material/styles";
 import "../../pages/pagestyle.scss";
 import server from "../../../server/server";
 import { useState } from "react";
-import { Password } from "@mui/icons-material";
+import Alert from "@mui/material/Alert";
+import Stack from "@mui/material/Stack";
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(4),
@@ -16,36 +17,57 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   textAlign: "center",
 }));
 
+const adminMenu = {
+  admin_dashboard: {
+    1: "create_user",
+    2: "credentials_details",
+  },
+};
+
 function Login() {
   const navigate = useNavigate();
 
-  const [getLoginVal, setLoginVal] = useState({ email: "", password: "" });
+  const [getLoginVal, setLoginVal] = useState({
+    email: "admin",
+    password: "Admin@123",
+  });
+  const [getLoginDetails, setLoginDetails] = useState("");
+
+  console.log("getLoginDetails", getLoginDetails);
 
   // Custom function start here
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!getLoginVal.email && !getLoginVal.password) {
       return alert("Please Fill The Empty Fields");
     }
 
-    if (getLoginVal.email === "admin") {
-      console.log("Admin Login");
-
+    if (getLoginVal?.email === "admin") {
       try {
-        const res = server.post("/admin/login", {
+        const res = await server.post("/admin/login", {
           email: getLoginVal?.email,
           password: getLoginVal?.password,
         });
 
-        console.log("responzzz", res);
+        setLoginDetails(res?.data?.message);
+        console.log("responzzz", res?.data?.message);
+        if (res?.data?.message === "Login successful") {
+          setTimeout(() => {
+            navigate("/admin_dashboard"); // After Login Navigate
+          }, [300]);
+        }
+        sessionStorage.setItem("isLoggedIn", "true");
+        sessionStorage.setItem("loginMenu", JSON.stringify(adminMenu));
       } catch (error) {
-        console.log("Error in fecthing : ", error);
+        console.log(
+          "Error in fetching:",
+          error.response?.data || error.message
+        );
+        setLoginDetails(error.response?.data?.message);
       }
     } else {
       alert("User Login");
     }
-
-    sessionStorage.setItem("isLoggedIn", "true");
 
     const loginMenu = {
       "Planning Team": {
@@ -62,13 +84,10 @@ function Login() {
       },
     };
 
-    sessionStorage.setItem("loginMenu", JSON.stringify(loginMenu));
-
-    // navigate("/dashboard");
+    // sessionStorage.setItem("loginMenu", JSON.stringify(loginMenu));
   };
 
   // Custom function end here
-
   return (
     <Box
       sx={{
@@ -90,6 +109,18 @@ function Login() {
           >
             Welcome
           </Typography>
+
+          <Stack sx={{ width: "100%", marginBottom: 2 }} spacing={2}>
+            {getLoginDetails && (
+              <Alert
+                severity={
+                  getLoginDetails === "Login successful" ? "success" : "error"
+                }
+              >
+                {getLoginDetails}
+              </Alert>
+            )}
+          </Stack>
 
           <TextField
             label="Email"

@@ -1,9 +1,15 @@
-import React from 'react'
+import { useState, useEffect } from "react";
 
 function AdminDashboard() {
-  return (
-    <div>AdminDashboard</div>
-  )
+  const [getDetails, setDetails] = useState({});
+
+  console.log("getDetails", getDetails);
+
+  useEffect(() => {
+    setDetails("Heyy");
+  }, []);
+
+  return <div>AdminDashboard</div>;
 }
 
-export default AdminDashboard
+export default AdminDashboard;

@@ -9,7 +9,8 @@ import DashboardIcon from "@mui/icons-material/Addchart";
 import AssignmentAddIcon from "@mui/icons-material/AssignmentAdd";
 import DesignServicesIcon from "@mui/icons-material/DesignServices";
 import FormatPaintIcon from "@mui/icons-material/FormatPaint";
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import { Link } from "react-router-dom";
 import "../components//components.scss";
 
@@ -178,6 +179,27 @@ const Sidebar = ({ isCollapsed }) => {
           <AdminPanelSettingsIcon className="menu-icon" />
           <ListItemText
             primary="Admin Dashboard"
+            sx={{
+              overflow: "hidden",
+              maxWidth: isCollapsed ? 0 : 150,
+              opacity: isCollapsed ? 0 : 1,
+              transition: "max-width 0.3s ease, opacity 0.3s ease",
+              whiteSpace: "nowrap",
+            }}
+          />
+        </ListItem>
+
+        <ListItem
+          button
+          component={Link}
+          to="/create_user"
+          className={`list-element ${
+            location.pathname === "/create_user" ? "pageactive" : ""
+          }`}
+        >
+          <PersonAddIcon className="menu-icon" />
+          <ListItemText
+            primary="Create User"
             sx={{
               overflow: "hidden",
               maxWidth: isCollapsed ? 0 : 150,
