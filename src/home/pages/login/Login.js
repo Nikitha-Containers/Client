@@ -40,10 +40,6 @@ function Login() {
   // Custom function start here
 
   const handleLogin = async () => {
-    sessionStorage.setItem("isLoggedIn", "true");
-    setAuthPage(true);
-    // navigate("/admin_dashboard");
-
     if (!getLoginVal.email && !getLoginVal.password) {
       return alert("Please Fill The Empty Fields");
     }
@@ -59,7 +55,7 @@ function Login() {
         console.log("responzzz", res?.data?.message);
         if (res?.data?.message === "Login successful") {
           setTimeout(() => {
-            navigate("/admin_dashboard"); // After Login Navigate
+            setAuthPage(true);
           }, [300]);
         }
         sessionStorage.setItem("isLoggedIn", "true");
@@ -91,7 +87,7 @@ function Login() {
     };
 
     // sessionStorage.setItem("loginMenu", JSON.stringify(loginMenu));
-  };  
+  };
 
   // Custom function end here
   return (
