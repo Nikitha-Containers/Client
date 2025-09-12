@@ -13,11 +13,16 @@ import UpsDashboard from "./pages/dashboard/upsDesign/UpsDashboard";
 import CoatingDashboard from "./pages/dashboard/coating/CoatingDashboard";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import CreateUser from "./pages/admin/CreateUser";
+import NotFound from "./NotFound";
 
 function Mainlayouts() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const location = useLocation();
   const isLoginPage = location.pathname === "/login";
+
+  const notfound = sessionStorage.getItem("isLoggedIn");
+
+  console.log(notfound, "notfound");
 
   const handleToggleSidebar = () => {
     setIsSidebarCollapsed((prev) => !prev);
@@ -31,10 +36,12 @@ function Mainlayouts() {
 
   return (
     <Box>
-      {!isLoginPage && <TopBar onToggleSidebar={handleToggleSidebar} />}
+      {!isLoginPage && notfound && (
+        <TopBar onToggleSidebar={handleToggleSidebar} />
+      )}
 
       <Box sx={{ display: "flex", flexWrap: "nowrap" }}>
-        {!isLoginPage && (
+        {!isLoginPage && notfound && (
           <Box
             sx={{
               width: isSidebarCollapsed ? "0px" : "310px",
@@ -46,6 +53,7 @@ function Mainlayouts() {
             <Sidebar />
           </Box>
         )}
+
         <Box sx={{ flexGrow: 1, overflowY: "auto", padding: 0 }}>
           <Routes>
             <Route path="/" element={<Navigate to="/login" replace />} />
@@ -125,6 +133,8 @@ function Mainlayouts() {
                 </PrivateRoute>
               }
             />
+
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </Box>
       </Box>

@@ -1,11 +1,12 @@
-import { Box, Button, Paper, TextField, Typography } from "@mui/material";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { styled } from "@mui/material/styles";
-import "../../pages/pagestyle.scss";
-import server from "../../../server/server";
-import { useState } from "react";
 import Alert from "@mui/material/Alert";
 import Stack from "@mui/material/Stack";
+import { Box, Button, Paper, TextField, Typography } from "@mui/material";
+import server from "../../../server/server";
+import "../../pages/pagestyle.scss";
+import GoogleAuth from "./GoogleAuth";
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(4),
@@ -32,12 +33,17 @@ function Login() {
     password: "Admin@123",
   });
   const [getLoginDetails, setLoginDetails] = useState("");
+  const [getAuthPage, setAuthPage] = useState(false);
 
   console.log("getLoginDetails", getLoginDetails);
 
   // Custom function start here
 
   const handleLogin = async () => {
+    sessionStorage.setItem("isLoggedIn", "true");
+    setAuthPage(true);
+    // navigate("/admin_dashboard");
+
     if (!getLoginVal.email && !getLoginVal.password) {
       return alert("Please Fill The Empty Fields");
     }
@@ -85,7 +91,7 @@ function Login() {
     };
 
     // sessionStorage.setItem("loginMenu", JSON.stringify(loginMenu));
-  };
+  };  
 
   // Custom function end here
   return (
@@ -100,61 +106,65 @@ function Login() {
       className="loginBackgroung"
     >
       <Box className="innerLoginBox">
-        <StyledPaper>
-          <Typography
-            variant="h5"
-            mb={2.5}
-            fontWeight="500"
-            sx={{ fontFamily: "poppins , sans-serif" }}
-          >
-            Welcome
-          </Typography>
+        {getAuthPage ? (
+          <GoogleAuth />
+        ) : (
+          <StyledPaper>
+            <Typography
+              variant="h5"
+              mb={2.5}
+              fontWeight="500"
+              sx={{ fontFamily: "poppins , sans-serif" }}
+            >
+              Welcome
+            </Typography>
 
-          <Stack sx={{ width: "100%", marginBottom: 2 }} spacing={2}>
-            {getLoginDetails && (
-              <Alert
-                severity={
-                  getLoginDetails === "Login successful" ? "success" : "error"
-                }
-              >
-                {getLoginDetails}
-              </Alert>
-            )}
-          </Stack>
+            <Stack sx={{ width: "100%", marginBottom: 2 }} spacing={2}>
+              {getLoginDetails && (
+                <Alert
+                  severity={
+                    getLoginDetails === "Login successful" ? "success" : "error"
+                  }
+                >
+                  {getLoginDetails}
+                </Alert>
+              )}
+            </Stack>
 
-          <TextField
-            label="Email"
-            variant="outlined"
-            fullWidth
-            margin="normal"
-            value={getLoginVal.email}
-            onChange={(e) => {
-              setLoginVal({ ...getLoginVal, email: e.target.value });
-            }}
-          />
+            <TextField
+              label="Email"
+              variant="outlined"
+              fullWidth
+              margin="normal"
+              value={getLoginVal.email}
+              onChange={(e) => {
+                setLoginVal({ ...getLoginVal, email: e.target.value });
+              }}
+            />
 
-          <TextField
-            label="Password"
-            type="password"
-            variant="outlined"
-            fullWidth
-            margin="normal"
-            value={getLoginVal.password}
-            onChange={(e) => {
-              setLoginVal({ ...getLoginVal, password: e.target.value });
-            }}
-          />
+            <TextField
+              label="Password"
+              type="password"
+              variant="outlined"
+              fullWidth
+              margin="normal"
+              value={getLoginVal.password}
+              onChange={(e) => {
+                setLoginVal({ ...getLoginVal, password: e.target.value });
+              }}
+            />
 
-          <Button
-            variant="contained"
-            color="primary"
-            fullWidth
-            sx={{ mt: 3, py: 1.5, fontWeight: "bold" }}
-            onClick={handleLogin}
-          >
-            Login
-          </Button>
-        </StyledPaper>
+            <Button
+              variant="contained"
+              color="primary"
+              fullWidth
+              sx={{ mt: 3, py: 1.5, fontWeight: "bold" }}
+              onClick={handleLogin}
+            >
+              Login
+            </Button>
+          </StyledPaper>
+        )}
       </Box>
     </Box>
   );

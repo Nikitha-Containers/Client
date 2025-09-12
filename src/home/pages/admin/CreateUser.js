@@ -244,6 +244,15 @@ function CreateUser() {
             muiTableBodyRowProps={({ row }) => ({
               onClick: () => {
                 console.log(row.original);
+                setOpenDialog(true);
+
+                let val = {
+                  username: row?.original?.status,
+                  email: row?.original?.email,
+                  password: row?.original?.email,
+                };
+
+                setFormValues(val);
               },
               sx: {
                 cursor: "pointer",
