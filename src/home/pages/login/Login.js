@@ -53,7 +53,7 @@ function Login() {
 
         setLoginDetails(res?.data?.message);
         console.log("responzzz", res?.data?.message);
-        if (res?.data?.message === "Login successful") {
+        if (res?.data?.message === "Password correct, proceed to OTP verification") {
           setTimeout(() => {
             setAuthPage(true);
           }, [300]);
