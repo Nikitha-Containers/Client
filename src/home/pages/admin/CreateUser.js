@@ -14,6 +14,8 @@ import {
   Snackbar,
   Alert,
   InputAdornment,
+  Tab,
+  Tabs,
 } from "@mui/material";
 import { MaterialReactTable } from "material-react-table";
 import CloseIcon from "@mui/icons-material/Close";
@@ -23,6 +25,8 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import BlockIcon from "@mui/icons-material/Block";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
 const UserDialog = React.memo(
   ({
@@ -54,6 +58,15 @@ const UserDialog = React.memo(
         </DialogTitle>
 
         <DialogContent dividers>
+          <TextField
+            margin="normal"
+            label="Employee ID"
+            name="empID"
+            size="small"
+            fullWidth
+            value={formValues.empID || ""}
+            onChange={handleChange}
+          />
           <TextField
             margin="normal"
             label="Employee Name"
@@ -139,12 +152,13 @@ const DeleteConfirmationDialog = ({
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>
         <Typography sx={{ fontWeight: "bold", color: "#d32f2f" }}>
-          Confirm Delete
+          Confirm Permanent Delete
         </Typography>
       </DialogTitle>
       <DialogContent>
         <Typography>
-          Are you sure you want to delete user : <strong>{user?.empName}</strong>
+          Are you sure you want to permanently delete user :{" "}
+          <strong>{user?.empName}</strong> ?
         </Typography>
       </DialogContent>
       <DialogActions>
@@ -158,7 +172,7 @@ const DeleteConfirmationDialog = ({
           disabled={loading}
           startIcon={<DeleteIcon />}
         >
-          {loading ? "Deleting..." : "Delete"}
+          {loading ? "Deleting..." : "Delete Permanently"}
         </Button>
       </DialogActions>
     </Dialog>
@@ -172,6 +186,7 @@ function CreateUser() {
   const [isEdit, setIsEdit] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [activeTab, setActiveTab] = useState(0);
   const [deleteDialog, setDeleteDialog] = useState({
     open: false,
     user: null,
@@ -185,6 +200,7 @@ function CreateUser() {
   });
 
   const [formValues, setFormValues] = useState({
+    empID: "",
     empName: "",
     email: "",
     password: "",
@@ -195,6 +211,17 @@ function CreateUser() {
     fetchUsers();
   }, []);
 
+  // Separate users by status
+  const activeUsers = useMemo(
+    () => users.filter((user) => user.status === 1),
+    [users]
+  );
+
+  const inactiveUsers = useMemo(
+    () => users.filter((user) => user.status === 0),
+    [users]
+  );
+
   // Helper functions
   const showSnackbar = (message, severity = "success") => {
     setSnackbar({ open: true, message, severity });
@@ -203,10 +230,9 @@ function CreateUser() {
   // API functions
   const fetchUsers = async () => {
     try {
-      const response = await server.get("/user/allusers");
-      setUsers(response.data.usersList);
+      const response = await server.get("/user/all");
+      setUsers(response.data.allUsers);
     } catch (error) {
-      console.log("Error Fetching in Get All users ... 😶", error);
       showSnackbar("Failed to fetch users", "error");
     }
   };
@@ -216,10 +242,16 @@ function CreateUser() {
     setShowPassword(!showPassword);
   };
 
+  // Tab change handler
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
+  };
+
   // Dialog handlers
   const handleOpen = () => {
     setIsEdit(false);
     setFormValues({
+      empID: "",
       empName: "",
       email: "",
       password: "",
@@ -290,13 +322,36 @@ function CreateUser() {
     setIsEdit(true);
     setFormValues({
       userID: user.userID,
+      empID: user.empID || "",
       empName: user.empName || "",
       email: user.email || "",
-      password: "", 
+      password: "",
       department: user.department || "",
     });
     setShowPassword(false);
     setOpenDialog(true);
+  };
+
+  // Direct status change handler
+  const handleStatusChange = async (user, actionType) => {
+    try {
+      const endpoint =
+        actionType === "activate"
+          ? `/user/${user.userID}/activate`
+          : `/user/${user.userID}/deactivate`;
+
+      await server.put(endpoint);
+
+      showSnackbar(
+        `User ${
+          actionType === "activate" ? "activated" : "deactivated"
+        } successfully`
+      );
+      fetchUsers();
+    } catch (error) {
+      console.error("Error changing user status:", error);
+      showSnackbar("Failed to change user status", "error");
+    }
   };
 
   // Delete handlers
@@ -313,7 +368,7 @@ function CreateUser() {
 
     try {
       await server.delete(`/user/${deleteDialog.user.userID}`);
-      showSnackbar("User deleted successfully");
+      showSnackbar("User deleted permanently");
       fetchUsers();
       handleDeleteClose();
     } catch (error) {
@@ -331,71 +386,99 @@ function CreateUser() {
     });
   };
 
-  // Table columns
-  const columns = useMemo(
-    () => [
-      {
-        id: 1,
-        accessorKey: "userID",
-        header: "User ID",
-        size: 30,
-      },
-      {
-        id: 2,
-        accessorKey: "empName",
-        header: "Name",
-        size: 30,
-      },
-      {
-        id: 3,
-        accessorKey: "email",
-        header: "Email",
-        size: 30,
-      },
-      {
-        id: 4,
-        accessorKey: "department",
-        header: "Department",
-        size: 30,
-      },
-      {
-        id: 5,
-        accessorKey: "actions",
-        header: "Actions",
-        size: 30,
-        Header: () => (
-          <Box sx={{ textAlign: "center", width: "100%" }}>Actions</Box>
-        ),
-        Cell: ({ row }) => (
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: "100%",
-              columnGap: "20px",
-            }}
+  // Active & Inactive Table Coloumns
+  const getColumns = (userType) => [
+    {
+      id: 1,
+      accessorKey: "userID",
+      header: "User ID",
+      size: 30,
+    },
+    {
+      id: 2,
+      accessorKey: "empID",
+      header: "Employee ID",
+      size: 30,
+    },
+    {
+      id: 3,
+      accessorKey: "empName",
+      header: "Name",
+      size: 30,
+    },
+    {
+      id: 4,
+      accessorKey: "email",
+      header: "Email",
+      size: 30,
+    },
+    {
+      id: 5,
+      accessorKey: "department",
+      header: "Department",
+      size: 30,
+    },
+    {
+      id: 6,
+      accessorKey: "actions",
+      header: "Actions",
+      size: 30,
+      Header: () => (
+        <Box sx={{ textAlign: "center", width: "100%" }}>Actions</Box>
+      ),
+      Cell: ({ row }) => (
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "100%",
+            columnGap: "10px",
+            flexWrap: "wrap",
+          }}
+        >
+          <IconButton
+            onClick={() => handleEdit(row.original)}
+            color="primary"
+            title="Edit User"
+            size="small"
           >
+            <EditIcon />
+          </IconButton>
+
+          {userType === "active" ? (
             <IconButton
-              onClick={() => handleEdit(row.original)}
-              color="primary"
-              title="Edit User"
+              onClick={() => handleStatusChange(row.original, "deactivate")}
+              color="warning"
+              title="Deactivate User"
+              size="small"
             >
-              <EditIcon />
+              <BlockIcon />
             </IconButton>
-            <IconButton
-              onClick={() => handleDeleteClick(row.original)}
-              color="error"
-              title="Delete User"
-            >
-              <DeleteIcon />
-            </IconButton>
-          </Box>
-        ),
-      },
-    ],
-    []
-  );
+          ) : (
+            <>
+              <IconButton
+                onClick={() => handleStatusChange(row.original, "activate")}
+                color="success"
+                title="Activate User"
+                size="small"
+              >
+                <CheckCircleIcon />
+              </IconButton>
+              <IconButton
+                onClick={() => handleDeleteClick(row.original)}
+                color="error"
+                title="Delete User Permanently"
+                size="small"
+              >
+                <DeleteIcon />
+              </IconButton>
+            </>
+          )}
+        </Box>
+      ),
+    },
+  ];
 
   // Snackbar close handler
   const handleSnackbarClose = () => {
@@ -404,57 +487,124 @@ function CreateUser() {
 
   return (
     <Box className="Dashboard-con">
-
-      {/* Header Section */}
+      {/* Header Section - Following Planning component structure */}
       <Box className="breadcrump-con">
         <Box className="main-title">
           <div>User Management</div>
-          <Link className="gray-md-btn" onClick={handleOpen}>
+          <Link className="green-md-btn" onClick={handleOpen}>
             <AddSharpIcon /> Add User
           </Link>
         </Box>
       </Box>
 
-      {/* Main Content */}
+      {/* Main Content - Following Planning component structure */}
       <Box className="page-layout">
-        <Box sx={{ mt: 8 }}>
-          <MaterialReactTable
-            columns={columns}
-            data={users}
-            positionActionsColumn="last"
-            initialState={{
-              showGlobalFilter: true,
-            }}
-            muiTableHeadCellProps={{
-              sx: {
-                backgroundColor: "#f5f7f9",
-                color: "#000",
-                fontWeight: "bold",
-                textAlign: "center",
-                "& .Mui-TableHeadCell-Content": {
-                  justifyContent: "center",
-                },
-              },
-            }}
-            muiTableBodyCellProps={{
-              sx: {
-                textAlign: "center",
-              },
-            }}
-            muiTableBodyRowProps={({ row }) => ({
-              sx: {
-                cursor: "pointer",
-              },
-            })}
-            muiTableFooterCellProps={{
-              sx: {
-                backgroundColor: "#f5f7f9",
-                color: "#000",
-                fontWeight: 500,
-                textAlign: "center",
-              },
-            }}
-          />
+        <Box sx={{ mt: 3 }}>
+          {/* Tabs for Active/Inactive Users */}
+          <Box sx={{ width: "100%", mb: 3 }}>
+            <Tabs value={activeTab} onChange={handleTabChange} sx={{ mb: 2 }}>
+              <Tab
+                label={
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Typography sx={{ textTransform: "none" }}>
+                      Active Users - ({activeUsers.length})
+                    </Typography>
+                  </Box>
+                }
+              />
+              <Tab
+                label={
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Typography sx={{ textTransform: "none" }}>
+                      Inactive Users - ({inactiveUsers.length})
+                    </Typography>
+                  </Box>
+                }
+              />
+            </Tabs>
+
+            {/* Active Users Table */}
+            {activeTab === 0 && (
+              <MaterialReactTable
+                columns={getColumns("active")}
+                data={activeUsers}
+                positionActionsColumn="last"
+                initialState={{
+                  showGlobalFilter: true,
+                }}
+                muiTableHeadCellProps={{
+                  sx: {
+                    backgroundColor: "#f5f7f9",
+                    color: "#000",
+                    fontWeight: "bold",
+                    textAlign: "center",
+                    "& .Mui-TableHeadCell-Content": {
+                      justifyContent: "center",
+                    },
+                  },
+                }}
+                muiTableBodyCellProps={{
+                  sx: {
+                    textAlign: "center",
+                  },
+                }}
+                muiTableBodyRowProps={{
+                  sx: {
+                    cursor: "pointer",
+                  },
+                }}
+                muiTableFooterCellProps={{
+                  sx: {
+                    backgroundColor: "#f5f7f9",
+                    color: "#000",
+                    fontWeight: 500,
+                    textAlign: "center",
+                  },
+                }}
+              />
+            )}
+
+            {/* Inactive Users Table */}
+            {activeTab === 1 && (
+              <MaterialReactTable
+                columns={getColumns("inactive")}
+                data={inactiveUsers}
+                positionActionsColumn="last"
+                initialState={{
+                  showGlobalFilter: true,
+                }}
+                muiTableHeadCellProps={{
+                  sx: {
+                    backgroundColor: "#f5f7f9",
+                    color: "#000",
+                    fontWeight: "bold",
+                    textAlign: "center",
+                    "& .Mui-TableHeadCell-Content": {
+                      justifyContent: "center",
+                    },
+                  },
+                }}
+                muiTableBodyCellProps={{
+                  sx: {
+                    textAlign: "center",
+                  },
+                }}
+                muiTableBodyRowProps={{
+                  sx: {
+                    cursor: "pointer",
+                  },
+                }}
+                muiTableFooterCellProps={{
+                  sx: {
+                    backgroundColor: "#f5f7f9",
+                    color: "#000",
+                    fontWeight: 500,
+                    textAlign: "center",
+                  },
+                }}
+              />
+            )}
+          </Box>
         </Box>
       </Box>
 
