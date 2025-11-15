@@ -9,8 +9,9 @@ const Topbar = ({ onToggleSidebar }) => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    sessionStorage.removeItem("isLoggedIn");
-    sessionStorage.removeItem("loginMenu");
+    // sessionStorage.removeItem("isLoggedIn");
+    // sessionStorage.removeItem("loginMenu");
+    sessionStorage.clear();
     navigate("/login");
   };
 

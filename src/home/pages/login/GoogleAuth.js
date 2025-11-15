@@ -111,12 +111,15 @@ export default function GoogleAuth() {
 
       if (res.data.success) {
         showSnackbar("OTP Verified Successfully", "success");
+
+        if (res.data.token) {
+          sessionStorage.setItem("token", res.data.token);
+        }
         sessionStorage.setItem("isLoggedIn", "true");
 
-        // Small delay to show success message before redirect
         setTimeout(() => {
           navigate("/admin_dashboard");
-        }, 1500);
+        }, 1000);
       } else {
         showSnackbar(
           res.data.message || "Invalid OTP. Please try again.",
@@ -146,7 +149,6 @@ export default function GoogleAuth() {
     setSnackbar({ ...snackbar, open: false });
   };
 
-  // Check if OTP is complete but not yet verifying (auto-verify state)
   const isOtpComplete = otp.join("").length === OTP_LENGTH;
   const isAutoVerifying = isOtpComplete && !isVerifying;
 

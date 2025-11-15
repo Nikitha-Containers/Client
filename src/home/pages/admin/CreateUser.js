@@ -432,9 +432,7 @@ function CreateUser() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            width: "100%",
-            columnGap: "10px",
-            flexWrap: "wrap",
+            columnGap: "20px",
           }}
         >
           <IconButton
@@ -487,7 +485,6 @@ function CreateUser() {
 
   return (
     <Box className="Dashboard-con">
-      {/* Header Section - Following Planning component structure */}
       <Box className="breadcrump-con">
         <Box className="main-title">
           <div>User Management</div>
@@ -497,7 +494,6 @@ function CreateUser() {
         </Box>
       </Box>
 
-      {/* Main Content - Following Planning component structure */}
       <Box className="page-layout">
         <Box sx={{ mt: 3 }}>
           {/* Tabs for Active/Inactive Users */}
@@ -537,15 +533,6 @@ function CreateUser() {
                     backgroundColor: "#f5f7f9",
                     color: "#000",
                     fontWeight: "bold",
-                    textAlign: "center",
-                    "& .Mui-TableHeadCell-Content": {
-                      justifyContent: "center",
-                    },
-                  },
-                }}
-                muiTableBodyCellProps={{
-                  sx: {
-                    textAlign: "center",
                   },
                 }}
                 muiTableBodyRowProps={{
@@ -558,7 +545,6 @@ function CreateUser() {
                     backgroundColor: "#f5f7f9",
                     color: "#000",
                     fontWeight: 500,
-                    textAlign: "center",
                   },
                 }}
               />
@@ -578,15 +564,6 @@ function CreateUser() {
                     backgroundColor: "#f5f7f9",
                     color: "#000",
                     fontWeight: "bold",
-                    textAlign: "center",
-                    "& .Mui-TableHeadCell-Content": {
-                      justifyContent: "center",
-                    },
-                  },
-                }}
-                muiTableBodyCellProps={{
-                  sx: {
-                    textAlign: "center",
                   },
                 }}
                 muiTableBodyRowProps={{
@@ -599,7 +576,6 @@ function CreateUser() {
                     backgroundColor: "#f5f7f9",
                     color: "#000",
                     fontWeight: 500,
-                    textAlign: "center",
                   },
                 }}
               />
