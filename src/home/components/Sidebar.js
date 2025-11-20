@@ -129,6 +129,27 @@ const Sidebar = ({ isCollapsed }) => {
         <ListItem
           button
           component={Link}
+          to="/desigining_dashboard"
+          className={`list-element ${
+            location.pathname === "/desigining_dashboard" ? "pageactive" : ""
+          }`}
+        >
+          <DashboardIcon className="menu-icon" />
+          <ListItemText
+            primary="Designing Dashboard"
+            sx={{
+              overflow: "hidden",
+              maxWidth: isCollapsed ? 0 : 200,
+              opacity: isCollapsed ? 0 : 1,
+              transition: "max-width 0.3s ease, opacity 0.3s ease",
+              whiteSpace: "nowrap",
+            }}
+          />
+        </ListItem>
+
+        <ListItem
+          button
+          component={Link}
           to="/UpsDesignplan"
           className={`list-element ${
             location.pathname === "/UpsDesignplan" ? "pageactive" : ""

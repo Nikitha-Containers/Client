@@ -29,7 +29,7 @@ function Login() {
   const navigate = useNavigate();
 
   const [getLoginVal, setLoginVal] = useState({
-    email: "admin",
+    email: "Admin",
     password: "Admin@123",
   });
   const [getLoginDetails, setLoginDetails] = useState("");

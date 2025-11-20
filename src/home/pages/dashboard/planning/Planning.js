@@ -1,123 +1,82 @@
-import React, { useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
-import { IconButton } from "@mui/material";
+import { IconButton, Button } from "@mui/material";
 import SyncIcon from "@mui/icons-material/Sync";
 import { MaterialReactTable } from "material-react-table";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import "../../../pages/pagestyle.scss";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-
-
-
-const data = [
-  { id: 1, item: "NK25127", steel: "Alloy", size: "M12", date: "10-12-2025" },
-  { id: 2, item: "NK25128", steel: "Carbon", size: "M14", date: "11-12-2025" },
-  {
-    id: 3,
-    item: "NK25129",
-    steel: "Tool Steel",
-    size: "M16",
-    date: "12-12-2025",
-  },
-  {
-    id: 4,
-    item: "NK25130",
-    steel: "Stainless",
-    size: "M18",
-    date: "13-12-2025",
-  },
-  { id: 5, item: "NK25131", steel: "Alloy", size: "M20", date: "14-12-2025" },
-  { id: 6, item: "NK25132", steel: "Carbon", size: "M22", date: "15-12-2025" },
-  {
-    id: 7,
-    item: "NK25133",
-    steel: "Stainless",
-    size: "M24",
-    date: "16-12-2025",
-  },
-  {
-    id: 8,
-    item: "NK25134",
-    steel: "Tool Steel",
-    size: "M26",
-    date: "17-12-2025",
-  },
-  {
-    id: 9,
-    item: "NK25134",
-    steel: "Tool Steel",
-    size: "M26",
-    date: "17-12-2025",
-  },
-  {
-    id: 10,
-    item: "NK25134",
-    steel: "Tool Steel",
-    size: "M26",
-    date: "17-12-2025",
-  },
-  {
-    id: 11,
-    item: "NK25134",
-    steel: "Tool Steel",
-    size: "M26",
-    date: "17-12-2025",
-  },
-  {
-    id: 12,
-    item: "NK25134",
-    steel: "Tool Steel",
-    size: "M26",
-    date: "17-12-2025",
-  },
-];
+import server from "../../../../server/server";
 
 function Planning() {
   const navigate = useNavigate();
+  const [getSO, setSO] = useState([]);
+
+  // Fetch Data
+  useEffect(() => {
+    fetchSO();
+  }, []);
+
+  //Sales Order API
+  const fetchSO = async () => {
+    try {
+      const response = await server.get("/salesorder");
+      setSO(response.data.data);
+      console.log("salesorder: ", response.data.data);
+    } catch (error) {
+      console.error(error.message);
+    }
+  };
+
+  //Sync SAP Data
+  const sapSync = async () => {
+    const response = await server.get("/sap/sync");
+    fetchSO();
+  };
 
   const columns = useMemo(
     () => [
       {
         id: 1,
-        accessorKey: "id",
-        header: "SO.No",
+        accessorKey: "invoice_no",
+        header: "Invoice No",
         size: 30,
       },
       {
         id: 2,
-        accessorKey: "item",
+        accessorKey: "posting_date",
         header: "SO Date",
         size: 30,
       },
       {
         id: 3,
-        accessorKey: "steel",
+        accessorKey: "customer_name",
         header: "Customer Name",
         size: 30,
       },
       {
         id: 4,
-        accessorKey: "size",
+        accessorKey: "item_description",
         header: "Size",
         size: 30,
       },
       {
         id: 5,
-        accessorKey: "date",
+        accessorKey: "quantity",
         header: "Qty",
         size: 30,
       },
       {
         id: 6,
-        accessorKey: "date",
+        accessorKey: "posting_date",
         header: "Start Date",
         size: 30,
       },
       {
         id: 7,
-        accessorKey: "date",
+        accessorKey: "due_date",
         header: "End Date",
         size: 30,
       },
@@ -153,7 +112,11 @@ function Planning() {
       <Box className="breadcrump-con">
         <Box className="main-title">
           <div>Planning</div>
-          <Link className="green-md-btn" component={Link} to="/planning">
+          <Link
+            className="gray-md-btn"
+            onClick={sapSync}
+            to="/planning"
+          >
             <SyncIcon /> Sync With SO
           </Link>
         </Box>
@@ -163,7 +126,7 @@ function Planning() {
         <Box sx={{ mt: 8 }}>
           <MaterialReactTable
             columns={columns}
-            data={data}
+            data={getSO}
             positionActionsColumn="last"
             initialState={{
               showGlobalFilter: true,

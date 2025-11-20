@@ -14,7 +14,7 @@ import CoatingDashboard from "./pages/dashboard/coating/CoatingDashboard";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import CreateUser from "./pages/admin/CreateUser";
 import NotFound from "./NotFound";
-
+import DesigningDashboard from './pages/desigining/designingDashboard'
 function Mainlayouts() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const location = useLocation();
@@ -83,6 +83,15 @@ function Mainlayouts() {
               element={
                 <PrivateRoute>
                   <EditPlan />
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/desigining_dashboard"
+              element={
+                <PrivateRoute>
+                  <DesigningDashboard />
                 </PrivateRoute>
               }
             />
