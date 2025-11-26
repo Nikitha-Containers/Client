@@ -22,69 +22,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import upsImage from "../../../../assets/Pagesimage/ups-image.jpg";
-
-const data = [
-  { id: 1, item: "NK25127", steel: "Alloy", size: "M12", date: "10-12-2025" },
-  { id: 2, item: "NK25128", steel: "Carbon", size: "M14", date: "11-12-2025" },
-  {
-    id: 3,
-    item: "NK25129",
-    steel: "Tool Steel",
-    size: "M16",
-    date: "12-12-2025",
-  },
-  {
-    id: 4,
-    item: "NK25130",
-    steel: "Stainless",
-    size: "M18",
-    date: "13-12-2025",
-  },
-  { id: 5, item: "NK25131", steel: "Alloy", size: "M20", date: "14-12-2025" },
-  { id: 6, item: "NK25132", steel: "Carbon", size: "M22", date: "15-12-2025" },
-  {
-    id: 7,
-    item: "NK25133",
-    steel: "Stainless",
-    size: "M24",
-    date: "16-12-2025",
-  },
-  {
-    id: 8,
-    item: "NK25134",
-    steel: "Tool Steel",
-    size: "M26",
-    date: "17-12-2025",
-  },
-  {
-    id: 9,
-    item: "NK25134",
-    steel: "Tool Steel",
-    size: "M26",
-    date: "17-12-2025",
-  },
-  {
-    id: 10,
-    item: "NK25134",
-    steel: "Tool Steel",
-    size: "M26",
-    date: "17-12-2025",
-  },
-  {
-    id: 11,
-    item: "NK25134",
-    steel: "Tool Steel",
-    size: "M26",
-    date: "17-12-2025",
-  },
-  {
-    id: 12,
-    item: "NK25134",
-    steel: "Tool Steel",
-    size: "M26",
-    date: "17-12-2025",
-  },
-];
+import { useLocation } from "react-router-dom";
 
 const label = { inputProps: { "aria-label": "Checkbox demo" } };
 
@@ -102,6 +40,10 @@ const VisuallyHiddenInput = styled("input")`
 
 function UpsDashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const rowData = location.state;
+  
+  console.log("rowData", rowData);
 
   const [open, setOpen] = useState(false);
 
@@ -212,7 +154,12 @@ function UpsDashboard() {
             <Grid size={3}>
               <FormGroup>
                 <Typography mb={1}>SO Number</Typography>
-               <TextField id="outlined-size-small" name="" size="small" type="number" />
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  value={rowData?.saleorder_no || ""}
+                />
               </FormGroup>
             </Grid>
 
@@ -224,6 +171,7 @@ function UpsDashboard() {
                   name=""
                   size="small"
                   type="date"
+                  value={rowData?.posting_date}
                 />
               </FormGroup>
             </Grid>
@@ -247,7 +195,12 @@ function UpsDashboard() {
             <Grid size={3}>
               <FormGroup>
                 <Typography mb={1}>Job Name</Typography>
-               <TextField id="outlined-size-small" name="" size="small" type="number" />
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  type="number"
+                />
               </FormGroup>
             </Grid>
           </Grid>
@@ -316,31 +269,57 @@ function UpsDashboard() {
 
             <Grid size={1}>
               <div className="Box-table-content">
-                <TextField id="outlined-size-small" name="" size="small" type="number" />
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  type="number"
+                />
               </div>
             </Grid>
 
             <Grid size={1}>
               <div className="Box-table-content">
-               <TextField id="outlined-size-small" name="" size="small" type="number" />
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  type="number"
+                />
               </div>
             </Grid>
 
             <Grid size={1}>
               <div className="Box-table-content">
-               <TextField id="outlined-size-small" name="" size="small" type="number" />
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  type="text"
+                  value={rowData?.thickness || ""}
+                />
               </div>
             </Grid>
 
             <Grid size={1.5}>
               <div className="Box-table-content">
-               <TextField id="outlined-size-small" name="" size="small" type="number" />
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  type="number"
+                />
               </div>
             </Grid>
 
             <Grid size={1.5}>
               <div className="Box-table-content">
-               <TextField id="outlined-size-small" name="" size="small" type="number" />
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  type="number"
+                />
               </div>
             </Grid>
 
@@ -399,31 +378,57 @@ function UpsDashboard() {
 
             <Grid size={1}>
               <div className="Box-table-content">
-               <TextField id="outlined-size-small" name="" size="small" type="number" />
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  type="number"
+                />
               </div>
             </Grid>
 
             <Grid size={1}>
               <div className="Box-table-content">
-               <TextField id="outlined-size-small" name="" size="small" type="number" />
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  type="number"
+                />
               </div>
             </Grid>
 
             <Grid size={1}>
               <div className="Box-table-content">
-               <TextField id="outlined-size-small" name="" size="small" type="number" />
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  type="text"
+                  value={rowData?.thickness || ""}
+                />
               </div>
             </Grid>
 
             <Grid size={1.5}>
               <div className="Box-table-content">
-               <TextField id="outlined-size-small" name="" size="small" type="number" />
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  type="number"
+                />
               </div>
             </Grid>
 
             <Grid size={1.5}>
               <div className="Box-table-content">
-               <TextField id="outlined-size-small" name="" size="small" type="number" />
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  type="number"
+                />
               </div>
             </Grid>
 
@@ -482,31 +487,57 @@ function UpsDashboard() {
 
             <Grid size={1}>
               <div className="Box-table-content">
-               <TextField id="outlined-size-small" name="" size="small" type="number" />
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  type="number"
+                />
               </div>
             </Grid>
 
             <Grid size={1}>
               <div className="Box-table-content">
-               <TextField id="outlined-size-small" name="" size="small" type="number" />
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  type="number"
+                />
               </div>
             </Grid>
 
             <Grid size={1}>
               <div className="Box-table-content">
-               <TextField id="outlined-size-small" name="" size="small" type="number" />
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  type="text"
+                  value={rowData?.thickness || ""}
+                />
               </div>
             </Grid>
 
             <Grid size={1.5}>
               <div className="Box-table-content">
-               <TextField id="outlined-size-small" name="" size="small" type="number" />
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  type="number"
+                />
               </div>
             </Grid>
 
             <Grid size={1.5}>
               <div className="Box-table-content">
-               <TextField id="outlined-size-small" name="" size="small" type="number" />
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  type="number"
+                />
               </div>
             </Grid>
 
@@ -565,31 +596,57 @@ function UpsDashboard() {
 
             <Grid size={1}>
               <div className="Box-table-content">
-               <TextField id="outlined-size-small" name="" size="small" type="number" />
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  type="number"
+                />
               </div>
             </Grid>
 
             <Grid size={1}>
               <div className="Box-table-content">
-               <TextField id="outlined-size-small" name="" size="small" type="number" />
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  type="number"
+                />
               </div>
             </Grid>
 
             <Grid size={1}>
               <div className="Box-table-content">
-               <TextField id="outlined-size-small" name="" size="small" type="number" />
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  type="text"
+                  value={rowData?.thickness || ""}
+                />
               </div>
             </Grid>
 
             <Grid size={1.5}>
               <div className="Box-table-content">
-               <TextField id="outlined-size-small" name="" size="small" type="number" />
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  type="number"
+                />
               </div>
             </Grid>
 
             <Grid size={1.5}>
               <div className="Box-table-content">
-               <TextField id="outlined-size-small" name="" size="small" type="number" />
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  type="number"
+                />
               </div>
             </Grid>
 
@@ -648,31 +705,57 @@ function UpsDashboard() {
 
             <Grid size={1}>
               <div className="Box-table-content">
-               <TextField id="outlined-size-small" name="" size="small" type="number" />
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  type="number"
+                />
               </div>
             </Grid>
 
             <Grid size={1}>
               <div className="Box-table-content">
-               <TextField id="outlined-size-small" name="" size="small" type="number" />
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  type="number"
+                />
               </div>
             </Grid>
 
             <Grid size={1}>
               <div className="Box-table-content">
-               <TextField id="outlined-size-small" name="" size="small" type="number" />
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  type="text"
+                  value={rowData?.thickness || ""}
+                />
               </div>
             </Grid>
 
             <Grid size={1.5}>
               <div className="Box-table-content">
-               <TextField id="outlined-size-small" name="" size="small" type="number" />
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  type="number"
+                />
               </div>
             </Grid>
 
             <Grid size={1.5}>
               <div className="Box-table-content">
-               <TextField id="outlined-size-small" name="" size="small" type="number" />
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  type="number"
+                />
               </div>
             </Grid>
 
@@ -731,31 +814,57 @@ function UpsDashboard() {
 
             <Grid size={1}>
               <div className="Box-table-content">
-               <TextField id="outlined-size-small" name="" size="small" type="number" />
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  type="number"
+                />
               </div>
             </Grid>
 
             <Grid size={1}>
               <div className="Box-table-content">
-               <TextField id="outlined-size-small" name="" size="small" type="number" />
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  type="number"
+                />
               </div>
             </Grid>
 
             <Grid size={1}>
               <div className="Box-table-content">
-               <TextField id="outlined-size-small" name="" size="small" type="number" />
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  type="text"
+                  value={rowData?.thickness || ""}
+                />
               </div>
             </Grid>
 
             <Grid size={1.5}>
               <div className="Box-table-content">
-               <TextField id="outlined-size-small" name="" size="small" type="number" />
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  type="number"
+                />
               </div>
             </Grid>
 
             <Grid size={1.5}>
               <div className="Box-table-content">
-               <TextField id="outlined-size-small" name="" size="small" type="number" />
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  type="number"
+                />
               </div>
             </Grid>
 

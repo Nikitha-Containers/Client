@@ -14,7 +14,7 @@ import CoatingDashboard from "./pages/dashboard/coating/CoatingDashboard";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import CreateUser from "./pages/admin/CreateUser";
 import NotFound from "./NotFound";
-import DesigningDashboard from './pages/desigining/designingDashboard'
+import DesigningDashboard from './pages/desigining/DesigningDashboard'
 function Mainlayouts() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const location = useLocation();

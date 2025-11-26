@@ -14,8 +14,9 @@ import FileDownloadIcon from "@mui/icons-material/FileDownload";
 // import "../../pages/pagestyle.scss";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-
 import excelExportI from "../../../assets/icons/icons8-export-excel-50.png";
+import { SalesOrder } from "../../../API/Salesorder";
+import { useNavigate } from "react-router-dom";
 
 const Item = styled(Paper)(({ theme }) => ({
   backgroundColor: "#fff",
@@ -28,114 +29,26 @@ const Item = styled(Paper)(({ theme }) => ({
   }),
 }));
 
-const data = [
-  { id: 1, item: "NK25127", steel: "Alloy", size: "M12", date: "10-12-2025" },
-  { id: 2, item: "NK25128", steel: "Carbon", size: "M14", date: "11-12-2025" },
-  {
-    id: 3,
-    item: "NK25129",
-    steel: "Tool Steel",
-    size: "M16",
-    date: "12-12-2025",
-  },
-  {
-    id: 4,
-    item: "NK25130",
-    steel: "Stainless",
-    size: "M18",
-    date: "13-12-2025",
-  },
-  { id: 5, item: "NK25131", steel: "Alloy", size: "M20", date: "14-12-2025" },
-  { id: 6, item: "NK25132", steel: "Carbon", size: "M22", date: "15-12-2025" },
-  {
-    id: 7,
-    item: "NK25133",
-    steel: "Stainless",
-    size: "M24",
-    date: "16-12-2025",
-  },
-  {
-    id: 8,
-    item: "NK25134",
-    steel: "Tool Steel",
-    size: "M26",
-    date: "17-12-2025",
-  },
-  {
-    id: 9,
-    item: "NK25134",
-    steel: "Tool Steel",
-    size: "M26",
-    date: "17-12-2025",
-  },
-  {
-    id: 10,
-    item: "NK25134",
-    steel: "Tool Steel",
-    size: "M26",
-    date: "17-12-2025",
-  },
-  {
-    id: 11,
-    item: "NK25134",
-    steel: "Tool Steel",
-    size: "M26",
-    date: "17-12-2025",
-  },
-  {
-    id: 12,
-    item: "NK25134",
-    steel: "Tool Steel",
-    size: "M26",
-    date: "17-12-2025",
-  },
-];
+const DesigningDashboard = () => {
+  const { salesOrders } = SalesOrder();
+  console.log("salesOrders", salesOrders);
 
-const Dashboard = () => {
+  const navigate = useNavigate();
+
   const columns = useMemo(
     () => [
-      {
-        id: 1,
-        accessorKey: "id",
-        header: "SO.No",
-        size: 30,
-      },
-      {
-        id: 2,
-        accessorKey: "item",
-        header: "SO Date",
-        size: 30,
-      },
+      { id: 1, accessorKey: "invoice_no", header: "Invoice No", size: 30 },
+      { id: 2, accessorKey: "posting_date", header: "SO Date", size: 30 },
       {
         id: 3,
-        accessorKey: "steel",
+        accessorKey: "customer_name",
         header: "Customer Name",
         size: 30,
       },
-      {
-        id: 4,
-        accessorKey: "size",
-        header: "Size",
-        size: 30,
-      },
-      {
-        id: 5,
-        accessorKey: "date",
-        header: "Qty",
-        size: 30,
-      },
-      {
-        id: 6,
-        accessorKey: "date",
-        header: "Start Date",
-        size: 30,
-      },
-      {
-        id: 7,
-        accessorKey: "date",
-        header: "End Date",
-        size: 30,
-      },
+      { id: 4, accessorKey: "item_description", header: "Size", size: 30 },
+      { id: 5, accessorKey: "quantity", header: "Qty", size: 30 },
+      { id: 6, accessorKey: "posting_date", header: "Start Date", size: 30 },
+      { id: 7, accessorKey: "due_date", header: "End Date", size: 30 },
       {
         id: 8,
         accessorKey: "actions",
@@ -227,7 +140,12 @@ const Dashboard = () => {
         <Box className="Dashboard-table" sx={{ mt: 1 }}>
           <MaterialReactTable
             columns={columns}
-            data={data}
+            data={salesOrders}
+            muiTableBodyRowProps={({ row }) => ({
+              onClick: () =>
+                navigate("/UpsDesignplan", { state: row.original }),
+              style: { cursor: "pointer" },
+            })}
             positionActionsColumn="last"
             initialState={{
               showGlobalFilter: true,
@@ -256,7 +174,7 @@ const Dashboard = () => {
                   padding: "0px 0px 0px 0px",
                 }}
               >
-                <div class="table-title">Processing Team</div>
+                <div className="table-title">Processing Team</div>
 
                 <button className="export-btn">
                   <img
@@ -274,4 +192,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default DesigningDashboard;
