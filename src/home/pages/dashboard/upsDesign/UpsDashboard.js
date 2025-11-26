@@ -15,7 +15,6 @@ import {
 import Button from "@mui/joy/Button";
 import SvgIcon from "@mui/joy/SvgIcon";
 import { styled } from "@mui/joy";
-import { MaterialReactTable } from "material-react-table";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import "../../../pages/pagestyle.scss";
 import EditIcon from "@mui/icons-material/Edit";
@@ -37,6 +36,95 @@ const VisuallyHiddenInput = styled("input")`
   white-space: nowrap;
   width: 1px;
 `;
+
+// Componnet Row Start Here
+
+const ComponentRow = ({
+  component,
+  name,
+  onDataChange,
+  onFileUpload,
+  onViewFile,
+}) => (
+  <>
+    <Grid size={12} sx={{ borderBottom: "1px solid #dcdddd" }}>
+      <Grid size={1}>
+        <div className="Box-table-checkbox">
+          <Checkbox checked={component.selected} {...label} />
+        </div>
+      </Grid>
+
+      <Grid size={2}>
+        <div className="Box-table-text">{name}</div>
+      </Grid>
+
+      <Grid size={1}>
+        <div className="Box-table-content">
+          <TextField
+            id="outlined-size-small"
+            name=""
+            size="small"
+            type="text"
+            value={component.length}
+            disabled={!component.selected}
+          />
+        </div>
+      </Grid>
+
+      <Grid size={1}>
+        <div className="Box-table-content">
+          <TextField
+            id="outlined-size-small"
+            name=""
+            size="small"
+            type="text"
+            value={component.breadth}
+            disabled={!component.selected}
+          />
+        </div>
+      </Grid>
+
+      <Grid size={1.5}>
+        <div className="Box-table-content">
+          <TextField
+            id="outlined-size-small"
+            name=""
+            size="small"
+            type="text"
+            value={component.ups}
+            disabled={!component.selected}
+          />
+        </div>
+      </Grid>
+
+      <Grid size={1.5}>
+        <div className="Box-table-content">
+          <TextField
+            id="outlined-size-small"
+            name=""
+            size="small"
+            type="text"
+            value={component.sheets}
+            disabled={!component.selected}
+          />
+        </div>
+      </Grid>
+
+      <Grid size={3}>
+        <div className="Box-table-content">
+          <TextField
+            id="outlined-size-small"
+            name=""
+            size="small"
+            type="text"
+            value={component.file}
+            disabled={!component.selected}
+          />
+        </div>
+      </Grid>
+    </Grid>
+  </>
+);
 
 function UpsDashboard() {
   const navigate = useNavigate();
@@ -255,7 +343,6 @@ function UpsDashboard() {
             {/* Header End Here  */}
 
             {/* First Row start Here  */}
-            <Grid size={12} sx={{ borderBottom: "1px solid #dcdddd" }}></Grid>
 
             <Grid size={1}>
               <div className="Box-table-checkbox">
