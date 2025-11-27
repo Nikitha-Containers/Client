@@ -1,8 +1,7 @@
-import { useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import Box from "@mui/material/Box";
 import {
-  IconButton,
   MenuItem,
   Grid,
   FormGroup,
@@ -17,8 +16,6 @@ import SvgIcon from "@mui/joy/SvgIcon";
 import { styled } from "@mui/joy";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import "../../../pages/pagestyle.scss";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import upsImage from "../../../../assets/Pagesimage/ups-image.jpg";
 import { useLocation } from "react-router-dom";
@@ -37,8 +34,7 @@ const VisuallyHiddenInput = styled("input")`
   width: 1px;
 `;
 
-// Componnet Row Start Here
-
+// Component Row Start Here
 const ComponentRow = ({
   component,
   name,
@@ -47,96 +43,290 @@ const ComponentRow = ({
   onViewFile,
 }) => (
   <>
-    <Grid size={12} sx={{ borderBottom: "1px solid #dcdddd" }}>
-      <Grid size={1}>
-        <div className="Box-table-checkbox">
-          <Checkbox checked={component.selected} {...label} />
-        </div>
-      </Grid>
+    <Grid size={12} sx={{ borderBottom: "1px solid #dcdddd" }} />
 
-      <Grid size={2}>
-        <div className="Box-table-text">{name}</div>
-      </Grid>
+    <Grid size={1}>
+      <div className="Box-table-checkbox">
+        <Checkbox
+          checked={component.selected}
+          onChange={(e) => onDataChange(name, "selected", e.target.checked)}
+          {...label}
+        />
+      </div>
+    </Grid>
 
-      <Grid size={1}>
-        <div className="Box-table-content">
-          <TextField
-            id="outlined-size-small"
-            name=""
-            size="small"
-            type="text"
-            value={component.length}
-            disabled={!component.selected}
-          />
-        </div>
-      </Grid>
+    <Grid size={2}>
+      <div className="Box-table-text">{name}</div>
+    </Grid>
 
-      <Grid size={1}>
-        <div className="Box-table-content">
-          <TextField
-            id="outlined-size-small"
-            name=""
-            size="small"
-            type="text"
-            value={component.breadth}
-            disabled={!component.selected}
-          />
-        </div>
-      </Grid>
+    <Grid size={1}>
+      <div className="Box-table-content">
+        <TextField
+          id="outlined-size-small"
+          name=""
+          size="small"
+          type="text"
+          value={component.length}
+          onChange={(e) => onDataChange(name, "length", e.target.value)}
+          disabled={!component.selected}
+        />
+      </div>
+    </Grid>
 
-      <Grid size={1.5}>
-        <div className="Box-table-content">
-          <TextField
-            id="outlined-size-small"
-            name=""
-            size="small"
-            type="text"
-            value={component.ups}
-            disabled={!component.selected}
-          />
-        </div>
-      </Grid>
+    <Grid size={1}>
+      <div className="Box-table-content">
+        <TextField
+          id="outlined-size-small"
+          name=""
+          size="small"
+          type="text"
+          value={component.breadth}
+          onChange={(e) => onDataChange(name, "breadth", e.target.value)}
+          disabled={!component.selected}
+        />
+      </div>
+    </Grid>
 
-      <Grid size={1.5}>
-        <div className="Box-table-content">
-          <TextField
-            id="outlined-size-small"
-            name=""
-            size="small"
-            type="text"
-            value={component.sheets}
-            disabled={!component.selected}
-          />
-        </div>
-      </Grid>
+    <Grid size={1}>
+      <div className="Box-table-content">
+        <TextField
+          id="outlined-size-small"
+          name=""
+          size="small"
+          type="text"
+          value={component.thickness}
+          onChange={(e) => onDataChange(name, "thickness", e.target.value)}
+          disabled={!component.selected}
+        />
+      </div>
+    </Grid>
 
-      <Grid size={3}>
-        <div className="Box-table-content">
-          <TextField
-            id="outlined-size-small"
-            name=""
-            size="small"
-            type="text"
-            value={component.file}
-            disabled={!component.selected}
-          />
-        </div>
-      </Grid>
+    <Grid size={1.5}>
+      <div className="Box-table-content">
+        <TextField
+          id="outlined-size-small"
+          name=""
+          size="small"
+          type="text"
+          value={component.ups}
+          onChange={(e) => onDataChange(name, "ups", e.target.value)}
+          disabled={!component.selected}
+        />
+      </div>
+    </Grid>
+
+    <Grid size={1.5}>
+      <div className="Box-table-content">
+        <TextField
+          id="outlined-size-small"
+          name=""
+          size="small"
+          type="text"
+          value={component.sheets}
+          onChange={(e) => onDataChange(name, "sheets", e.target.value)}
+          disabled={!component.selected}
+        />
+      </div>
+    </Grid>
+
+    <Grid size={3}>
+      <FileUpload
+        onFileUpload={onFileUpload}
+        onViewFile={onViewFile}
+        componentName={name}
+        file={component.file}
+        disabled={!component.selected}
+      />
     </Grid>
   </>
 );
 
+// File Upload Component
+const FileUpload = ({
+  onFileUpload,
+  onViewFile,
+  componentName,
+  file,
+  disabled,
+}) => (
+  <Box
+    className="Box-table-upload"
+    sx={{ display: "flex", alignItems: "center", columnGap: 2.5 }}
+  >
+    <Button
+      component="label"
+      variant="outlined"
+      color="neutral"
+      disabled={disabled}
+      startDecorator={
+        <SvgIcon>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"
+            />
+          </svg>
+        </SvgIcon>
+      }
+    >
+      {file ? "Change File" : "Upload a file"}
+      <VisuallyHiddenInput
+        type="file"
+        onChange={(e) => onFileUpload(componentName, e.target.files[0])}
+      />
+    </Button>
+
+    {file && (
+      <Link
+        className="gray-md-btn"
+        onClick={() => onViewFile(componentName)}
+        style={{ cursor: "pointer" }}
+      >
+        <VisibilityIcon /> View
+      </Link>
+    )}
+  </Box>
+);
+
 function UpsDashboard() {
-  const navigate = useNavigate();
   const location = useLocation();
   const rowData = location.state;
-  
-  console.log("rowData", rowData);
+
+  const initialFormData = {
+    soNumber: rowData?.saleorder_no || "",
+    soDate: rowData?.posting_date
+      ? new Date(rowData.posting_date).toISOString().split("T")[0]
+      : "",
+    fabSite: "",
+    jobName: "",
+  };
+
+  const initialComponentState = {
+    selected: false,
+    length: "",
+    breadth: "",
+    thickness: rowData?.thickness || "",
+    ups: "",
+    sheets: "",
+    file: null,
+  };
 
   const [open, setOpen] = useState(false);
+  const [currentImage, setCurrentImage] = useState("");
+  const [formData, setFormData] = useState(initialFormData);
+  const [components, setComponents] = useState({
+    Lid: initialComponentState,
+    Body: initialComponentState,
+    Bottom: initialComponentState,
+    "Lid & Body": initialComponentState,
+    "Lid & Body & Bottom": initialComponentState,
+    "Body & Bottom": initialComponentState,
+  });
 
   const handleOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
+
+  const handleClose = () => {
+    setOpen(false);
+    if (currentImage) {
+      URL.revokeObjectURL(currentImage);
+      setCurrentImage("");
+    }
+  };
+
+  const handleFormChange = (field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleComponentChange = (componentName, field, value) => {
+    setComponents((prev) => ({
+      ...prev,
+      [componentName]: {
+        ...prev[componentName],
+        [field]: value,
+      },
+    }));
+  };
+
+  const handleFileUpload = (componentName, file) => {
+    if (file) {
+      handleComponentChange(componentName, "file", file);
+    }
+  };
+
+  const handleViewFile = (componentName) => {
+    const file = components[componentName]?.file;
+    if (file) {
+      if (file.type.startsWith("image/")) {
+        const imageUrl = URL.createObjectURL(file);
+        setCurrentImage(imageUrl);
+        setOpen(true);
+      } else {
+        window.open(URL.createObjectURL(file), "_blank");
+      }
+    } else {
+      setCurrentImage(upsImage);
+      setOpen(true);
+    }
+  };
+
+  const handleSubmit = () => {
+    const selectedComponents = Object.entries(components)
+      .filter(([_, data]) => data.selected)
+      .map(([name, data]) => ({
+        name,
+        ...data,
+      }));
+
+    if (selectedComponents.length === 0) {
+      alert("Please select at least one component");
+      return false;
+    }
+
+    const incompleteComponents = selectedComponents.filter(
+      (comp) =>
+        !comp.length ||
+        !comp.breadth ||
+        !comp.thickness ||
+        !comp.ups ||
+        !comp.sheets
+    );
+
+    if (incompleteComponents.length > 0) {
+      alert("Please fill all fields for selected components");
+      return false;
+    }
+
+    // API Call Post
+    console.log("Form Data:", formData);
+    console.log("Selected Components:", selectedComponents);
+    alert("Data submitted successfully!");
+  };
+
+  const handleCancel = () => {
+    setFormData(initialFormData);
+    setComponents({
+      Lid: initialComponentState,
+      Body: initialComponentState,
+      Bottom: initialComponentState,
+      "Lid & Body": initialComponentState,
+      "Lid & Body & Bottom": initialComponentState,
+      "Body & Bottom": initialComponentState,
+    });
+
+    if (open) {
+      handleClose();
+    }
+  };
 
   const modalStyle = {
     position: "absolute",
@@ -147,77 +337,6 @@ function UpsDashboard() {
     maxWidth: "90vw",
     maxHeight: "90vh",
   };
-
-  const columns = useMemo(
-    () => [
-      {
-        id: 1,
-        accessorKey: "id",
-        header: "SO.No",
-        size: 30,
-      },
-      {
-        id: 2,
-        accessorKey: "item",
-        header: "SO Date",
-        size: 30,
-      },
-      {
-        id: 3,
-        accessorKey: "steel",
-        header: "Customer Name",
-        size: 30,
-      },
-      {
-        id: 4,
-        accessorKey: "size",
-        header: "Size",
-        size: 30,
-      },
-      {
-        id: 5,
-        accessorKey: "date",
-        header: "Qty",
-        size: 30,
-      },
-      {
-        id: 6,
-        accessorKey: "date",
-        header: "Start Date",
-        size: 30,
-      },
-      {
-        id: 7,
-        accessorKey: "date",
-        header: "End Date",
-        size: 30,
-      },
-      {
-        id: 8,
-        accessorKey: "actions",
-        header: "Actions",
-        size: 30,
-        Cell: ({ row }) => (
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              columnGap: "20px",
-            }}
-          >
-            <IconButton>
-              <EditIcon />
-            </IconButton>
-            <IconButton>
-              <DeleteIcon />
-            </IconButton>
-          </Box>
-        ),
-      },
-    ],
-    []
-  );
 
   return (
     <Box className="Dashboard-con">
@@ -246,7 +365,8 @@ function UpsDashboard() {
                   id="outlined-size-small"
                   name=""
                   size="small"
-                  value={rowData?.saleorder_no || ""}
+                  value={formData.soNumber}
+                  onChange={(e) => handleFormChange("soNumber", e.target.value)}
                 />
               </FormGroup>
             </Grid>
@@ -259,7 +379,8 @@ function UpsDashboard() {
                   name=""
                   size="small"
                   type="date"
-                  value={rowData?.posting_date}
+                  value={formData.soDate}
+                  onChange={(e) => handleFormChange("soDate", e.target.value)}
                 />
               </FormGroup>
             </Grid>
@@ -270,12 +391,17 @@ function UpsDashboard() {
                 <Select
                   labelId="demo-simple-select-label"
                   id="demo-simple-select"
-                  value={10}
+                  value={formData.fabSite}
                   size="small"
+                  displayEmpty
+                  renderValue={
+                    formData.fabSite !== "" ? undefined : () => "Select"
+                  }
+                  onChange={(e) => handleFormChange("fabSite", e.target.value)}
                 >
-                  <MenuItem value={10}>1.</MenuItem>
-                  <MenuItem value={20}>2.</MenuItem>
-                  <MenuItem value={30}>3.</MenuItem>
+                  <MenuItem value={10}>Site 1</MenuItem>
+                  <MenuItem value={20}>Site 2</MenuItem>
+                  <MenuItem value={30}>Site 3</MenuItem>
                 </Select>
               </FormGroup>
             </Grid>
@@ -287,7 +413,9 @@ function UpsDashboard() {
                   id="outlined-size-small"
                   name=""
                   size="small"
-                  type="number"
+                  type="text"
+                  value={formData.jobName}
+                  onChange={(e) => handleFormChange("jobName", e.target.value)}
                 />
               </FormGroup>
             </Grid>
@@ -297,7 +425,7 @@ function UpsDashboard() {
         <Box
           sx={{
             background: "#fff",
-            mt: 1,
+            mt: 3,
             boxShadow:
               "rgba(0, 0, 0, 0.02) 0px 1px 3px 0px, rgba(27, 31, 35, 0.15) 0px 0px 0px 1px",
           }}
@@ -305,7 +433,7 @@ function UpsDashboard() {
           <Grid container spacing={0.5}>
             <Grid size={12}>
               <div className="Box-table-title">
-                Todays' Work - ( 10-09-2025 )
+                Today's Work - ({new Date().toLocaleDateString()})
               </div>
             </Grid>
 
@@ -316,691 +444,73 @@ function UpsDashboard() {
             <Grid size={2}>
               <div className="Box-table-subtitle">Component</div>
             </Grid>
-
             <Grid size={1}>
               <div className="Box-table-subtitle">Length</div>
             </Grid>
-
             <Grid size={1}>
               <div className="Box-table-subtitle">Breadth</div>
             </Grid>
-
             <Grid size={1}>
               <div className="Box-table-subtitle">Thickness</div>
             </Grid>
-
             <Grid size={1.5}>
               <div className="Box-table-subtitle">Ups</div>
             </Grid>
-
             <Grid size={1.5}>
-              <div className="Box-table-subtitle">No.of.Sheets</div>
+              <div className="Box-table-subtitle">No. of Sheets</div>
             </Grid>
-
             <Grid size={3}>
               <div className="Box-table-subtitle">Source File</div>
             </Grid>
-            {/* Header End Here  */}
+            {/* Header End Here */}
 
-            {/* First Row start Here  */}
-
-            <Grid size={1}>
-              <div className="Box-table-checkbox">
-                <Checkbox {...label} />
-              </div>
-            </Grid>
-
-            <Grid size={2}>
-              <div className="Box-table-text">Lid </div>
-            </Grid>
-
-            <Grid size={1}>
-              <div className="Box-table-content">
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  type="number"
-                />
-              </div>
-            </Grid>
-
-            <Grid size={1}>
-              <div className="Box-table-content">
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  type="number"
-                />
-              </div>
-            </Grid>
-
-            <Grid size={1}>
-              <div className="Box-table-content">
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  type="text"
-                  value={rowData?.thickness || ""}
-                />
-              </div>
-            </Grid>
-
-            <Grid size={1.5}>
-              <div className="Box-table-content">
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  type="number"
-                />
-              </div>
-            </Grid>
-
-            <Grid size={1.5}>
-              <div className="Box-table-content">
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  type="number"
-                />
-              </div>
-            </Grid>
-
-            <Grid size={3}>
-              <Box
-                className="Box-table-upload"
-                sx={{ display: "flex", alignItems: "center", columnGap: 2.5 }}
-              >
-                <Button
-                  component="label"
-                  role={undefined}
-                  tabIndex={-1}
-                  variant="outlined"
-                  color="neutral"
-                  startDecorator={
-                    <SvgIcon>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={1.5}
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"
-                        />
-                      </svg>
-                    </SvgIcon>
-                  }
-                >
-                  Upload a file
-                  <VisuallyHiddenInput type="file" />
-                </Button>
-
-                <Link className="gray-md-btn" onClick={handleOpen}>
-                  <VisibilityIcon /> View
-                </Link>
-              </Box>
-            </Grid>
-            {/* First Row end Here  */}
-
-            {/* Secound Row start Here  */}
-            <Grid size={12} sx={{ borderBottom: "1px solid #dcdddd" }}></Grid>
-
-            <Grid size={1}>
-              <div className="Box-table-checkbox">
-                <Checkbox {...label} />
-              </div>
-            </Grid>
-
-            <Grid size={2}>
-              <div className="Box-table-text">Body</div>
-            </Grid>
-
-            <Grid size={1}>
-              <div className="Box-table-content">
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  type="number"
-                />
-              </div>
-            </Grid>
-
-            <Grid size={1}>
-              <div className="Box-table-content">
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  type="number"
-                />
-              </div>
-            </Grid>
-
-            <Grid size={1}>
-              <div className="Box-table-content">
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  type="text"
-                  value={rowData?.thickness || ""}
-                />
-              </div>
-            </Grid>
-
-            <Grid size={1.5}>
-              <div className="Box-table-content">
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  type="number"
-                />
-              </div>
-            </Grid>
-
-            <Grid size={1.5}>
-              <div className="Box-table-content">
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  type="number"
-                />
-              </div>
-            </Grid>
-
-            <Grid size={3}>
-              <Box
-                className="Box-table-upload"
-                sx={{ display: "flex", alignItems: "center", columnGap: 2.5 }}
-              >
-                <Button
-                  component="label"
-                  role={undefined}
-                  tabIndex={-1}
-                  variant="outlined"
-                  color="neutral"
-                  startDecorator={
-                    <SvgIcon>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={1.5}
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"
-                        />
-                      </svg>
-                    </SvgIcon>
-                  }
-                >
-                  Upload a file
-                  <VisuallyHiddenInput type="file" />
-                </Button>
-
-                <Link className="gray-md-btn" onClick={handleOpen}>
-                  <VisibilityIcon /> View
-                </Link>
-              </Box>
-            </Grid>
-            {/* Secound Row end Here  */}
-
-            {/* Third Row start Here  */}
-            <Grid size={12} sx={{ borderBottom: "1px solid #dcdddd" }}></Grid>
-
-            <Grid size={1}>
-              <div className="Box-table-checkbox">
-                <Checkbox {...label} />
-              </div>
-            </Grid>
-
-            <Grid size={2}>
-              <div className="Box-table-text">Bottom</div>
-            </Grid>
-
-            <Grid size={1}>
-              <div className="Box-table-content">
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  type="number"
-                />
-              </div>
-            </Grid>
-
-            <Grid size={1}>
-              <div className="Box-table-content">
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  type="number"
-                />
-              </div>
-            </Grid>
-
-            <Grid size={1}>
-              <div className="Box-table-content">
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  type="text"
-                  value={rowData?.thickness || ""}
-                />
-              </div>
-            </Grid>
-
-            <Grid size={1.5}>
-              <div className="Box-table-content">
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  type="number"
-                />
-              </div>
-            </Grid>
-
-            <Grid size={1.5}>
-              <div className="Box-table-content">
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  type="number"
-                />
-              </div>
-            </Grid>
-
-            <Grid size={3}>
-              <Box
-                className="Box-table-upload"
-                sx={{ display: "flex", alignItems: "center", columnGap: 2.5 }}
-              >
-                <Button
-                  component="label"
-                  role={undefined}
-                  tabIndex={-1}
-                  variant="outlined"
-                  color="neutral"
-                  startDecorator={
-                    <SvgIcon>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={1.5}
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"
-                        />
-                      </svg>
-                    </SvgIcon>
-                  }
-                >
-                  Upload a file
-                  <VisuallyHiddenInput type="file" />
-                </Button>
-
-                <Link className="gray-md-btn" onClick={handleOpen}>
-                  <VisibilityIcon /> View
-                </Link>
-              </Box>
-            </Grid>
-            {/* Third Row end Here  */}
-
-            {/* Forth Row start Here  */}
-            <Grid size={12} sx={{ borderBottom: "1px solid #dcdddd" }}></Grid>
-
-            <Grid size={1}>
-              <div className="Box-table-checkbox">
-                <Checkbox {...label} />
-              </div>
-            </Grid>
-
-            <Grid size={2}>
-              <div className="Box-table-text">Lid & Body</div>
-            </Grid>
-
-            <Grid size={1}>
-              <div className="Box-table-content">
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  type="number"
-                />
-              </div>
-            </Grid>
-
-            <Grid size={1}>
-              <div className="Box-table-content">
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  type="number"
-                />
-              </div>
-            </Grid>
-
-            <Grid size={1}>
-              <div className="Box-table-content">
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  type="text"
-                  value={rowData?.thickness || ""}
-                />
-              </div>
-            </Grid>
-
-            <Grid size={1.5}>
-              <div className="Box-table-content">
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  type="number"
-                />
-              </div>
-            </Grid>
-
-            <Grid size={1.5}>
-              <div className="Box-table-content">
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  type="number"
-                />
-              </div>
-            </Grid>
-
-            <Grid size={3}>
-              <Box
-                className="Box-table-upload"
-                sx={{ display: "flex", alignItems: "center", columnGap: 2.5 }}
-              >
-                <Button
-                  component="label"
-                  role={undefined}
-                  tabIndex={-1}
-                  variant="outlined"
-                  color="neutral"
-                  startDecorator={
-                    <SvgIcon>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={1.5}
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"
-                        />
-                      </svg>
-                    </SvgIcon>
-                  }
-                >
-                  Upload a file
-                  <VisuallyHiddenInput type="file" />
-                </Button>
-
-                <Link className="gray-md-btn" onClick={handleOpen}>
-                  <VisibilityIcon /> View
-                </Link>
-              </Box>
-            </Grid>
-            {/* Forth Row end Here  */}
-
-            {/* Fifth Row start Here  */}
-            <Grid size={12} sx={{ borderBottom: "1px solid #dcdddd" }}></Grid>
-
-            <Grid size={1}>
-              <div className="Box-table-checkbox">
-                <Checkbox {...label} />
-              </div>
-            </Grid>
-
-            <Grid size={2}>
-              <div className="Box-table-text">Lid & Body & Bottom</div>
-            </Grid>
-
-            <Grid size={1}>
-              <div className="Box-table-content">
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  type="number"
-                />
-              </div>
-            </Grid>
-
-            <Grid size={1}>
-              <div className="Box-table-content">
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  type="number"
-                />
-              </div>
-            </Grid>
-
-            <Grid size={1}>
-              <div className="Box-table-content">
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  type="text"
-                  value={rowData?.thickness || ""}
-                />
-              </div>
-            </Grid>
-
-            <Grid size={1.5}>
-              <div className="Box-table-content">
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  type="number"
-                />
-              </div>
-            </Grid>
-
-            <Grid size={1.5}>
-              <div className="Box-table-content">
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  type="number"
-                />
-              </div>
-            </Grid>
-
-            <Grid size={3}>
-              <Box
-                className="Box-table-upload"
-                sx={{ display: "flex", alignItems: "center", columnGap: 2.5 }}
-              >
-                <Button
-                  component="label"
-                  role={undefined}
-                  tabIndex={-1}
-                  variant="outlined"
-                  color="neutral"
-                  startDecorator={
-                    <SvgIcon>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={1.5}
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"
-                        />
-                      </svg>
-                    </SvgIcon>
-                  }
-                >
-                  Upload a file
-                  <VisuallyHiddenInput type="file" />
-                </Button>
-
-                <Link className="gray-md-btn" onClick={handleOpen}>
-                  <VisibilityIcon /> View
-                </Link>
-              </Box>
-            </Grid>
-            {/* Fifth Row end Here  */}
-
-            {/* Sixth Row start Here  */}
-            <Grid size={12} sx={{ borderBottom: "1px solid #dcdddd" }}></Grid>
-
-            <Grid size={1}>
-              <div className="Box-table-checkbox">
-                <Checkbox {...label} />
-              </div>
-            </Grid>
-
-            <Grid size={2}>
-              <div className="Box-table-text">Body & Bottom</div>
-            </Grid>
-
-            <Grid size={1}>
-              <div className="Box-table-content">
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  type="number"
-                />
-              </div>
-            </Grid>
-
-            <Grid size={1}>
-              <div className="Box-table-content">
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  type="number"
-                />
-              </div>
-            </Grid>
-
-            <Grid size={1}>
-              <div className="Box-table-content">
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  type="text"
-                  value={rowData?.thickness || ""}
-                />
-              </div>
-            </Grid>
-
-            <Grid size={1.5}>
-              <div className="Box-table-content">
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  type="number"
-                />
-              </div>
-            </Grid>
-
-            <Grid size={1.5}>
-              <div className="Box-table-content">
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  type="number"
-                />
-              </div>
-            </Grid>
-
-            <Grid size={3}>
-              <Box
-                className="Box-table-upload"
-                sx={{ display: "flex", alignItems: "center", columnGap: 2.5 }}
-              >
-                <Button
-                  component="label"
-                  role={undefined}
-                  tabIndex={-1}
-                  variant="outlined"
-                  color="neutral"
-                  startDecorator={
-                    <SvgIcon>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={1.5}
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"
-                        />
-                      </svg>
-                    </SvgIcon>
-                  }
-                >
-                  Upload a file
-                  <VisuallyHiddenInput type="file" />
-                </Button>
-
-                <Link className="gray-md-btn" onClick={handleOpen}>
-                  <VisibilityIcon /> View
-                </Link>
-              </Box>
-            </Grid>
-            {/* Sixth Row end Here  */}
+            {/* Render Component Rows */}
+            {Object.entries(components).map(([key, component]) => (
+              <ComponentRow
+                key={key}
+                component={component}
+                name={key}
+                onDataChange={handleComponentChange}
+                onFileUpload={handleFileUpload}
+                onViewFile={handleViewFile}
+              />
+            ))}
           </Grid>
+
+          {/* Action Buttons */}
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "flex-end",
+              p: 2,
+              mt: 2,
+              gap: 2,
+            }}
+          >
+            <Button
+              variant="outlined"
+              color="danger"
+              onClick={handleCancel}
+              sx={{ minWidth: 100 }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="solid"
+              color="success"
+              onClick={handleSubmit}
+              sx={{ minWidth: 100 }}
+            >
+              Submit
+            </Button>
+          </Box>
         </Box>
 
+        {/* File Preview Modal */}
         <Modal open={open} onClose={handleClose}>
           <Box sx={modalStyle}>
             <img
-              src={upsImage}
+              src={currentImage || upsImage}
               alt="ups-modal"
               style={{
                 width: "100%",
