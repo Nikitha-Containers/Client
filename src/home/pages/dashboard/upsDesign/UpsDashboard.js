@@ -19,6 +19,7 @@ import "../../../pages/pagestyle.scss";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import upsImage from "../../../../assets/Pagesimage/ups-image.jpg";
 import { useLocation } from "react-router-dom";
+import server from "../../../../server/server";
 
 const label = { inputProps: { "aria-label": "Checkbox demo" } };
 
@@ -279,12 +280,18 @@ function UpsDashboard() {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const selectedComponents = Object.entries(components)
       .filter(([_, data]) => data.selected)
       .map(([name, data]) => ({
         name,
-        ...data,
+        selected: data.selected,
+        length: data.length,
+        breadth: data.breadth,
+        thickness: data.thickness,
+        ups: data.ups,
+        sheets: data.sheets,
+        fileName: data.file ? data.file.name : "",
       }));
 
     if (selectedComponents.length === 0) {
@@ -306,10 +313,29 @@ function UpsDashboard() {
       return false;
     }
 
-    // API Call Post
-    console.log("Form Data:", formData);
-    console.log("Selected Components:", selectedComponents);
-    alert("Data submitted successfully!");
+    try {
+      const response = await server.post("/design/upsDesign", {
+        soNumber: formData.soNumber,
+        soDate: formData.soDate,
+        fabSite: formData.fabSite,
+        jobName: formData.jobName,
+        components: selectedComponents,
+      });
+
+      const result = response.data;
+
+      if (result.success) {
+        alert("Design saved successfully!");
+        console.log("Saved to MongoDB:", result.design);
+        // handleCancel();
+      } else {
+        throw new Error(result.error || "Failed to save design");
+      }
+    } catch (error) {
+      console.error("Error submitting data:", error);
+      const errorMessage = error.response?.data?.error || error.message;
+      alert(`Error: ${errorMessage}`);
+    }
   };
 
   const handleCancel = () => {

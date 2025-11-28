@@ -15,16 +15,21 @@ export const SO_Slice = createSlice({
       state.loading = false;
       state.error = null;
     },
-    setError: (state, { payload }) => {
+    setSOError: (state, { payload }) => {
       state.loading = false;
       state.error = payload;
     },
-    clearError: (state) => {
+    clearSOError: (state) => {
+      state.error = null;
+    },
+    setSOLoading: (state) => {
+      state.loading = true;
       state.error = null;
     },
   },
 });
 
-export const { setSO, setError, clearError } = SO_Slice.actions;
+export const { setSO, setSOError, clearSOError, setSOLoading } =
+  SO_Slice.actions;
 
 export default SO_Slice.reducer;

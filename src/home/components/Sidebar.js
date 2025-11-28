@@ -171,6 +171,27 @@ const Sidebar = ({ isCollapsed }) => {
         <ListItem
           button
           component={Link}
+          to="/printing_manager"
+          className={`list-element ${
+            location.pathname === "/printing_manager" ? "pageactive" : ""
+          }`}
+        >
+          <DesignServicesIcon className="menu-icon" />
+          <ListItemText
+            primary="Printing Manager"
+            sx={{
+              overflow: "hidden",
+              maxWidth: isCollapsed ? 0 : 150,
+              opacity: isCollapsed ? 0 : 1,
+              transition: "max-width 0.3s ease, opacity 0.3s ease",
+              whiteSpace: "nowrap",
+            }}
+          />
+        </ListItem>
+
+        <ListItem
+          button
+          component={Link}
           to="/coating_dashboard"
           className={`list-element ${
             location.pathname === "/coating_dashboard" ? "pageactive" : ""

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { setSO, setError } from "../slices/SO_Slice";
+import { setSO, setSOError } from "../slices/SO_Slice";
 import server from "../server/server";
 
 export const SalesOrder = () => {
@@ -12,7 +12,7 @@ export const SalesOrder = () => {
       const response = await server.get("/salesorder");
       dispatch(setSO(response.data.data));
     } catch (error) {
-      dispatch(setError(error.message));
+      dispatch(setSOError(error.message));
     }
   };
 
@@ -21,7 +21,7 @@ export const SalesOrder = () => {
       await server.get("/sap/sync");
       await fetchSO();
     } catch (error) {
-      dispatch(setError(error.message));
+      dispatch(setSOError(error.message));
     }
   };
 

@@ -14,7 +14,9 @@ import CoatingDashboard from "./pages/dashboard/coating/CoatingDashboard";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import CreateUser from "./pages/admin/CreateUser";
 import NotFound from "./NotFound";
-import DesigningDashboard from './pages/desigining/DesigningDashboard'
+import DesigningDashboard from "./pages/desigining/DesigningDashboard";
+import PrintingManager from "./pages/dashboard/printing/PrintingManager";
+
 function Mainlayouts() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const location = useLocation();
@@ -101,6 +103,15 @@ function Mainlayouts() {
               element={
                 <PrivateRoute>
                   <UpsDashboard />
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/printing_manager"
+              element={
+                <PrivateRoute>
+                  <PrintingManager />
                 </PrivateRoute>
               }
             />
