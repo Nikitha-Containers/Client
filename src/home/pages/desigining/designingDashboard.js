@@ -17,6 +17,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import excelExportI from "../../../assets/icons/icons8-export-excel-50.png";
 import { SalesOrder } from "../../../API/Salesorder";
 import { useNavigate } from "react-router-dom";
+import { useDesign } from "../../../API/Design_API";
 
 const Item = styled(Paper)(({ theme }) => ({
   backgroundColor: "#fff",
@@ -32,12 +33,14 @@ const Item = styled(Paper)(({ theme }) => ({
 const DesigningDashboard = () => {
   const { salesOrders } = SalesOrder();
   console.log("salesOrders", salesOrders);
+  const { designs } = useDesign();
+  console.log("designs", designs);
 
   const navigate = useNavigate();
 
   const columns = useMemo(
     () => [
-      { id: 1, accessorKey: "invoice_no", header: "Invoice No", size: 30 },
+      { id: 1, accessorKey: "saleorder_no", header: "SO No", size: 30 },
       { id: 2, accessorKey: "posting_date", header: "SO Date", size: 30 },
       {
         id: 3,
@@ -141,11 +144,22 @@ const DesigningDashboard = () => {
           <MaterialReactTable
             columns={columns}
             data={salesOrders}
-            muiTableBodyRowProps={({ row }) => ({
-              onClick: () =>
-                navigate("/UpsDesignplan", { state: row.original }),
-              style: { cursor: "pointer" },
-            })}
+            muiTableBodyRowProps={({ row }) => {
+              const so = row.original;
+              const designSO = designs.find(
+                (d) => d.saleorder_no === so.saleorder_no
+              );
+              return {
+                onClick: () =>
+                  navigate("/UpsDesignplan", {
+                    state: {
+                      saleOrder: so,
+                      design: designSO,
+                    },
+                  }),
+                style: { cursor: "pointer" },
+              };
+            }}
             positionActionsColumn="last"
             initialState={{
               showGlobalFilter: true,

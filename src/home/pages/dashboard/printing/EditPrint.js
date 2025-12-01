@@ -8,7 +8,6 @@ import {
   Typography,
   TextField,
   Select,
-  Checkbox,
   Modal,
 } from "@mui/material";
 import Button from "@mui/joy/Button";
@@ -20,7 +19,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import upsImage from "../../../../assets/Pagesimage/ups-image.jpg";
 import { useLocation } from "react-router-dom";
 import server from "../../../../server/server";
-
+import { useDesign } from "../../../../API/Design_API";
 const label = { inputProps: { "aria-label": "Checkbox demo" } };
 
 const VisuallyHiddenInput = styled("input")`
@@ -36,26 +35,9 @@ const VisuallyHiddenInput = styled("input")`
 `;
 
 // Component Row Start Here
-const ComponentRow = ({
-  component,
-  name,
-  onDataChange,
-  onFileUpload,
-  onViewFile,
-}) => (
+const ComponentRow = ({ component, name, onDataChange, onViewFile }) => (
   <>
     <Grid size={12} sx={{ borderBottom: "1px solid #dcdddd" }} />
-
-    <Grid size={1}>
-      <div className="Box-table-checkbox">
-        <Checkbox
-          checked={component.selected}
-          onChange={(e) => onDataChange(name, "selected", e.target.checked)}
-          {...label}
-        />
-      </div>
-    </Grid>
-
     <Grid size={2}>
       <div className="Box-table-text">{name}</div>
     </Grid>
@@ -69,7 +51,6 @@ const ComponentRow = ({
           type="text"
           value={component.length}
           onChange={(e) => onDataChange(name, "length", e.target.value)}
-          disabled={!component.selected}
         />
       </div>
     </Grid>
@@ -83,7 +64,6 @@ const ComponentRow = ({
           type="text"
           value={component.breadth}
           onChange={(e) => onDataChange(name, "breadth", e.target.value)}
-          disabled={!component.selected}
         />
       </div>
     </Grid>
@@ -97,7 +77,6 @@ const ComponentRow = ({
           type="text"
           value={component.thickness}
           onChange={(e) => onDataChange(name, "thickness", e.target.value)}
-          disabled={!component.selected}
         />
       </div>
     </Grid>
@@ -111,7 +90,6 @@ const ComponentRow = ({
           type="text"
           value={component.ups}
           onChange={(e) => onDataChange(name, "ups", e.target.value)}
-          disabled={!component.selected}
         />
       </div>
     </Grid>
@@ -125,18 +103,15 @@ const ComponentRow = ({
           type="text"
           value={component.sheets}
           onChange={(e) => onDataChange(name, "sheets", e.target.value)}
-          disabled={!component.selected}
         />
       </div>
     </Grid>
 
     <Grid size={3}>
       <FileUpload
-        onFileUpload={onFileUpload}
         onViewFile={onViewFile}
         componentName={name}
         file={component.file}
-        disabled={!component.selected}
       />
     </Grid>
   </>
@@ -144,7 +119,6 @@ const ComponentRow = ({
 
 // File Upload Component
 const FileUpload = ({
-  onFileUpload,
   onViewFile,
   componentName,
   file,
@@ -177,47 +151,39 @@ const FileUpload = ({
         </SvgIcon>
       }
     >
-      {file ? "Change File" : "Upload a file"}
-      <VisuallyHiddenInput
-        type="file"
-        onChange={(e) => onFileUpload(componentName, e.target.files[0])}
-      />
+      {file && (
+        <Link
+          className="gray-md-btn"
+          onClick={() => onViewFile(componentName)}
+          style={{ cursor: "pointer" }}
+        >
+          <VisibilityIcon /> View
+        </Link>
+      )}
     </Button>
-
-    {file && (
-      <Link
-        className="gray-md-btn"
-        onClick={() => onViewFile(componentName)}
-        style={{ cursor: "pointer" }}
-      >
-        <VisibilityIcon /> View
-      </Link>
-    )}
   </Box>
 );
 
-// Main Component Startted Here
-
-function UpsDashboard() {
+function EditPrint() {
   const location = useLocation();
-  const { saleOrder, design } = location.state || {};
-  console.log("Saleordersssssssss: ", saleOrder);
-  console.log("designssssssssss: ", design);
+  const rowData = location.state;
+
+    const { designs } = useDesign();
+    console.log("designs", designs);
 
   const initialFormData = {
-    soNumber: saleOrder?.saleorder_no || "",
-    soDate: saleOrder?.posting_date
-      ? new Date(saleOrder.posting_date).toISOString().split("T")[0]
+    soNumber: rowData?.saleorder_no || "",
+    soDate: rowData?.posting_date
+      ? new Date(rowData.posting_date).toISOString().split("T")[0]
       : "",
     fabSite: "",
-    jobName: "",
+    totalQuantity: rowData?.quantity || "",
   };
 
   const initialComponentState = {
-    selected: false,
     length: "",
     breadth: "",
-    thickness: saleOrder?.thickness || "",
+    thickness: rowData?.thickness || "",
     ups: "",
     sheets: "",
     file: null,
@@ -262,12 +228,6 @@ function UpsDashboard() {
     }));
   };
 
-  const handleFileUpload = (componentName, file) => {
-    if (file) {
-      handleComponentChange(componentName, "file", file);
-    }
-  };
-
   const handleViewFile = (componentName) => {
     const file = components[componentName]?.file;
     if (file) {
@@ -289,7 +249,6 @@ function UpsDashboard() {
       .filter(([_, data]) => data.selected)
       .map(([name, data]) => ({
         name,
-        selected: data.selected,
         length: data.length,
         breadth: data.breadth,
         thickness: data.thickness,
@@ -319,11 +278,10 @@ function UpsDashboard() {
 
     try {
       const response = await server.post("/design/upsDesign", {
-        ...saleOrder,
         soNumber: formData.soNumber,
         soDate: formData.soDate,
         fabSite: formData.fabSite,
-        jobName: formData.jobName,
+        totalQuantity: formData.totalQuantity,
         components: selectedComponents,
       });
 
@@ -378,10 +336,10 @@ function UpsDashboard() {
               style={{ color: "#0a85cb", textDecoration: "none" }}
               to={"/planning"}
             >
-              Ups Design Plan
+              Printing Manager
             </Link>
             <KeyboardArrowRightIcon sx={{ color: "#0a85cb" }} />
-            <div>Edit </div>
+            <div>Edit Print </div>
           </div>
         </Box>
       </Box>
@@ -439,13 +397,13 @@ function UpsDashboard() {
 
             <Grid size={3}>
               <FormGroup>
-                <Typography mb={1}>Job Name</Typography>
+                <Typography mb={1}>Total Qty</Typography>
                 <TextField
                   id="outlined-size-small"
                   name=""
                   size="small"
                   type="text"
-                  value={formData.jobName}
+                  value={formData.totalQuantity}
                   onChange={(e) => handleFormChange("jobName", e.target.value)}
                 />
               </FormGroup>
@@ -469,9 +427,6 @@ function UpsDashboard() {
             </Grid>
 
             {/* Header Start Here  */}
-            <Grid size={1}>
-              <div className="Box-table-subtitle">Select Job</div>
-            </Grid>
             <Grid size={2}>
               <div className="Box-table-subtitle">Component</div>
             </Grid>
@@ -493,6 +448,12 @@ function UpsDashboard() {
             <Grid size={3}>
               <div className="Box-table-subtitle">Source File</div>
             </Grid>
+            <Grid size={3}>
+              <div className="Box-table-subtitle">Coating Type</div>
+            </Grid>
+            <Grid size={3}>
+              <div className="Box-table-subtitle">Printing Color</div>
+            </Grid>
             {/* Header End Here */}
 
             {/* Render Component Rows */}
@@ -502,7 +463,6 @@ function UpsDashboard() {
                 component={component}
                 name={key}
                 onDataChange={handleComponentChange}
-                onFileUpload={handleFileUpload}
                 onViewFile={handleViewFile}
               />
             ))}
@@ -557,4 +517,4 @@ function UpsDashboard() {
   );
 }
 
-export default UpsDashboard;
+export default EditPrint;
