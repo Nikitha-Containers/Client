@@ -173,7 +173,10 @@ const Sidebar = ({ isCollapsed }) => {
           component={Link}
           to="/printing_manager"
           className={`list-element ${
-            location.pathname === "/printing_manager" ? "pageactive" : ""
+            location.pathname === "/printing_manager" ||
+            location.pathname === "/editprint"
+              ? "pageactive"
+              : ""
           }`}
         >
           <DesignServicesIcon className="menu-icon" />

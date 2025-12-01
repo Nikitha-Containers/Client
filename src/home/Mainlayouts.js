@@ -16,6 +16,7 @@ import CreateUser from "./pages/admin/CreateUser";
 import NotFound from "./NotFound";
 import DesigningDashboard from "./pages/desigining/DesigningDashboard";
 import PrintingManager from "./pages/dashboard/printing/PrintingManager";
+import EditPrint from "./pages/dashboard/printing/EditPrint";
 
 function Mainlayouts() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -112,6 +113,15 @@ function Mainlayouts() {
               element={
                 <PrivateRoute>
                   <PrintingManager />
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/editprint"
+              element={
+                <PrivateRoute>
+                  <EditPrint />
                 </PrivateRoute>
               }
             />

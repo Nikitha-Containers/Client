@@ -19,8 +19,8 @@ function Planning() {
     () => [
       {
         id: 1,
-        accessorKey: "invoice_no",
-        header: "Invoice No",
+        accessorKey: "saleorder_no",
+        header: "SO No",
         size: 30,
       },
       {

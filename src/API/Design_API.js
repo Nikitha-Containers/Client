@@ -20,7 +20,7 @@ export const useDesign = () => {
       dispatch(clearDesignError());
 
       const response = await server.get("/design");
-      dispatch(setDesign(response.data.data));
+      dispatch(setDesign(response.data.UpsDesign));
     } catch (error) {
       dispatch(setDesignError(error.message));
     }

@@ -10,7 +10,9 @@ import Todaywork from "../../../../assets/icons/list-check-solid.svg";
 import { MaterialReactTable } from "material-react-table";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { designs } from "../../../../API/Design_API";
+import { useDesign } from "../../../../API/Design_API";
+import { SalesOrder } from "../../../../API/Salesorder";
+import { useNavigate } from "react-router-dom";
 const Item = styled(Paper)(({ theme }) => ({
   backgroundColor: "#fff",
   ...theme.typography.body2,
@@ -23,49 +25,55 @@ const Item = styled(Paper)(({ theme }) => ({
 }));
 
 const PrintingManager = () => {
+  const { salesOrders } = SalesOrder();
+  console.log("salesOrders", salesOrders);
 
-  const {designs} = useDesign()
+  const { designs } = useDesign();
+  console.log("designs", designs);
+
+  const navigate = useNavigate();
+
   const columns = useMemo(
     () => [
       {
         id: 1,
-        accessorKey: "id",
+        accessorKey: "saleorder_no",
         header: "SO.No",
         size: 30,
       },
       {
         id: 2,
-        accessorKey: "item",
+        accessorKey: "posting_date",
         header: "SO Date",
         size: 30,
       },
       {
         id: 3,
-        accessorKey: "steel",
+        accessorKey: "customer_name",
         header: "Customer Name",
         size: 30,
       },
       {
         id: 4,
-        accessorKey: "size",
+        accessorKey: "item_description",
         header: "Size",
         size: 30,
       },
       {
         id: 5,
-        accessorKey: "date",
+        accessorKey: "quantity",
         header: "Qty",
         size: 30,
       },
       {
         id: 6,
-        accessorKey: "date",
+        accessorKey: "posting_date",
         header: "Start Date",
         size: 30,
       },
       {
         id: 7,
-        accessorKey: "date",
+        accessorKey: "due_date",
         header: "End Date",
         size: 30,
       },
@@ -157,7 +165,7 @@ const PrintingManager = () => {
         <Box className="Dashboard-table" sx={{ mt: 1 }}>
           <MaterialReactTable
             columns={columns}
-            data={data}
+            data={salesOrders}
             positionActionsColumn="last"
             initialState={{
               showGlobalFilter: true,
@@ -169,6 +177,11 @@ const PrintingManager = () => {
                 fontWeight: "bold",
               },
             }}
+            muiTableBodyRowProps={({ row }) => ({
+              onClick: () => {
+                navigate(`/editprint`, { state: row.original });
+              },
+            })}
             muiTableFooterCellProps={{
               sx: {
                 backgroundColor: "#f5f7f9",
