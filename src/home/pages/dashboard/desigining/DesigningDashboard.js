@@ -5,19 +5,19 @@ import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Grid from "@mui/material/Grid";
 import { IconButton } from "@mui/material";
-import Completed from "../../../assets/icons/circle-check-solid.svg";
-import Pending from "../../../assets/icons/hourglass-half-solid.svg";
-import Todaywork from "../../../assets/icons/list-check-solid.svg";
+import Completed from "../../../../assets/icons/circle-check-solid.svg";
+import Pending from "../../../../assets/icons/hourglass-half-solid.svg";
+import Todaywork from "../../../../assets/icons/list-check-solid.svg";
 import AddSharpIcon from "@mui/icons-material/AddSharp";
 import { MaterialReactTable } from "material-react-table";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 // import "../../pages/pagestyle.scss";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import excelExportI from "../../../assets/icons/icons8-export-excel-50.png";
-import { SalesOrder } from "../../../API/Salesorder";
+import excelExportI from "../../../../assets/icons/icons8-export-excel-50.png";
+import { SalesOrder } from "../../../../API/Salesorder";
 import { useNavigate } from "react-router-dom";
-import { useDesign } from "../../../API/Design_API";
+import { useDesign } from "../../../../API/Design_API";
 
 const Item = styled(Paper)(({ theme }) => ({
   backgroundColor: "#fff",
@@ -40,7 +40,12 @@ const DesigningDashboard = () => {
 
   const columns = useMemo(
     () => [
-      { id: 1, accessorKey: "saleorder_no", header: "SO No", size: 30 },
+      {
+        id: 1,
+        accessorKey: "saleorder_no",
+        header: "SO No",
+        size: 30,
+      },
       { id: 2, accessorKey: "posting_date", header: "SO Date", size: 30 },
       {
         id: 3,
@@ -144,22 +149,6 @@ const DesigningDashboard = () => {
           <MaterialReactTable
             columns={columns}
             data={salesOrders}
-            muiTableBodyRowProps={({ row }) => {
-              const so = row.original;
-              const designSO = designs.find(
-                (d) => d.saleorder_no === so.saleorder_no
-              );
-              return {
-                onClick: () =>
-                  navigate("/UpsDesignplan", {
-                    state: {
-                      saleOrder: so,
-                      design: designSO,
-                    },
-                  }),
-                style: { cursor: "pointer" },
-              };
-            }}
             positionActionsColumn="last"
             initialState={{
               showGlobalFilter: true,
@@ -171,6 +160,11 @@ const DesigningDashboard = () => {
                 fontWeight: "bold",
               },
             }}
+            muiTableBodyRowProps={({ row }) => ({
+              onClick: () => {
+                navigate(`/editprint`, { state: row.original });
+              },
+            })}
             muiTableFooterCellProps={{
               sx: {
                 backgroundColor: "#f5f7f9",

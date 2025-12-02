@@ -142,6 +142,8 @@ const ComponentRow = ({
   </>
 );
 
+// Component Row End Here
+
 // File Upload Component
 const FileUpload = ({
   onFileUpload,
@@ -198,19 +200,21 @@ const FileUpload = ({
 
 // Main Component Startted Here
 
-function UpsDashboard() {
-  const location = useLocation();
-  const { saleOrder, design } = location.state || {};
-  console.log("Saleordersssssssss: ", saleOrder);
-  console.log("designssssssssss: ", design);
+function EditDesign() {
+  const { salesOrders } = SalesOrder();
+  console.log("salesOrders", salesOrders);
+
+  const { designs } = useDesign();
+  console.log("designs", designs);
+  
 
   const initialFormData = {
     soNumber: saleOrder?.saleorder_no || "",
     soDate: saleOrder?.posting_date
       ? new Date(saleOrder.posting_date).toISOString().split("T")[0]
       : "",
-    fabSite: "",
-    jobName: "",
+    machine: "",
+    totalQty: saleOrder?.quantity || "",
   };
 
   const initialComponentState = {
@@ -322,8 +326,8 @@ function UpsDashboard() {
         ...saleOrder,
         soNumber: formData.soNumber,
         soDate: formData.soDate,
-        fabSite: formData.fabSite,
-        jobName: formData.jobName,
+        machine: formData.machine,
+        totalQty: formData.totalQty,
         components: selectedComponents,
       });
 
@@ -376,12 +380,12 @@ function UpsDashboard() {
           <div className="main-inner-txts">
             <Link
               style={{ color: "#0a85cb", textDecoration: "none" }}
-              to={"/planning"}
+              to={"/desigining_dashboard"}
             >
-              Ups Design Plan
+              Design Dashboard
             </Link>
             <KeyboardArrowRightIcon sx={{ color: "#0a85cb" }} />
-            <div>Edit </div>
+            <div>Edit Design </div>
           </div>
         </Box>
       </Box>
@@ -418,35 +422,35 @@ function UpsDashboard() {
 
             <Grid size={3}>
               <FormGroup fullWidth>
-                <Typography mb={1}>Fab Site</Typography>
+                <Typography mb={1}>Machine</Typography>
                 <Select
                   labelId="demo-simple-select-label"
                   id="demo-simple-select"
-                  value={formData.fabSite}
+                  value={formData.machine}
                   size="small"
                   displayEmpty
                   renderValue={
-                    formData.fabSite !== "" ? undefined : () => "Select"
+                    formData.machine !== "" ? undefined : () => "Select"
                   }
-                  onChange={(e) => handleFormChange("fabSite", e.target.value)}
+                  onChange={(e) => handleFormChange("machine", e.target.value)}
                 >
-                  <MenuItem value={10}>Site 1</MenuItem>
-                  <MenuItem value={20}>Site 2</MenuItem>
-                  <MenuItem value={30}>Site 3</MenuItem>
+                  <MenuItem value={10}>Machine 1</MenuItem>
+                  <MenuItem value={20}>Machine 2</MenuItem>
+                  <MenuItem value={30}>Machine 3</MenuItem>
                 </Select>
               </FormGroup>
             </Grid>
 
             <Grid size={3}>
               <FormGroup>
-                <Typography mb={1}>Job Name</Typography>
+                <Typography mb={1}>Total Qty</Typography>
                 <TextField
                   id="outlined-size-small"
                   name=""
                   size="small"
                   type="text"
-                  value={formData.jobName}
-                  onChange={(e) => handleFormChange("jobName", e.target.value)}
+                  value={formData.totalQty}
+                  onChange={(e) => handleFormChange("totalQty", e.target.value)}
                 />
               </FormGroup>
             </Grid>
@@ -557,4 +561,6 @@ function UpsDashboard() {
   );
 }
 
-export default UpsDashboard;
+// Main Component End Here
+
+export default EditDesign;

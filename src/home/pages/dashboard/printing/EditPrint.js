@@ -118,12 +118,7 @@ const ComponentRow = ({ component, name, onDataChange, onViewFile }) => (
 );
 
 // File Upload Component
-const FileUpload = ({
-  onViewFile,
-  componentName,
-  file,
-  disabled,
-}) => (
+const FileUpload = ({ onViewFile, componentName, file, disabled }) => (
   <Box
     className="Box-table-upload"
     sx={{ display: "flex", alignItems: "center", columnGap: 2.5 }}
@@ -168,8 +163,8 @@ function EditPrint() {
   const location = useLocation();
   const rowData = location.state;
 
-    const { designs } = useDesign();
-    console.log("designs", designs);
+  const { designs } = useDesign();
+  console.log("designs", designs);
 
   const initialFormData = {
     soNumber: rowData?.saleorder_no || "",
@@ -334,7 +329,7 @@ function EditPrint() {
           <div className="main-inner-txts">
             <Link
               style={{ color: "#0a85cb", textDecoration: "none" }}
-              to={"/planning"}
+              to={"/printing_manager"}
             >
               Printing Manager
             </Link>
