@@ -26,10 +26,9 @@ const Item = styled(Paper)(({ theme }) => ({
 
 const PrintingManager = () => {
   const { salesOrders } = SalesOrder();
-  console.log("salesOrders", salesOrders);
+
 
   const { designs } = useDesign();
-  console.log("designs", designs);
 
   const navigate = useNavigate();
 

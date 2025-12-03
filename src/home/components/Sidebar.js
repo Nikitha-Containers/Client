@@ -132,7 +132,7 @@ const Sidebar = ({ isCollapsed }) => {
           to="/desigining_dashboard"
           className={`list-element ${
             location.pathname === "/desigining_dashboard" ||
-            location.pathname === "editdesign"
+            location.pathname === "/editdesign"
               ? "pageactive"
               : ""
           }`}

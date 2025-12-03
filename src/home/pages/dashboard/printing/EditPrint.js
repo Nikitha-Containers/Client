@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
 import Box from "@mui/material/Box";
 import {
   MenuItem,
@@ -17,9 +17,8 @@ import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import "../../../pages/pagestyle.scss";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import upsImage from "../../../../assets/Pagesimage/ups-image.jpg";
-import { useLocation } from "react-router-dom";
 import server from "../../../../server/server";
-import { useDesign } from "../../../../API/Design_API";
+
 const label = { inputProps: { "aria-label": "Checkbox demo" } };
 
 const VisuallyHiddenInput = styled("input")`
@@ -35,9 +34,26 @@ const VisuallyHiddenInput = styled("input")`
 `;
 
 // Component Row Start Here
-const ComponentRow = ({ component, name, onDataChange, onViewFile }) => (
+const ComponentRow = ({
+  component,
+  name,
+  onDataChange,
+  onFileUpload,
+  onViewFile,
+}) => (
   <>
     <Grid size={12} sx={{ borderBottom: "1px solid #dcdddd" }} />
+
+    <Grid size={1}>
+      <div className="Box-table-checkbox">
+        <Checkbox
+          checked={component.selected}
+          onChange={(e) => onDataChange(name, "selected", e.target.checked)}
+          {...label}
+        />
+      </div>
+    </Grid>
+
     <Grid size={2}>
       <div className="Box-table-text">{name}</div>
     </Grid>
@@ -51,6 +67,7 @@ const ComponentRow = ({ component, name, onDataChange, onViewFile }) => (
           type="text"
           value={component.length}
           onChange={(e) => onDataChange(name, "length", e.target.value)}
+          disabled={!component.selected}
         />
       </div>
     </Grid>
@@ -64,6 +81,7 @@ const ComponentRow = ({ component, name, onDataChange, onViewFile }) => (
           type="text"
           value={component.breadth}
           onChange={(e) => onDataChange(name, "breadth", e.target.value)}
+          disabled={!component.selected}
         />
       </div>
     </Grid>
@@ -77,6 +95,7 @@ const ComponentRow = ({ component, name, onDataChange, onViewFile }) => (
           type="text"
           value={component.thickness}
           onChange={(e) => onDataChange(name, "thickness", e.target.value)}
+          disabled={!component.selected}
         />
       </div>
     </Grid>
@@ -90,6 +109,7 @@ const ComponentRow = ({ component, name, onDataChange, onViewFile }) => (
           type="text"
           value={component.ups}
           onChange={(e) => onDataChange(name, "ups", e.target.value)}
+          disabled={!component.selected}
         />
       </div>
     </Grid>
@@ -103,22 +123,33 @@ const ComponentRow = ({ component, name, onDataChange, onViewFile }) => (
           type="text"
           value={component.sheets}
           onChange={(e) => onDataChange(name, "sheets", e.target.value)}
+          disabled={!component.selected}
         />
       </div>
     </Grid>
 
     <Grid size={3}>
       <FileUpload
+        onFileUpload={onFileUpload}
         onViewFile={onViewFile}
         componentName={name}
         file={component.file}
+        disabled={!component.selected}
       />
     </Grid>
   </>
 );
 
+// Component Row End Here
+
 // File Upload Component
-const FileUpload = ({ onViewFile, componentName, file, disabled }) => (
+const FileUpload = ({
+  onFileUpload,
+  onViewFile,
+  componentName,
+  file,
+  disabled,
+}) => (
   <Box
     className="Box-table-upload"
     sx={{ display: "flex", alignItems: "center", columnGap: 2.5 }}
@@ -146,55 +177,147 @@ const FileUpload = ({ onViewFile, componentName, file, disabled }) => (
         </SvgIcon>
       }
     >
-      {file && (
-        <Link
-          className="gray-md-btn"
-          onClick={() => onViewFile(componentName)}
-          style={{ cursor: "pointer" }}
-        >
-          <VisibilityIcon /> View
-        </Link>
-      )}
+      {file ? "Change File" : "Upload a file"}
+      <VisuallyHiddenInput
+        type="file"
+        onChange={(e) => onFileUpload(componentName, e.target.files[0])}
+      />
     </Button>
+
+    {file && (
+      <Link
+        className="gray-md-btn"
+        onClick={() => onViewFile(componentName)}
+        style={{ cursor: "pointer" }}
+      >
+        <VisibilityIcon /> View
+      </Link>
+    )}
   </Box>
 );
 
-function EditPrint() {
+// Main Component Started Here
+
+function EditDesign() {
   const location = useLocation();
-  const rowData = location.state;
+  const { salesOrder, design } = location.state || {};
 
-  const { designs } = useDesign();
-  console.log("designs", designs);
+  console.log("Sales Order:", salesOrder);
+  console.log("Design data:", design);
 
-  const initialFormData = {
-    soNumber: rowData?.saleorder_no || "",
-    soDate: rowData?.posting_date
-      ? new Date(rowData.posting_date).toISOString().split("T")[0]
+  const [formData, setFormData] = useState({
+    soNumber: salesOrder?.saleorder_no || "",
+    soDate: salesOrder?.posting_date
+      ? new Date(salesOrder?.posting_date).toISOString().split("T")[0]
       : "",
-    fabSite: "",
-    totalQuantity: rowData?.quantity || "",
-  };
+    machine: design?.machine || "",
+    totalQty: salesOrder?.quantity || "",
+  });
 
-  const initialComponentState = {
-    length: "",
-    breadth: "",
-    thickness: rowData?.thickness || "",
-    ups: "",
-    sheets: "",
-    file: null,
+  const initialComponentsState = {
+    Lid: {
+      selected: false,
+      length: "",
+      breadth: "",
+      thickness: salesOrder?.thickness || "",
+      ups: "",
+      sheets: "",
+      file: null,
+    },
+    Body: {
+      selected: false,
+      length: "",
+      breadth: "",
+      thickness: salesOrder?.thickness || "",
+      ups: "",
+      sheets: "",
+      file: null,
+    },
+    Bottom: {
+      selected: false,
+      length: "",
+      breadth: "",
+      thickness: salesOrder?.thickness || "",
+      ups: "",
+      sheets: "",
+      file: null,
+    },
+    "Lid & Body": {
+      selected: false,
+      length: "",
+      breadth: "",
+      thickness: salesOrder?.thickness || "",
+      ups: "",
+      sheets: "",
+      file: null,
+    },
+    "Lid & Body & Bottom": {
+      selected: false,
+      length: "",
+      breadth: "",
+      thickness: salesOrder?.thickness || "",
+      ups: "",
+      sheets: "",
+      file: null,
+    },
+    "Body & Bottom": {
+      selected: false,
+      length: "",
+      breadth: "",
+      thickness: salesOrder?.thickness || "",
+      ups: "",
+      sheets: "",
+      file: null,
+    },
   };
 
   const [open, setOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState("");
-  const [formData, setFormData] = useState(initialFormData);
-  const [components, setComponents] = useState({
-    Lid: initialComponentState,
-    Body: initialComponentState,
-    Bottom: initialComponentState,
-    "Lid & Body": initialComponentState,
-    "Lid & Body & Bottom": initialComponentState,
-    "Body & Bottom": initialComponentState,
-  });
+  const [components, setComponents] = useState(initialComponentsState);
+
+  useEffect(() => {
+    if (design?.components) {
+      const updatedComponents = { ...initialComponentsState };
+
+      if (Array.isArray(design.components)) {
+        design.components.forEach((comp) => {
+          if (comp.name && updatedComponents[comp.name]) {
+            updatedComponents[comp.name] = {
+              ...updatedComponents[comp.name],
+              selected: comp.selected !== undefined ? comp.selected : true,
+              length: comp.length || "",
+              breadth: comp.breadth || "",
+              thickness: comp.thickness || salesOrder?.thickness || "",
+              ups: comp.ups || "",
+              sheets: comp.sheets || "",
+              file: comp.file || null,
+            };
+          }
+        });
+      } else if (typeof design.components === "object") {
+        Object.keys(design.components).forEach((key) => {
+          if (updatedComponents[key]) {
+            updatedComponents[key] = {
+              ...updatedComponents[key],
+              selected:
+                design.components[key].selected !== undefined
+                  ? design.components[key].selected
+                  : true,
+              length: design.components[key].length || "",
+              breadth: design.components[key].breadth || "",
+              thickness:
+                design.components[key].thickness || salesOrder?.thickness || "",
+              ups: design.components[key].ups || "",
+              sheets: design.components[key].sheets || "",
+              file: design.components[key].file || null,
+            };
+          }
+        });
+      }
+
+      setComponents(updatedComponents);
+    }
+  }, [design]);
 
   const handleOpen = () => setOpen(true);
 
@@ -223,10 +346,16 @@ function EditPrint() {
     }));
   };
 
+  const handleFileUpload = (componentName, file) => {
+    if (file) {
+      handleComponentChange(componentName, "file", file);
+    }
+  };
+
   const handleViewFile = (componentName) => {
     const file = components[componentName]?.file;
     if (file) {
-      if (file.type.startsWith("image/")) {
+      if (file.type?.startsWith("image/")) {
         const imageUrl = URL.createObjectURL(file);
         setCurrentImage(imageUrl);
         setOpen(true);
@@ -244,6 +373,7 @@ function EditPrint() {
       .filter(([_, data]) => data.selected)
       .map(([name, data]) => ({
         name,
+        selected: data.selected,
         length: data.length,
         breadth: data.breadth,
         thickness: data.thickness,
@@ -272,40 +402,75 @@ function EditPrint() {
     }
 
     try {
-      const response = await server.post("/design/upsDesign", {
-        soNumber: formData.soNumber,
-        soDate: formData.soDate,
-        fabSite: formData.fabSite,
-        totalQuantity: formData.totalQuantity,
+      const response = await server.post("/design/add", {
+        art_work: salesOrder?.art_work,
+        size: salesOrder?.item_description,
+        customer_name: salesOrder?.customer_name,
+        start_date: salesOrder?.posting_date,
+        end_date: salesOrder?.due_date,
+        soNumber: formData?.soNumber,
+        soDate: formData?.soDate,
+        machine: formData?.machine,
+        totalQty: formData?.totalQty,
         components: selectedComponents,
       });
 
       const result = response.data;
 
       if (result.success) {
-        alert("Design saved successfully!");
-        console.log("Saved to MongoDB:", result.design);
-        // handleCancel();
+        alert("Design updated successfully!");
+        console.log("Updated in MongoDB:", result.design);
       } else {
-        throw new Error(result.error || "Failed to save design");
+        throw new Error(result.error || "Failed to update design");
       }
     } catch (error) {
-      console.error("Error submitting data:", error);
+      console.error("Error updating data:", error);
       const errorMessage = error.response?.data?.error || error.message;
       alert(`Error: ${errorMessage}`);
     }
   };
 
   const handleCancel = () => {
-    setFormData(initialFormData);
-    setComponents({
-      Lid: initialComponentState,
-      Body: initialComponentState,
-      Bottom: initialComponentState,
-      "Lid & Body": initialComponentState,
-      "Lid & Body & Bottom": initialComponentState,
-      "Body & Bottom": initialComponentState,
-    });
+    if (design) {
+      setFormData({
+        soNumber: salesOrder?.saleorder_no || "",
+        soDate: salesOrder?.posting_date
+          ? new Date(salesOrder?.posting_date).toISOString().split("T")[0]
+          : "",
+        machine: design?.machine || "",
+        totalQty: salesOrder?.quantity || "",
+      });
+
+      if (design.components) {
+        const resetComponents = { ...initialComponentsState };
+
+        if (Array.isArray(design.components)) {
+          design.components.forEach((comp) => {
+            if (comp.name && resetComponents[comp.name]) {
+              resetComponents[comp.name] = {
+                ...resetComponents[comp.name],
+                selected: comp.selected !== undefined ? comp.selected : true,
+                length: comp.length || "",
+                breadth: comp.breadth || "",
+                thickness: comp.thickness || salesOrder?.thickness || "",
+                ups: comp.ups || "",
+                sheets: comp.sheets || "",
+                file: comp.file || null,
+              };
+            }
+          });
+        }
+        setComponents(resetComponents);
+      }
+    } else {
+      setFormData({
+        soNumber: "",
+        soDate: "",
+        machine: "",
+        totalQty: "",
+      });
+      setComponents(initialComponentsState);
+    }
 
     if (open) {
       handleClose();
@@ -329,12 +494,12 @@ function EditPrint() {
           <div className="main-inner-txts">
             <Link
               style={{ color: "#0a85cb", textDecoration: "none" }}
-              to={"/printing_manager"}
+              to={"/desigining_dashboard"}
             >
-              Printing Manager
+              Design Dashboard
             </Link>
             <KeyboardArrowRightIcon sx={{ color: "#0a85cb" }} />
-            <div>Edit Print </div>
+            <div>Edit Design </div>
           </div>
         </Box>
       </Box>
@@ -351,6 +516,7 @@ function EditPrint() {
                   size="small"
                   value={formData.soNumber}
                   onChange={(e) => handleFormChange("soNumber", e.target.value)}
+                  disabled
                 />
               </FormGroup>
             </Grid>
@@ -365,27 +531,29 @@ function EditPrint() {
                   type="date"
                   value={formData.soDate}
                   onChange={(e) => handleFormChange("soDate", e.target.value)}
+                  disabled
                 />
               </FormGroup>
             </Grid>
 
             <Grid size={3}>
               <FormGroup fullWidth>
-                <Typography mb={1}>Fab Site</Typography>
+                <Typography mb={1}>Machine</Typography>
                 <Select
                   labelId="demo-simple-select-label"
                   id="demo-simple-select"
-                  value={formData.fabSite}
+                  value={formData.machine}
                   size="small"
                   displayEmpty
                   renderValue={
-                    formData.fabSite !== "" ? undefined : () => "Select"
+                    formData.machine !== "" ? undefined : () => "Select"
                   }
-                  onChange={(e) => handleFormChange("fabSite", e.target.value)}
+                  onChange={(e) => handleFormChange("machine", e.target.value)}
                 >
-                  <MenuItem value={10}>Site 1</MenuItem>
-                  <MenuItem value={20}>Site 2</MenuItem>
-                  <MenuItem value={30}>Site 3</MenuItem>
+                  <MenuItem value="">Select</MenuItem>
+                  <MenuItem value="Machine 1">Machine 1</MenuItem>
+                  <MenuItem value="Machine 2">Machine 2</MenuItem>
+                  <MenuItem value="Machine 3">Machine 3</MenuItem>
                 </Select>
               </FormGroup>
             </Grid>
@@ -398,8 +566,9 @@ function EditPrint() {
                   name=""
                   size="small"
                   type="text"
-                  value={formData.totalQuantity}
-                  onChange={(e) => handleFormChange("jobName", e.target.value)}
+                  value={formData.totalQty}
+                  onChange={(e) => handleFormChange("totalQty", e.target.value)}
+                  disabled
                 />
               </FormGroup>
             </Grid>
@@ -416,12 +585,32 @@ function EditPrint() {
         >
           <Grid container spacing={0.5}>
             <Grid size={12}>
-              <div className="Box-table-title">
-                Today's Work - ({new Date().toLocaleDateString()})
+              <div
+                className="Box-table-title"
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <div>
+                  Today's Work - ({new Date().toLocaleDateString()}){" "}
+                  <span className={getArtWorkClass(salesOrder?.art_work)}>
+                    {salesOrder?.art_work || "NA"}
+                  </span>
+                </div>
+
+                <button className="gray-md-btn">
+                  <VisibilityIcon style={{ fontSize: 20 }} />
+                  Artwork Image
+                </button>
               </div>
             </Grid>
 
             {/* Header Start Here  */}
+            <Grid size={1}>
+              <div className="Box-table-subtitle">Select Job</div>
+            </Grid>
             <Grid size={2}>
               <div className="Box-table-subtitle">Component</div>
             </Grid>
@@ -443,12 +632,6 @@ function EditPrint() {
             <Grid size={3}>
               <div className="Box-table-subtitle">Source File</div>
             </Grid>
-            <Grid size={3}>
-              <div className="Box-table-subtitle">Coating Type</div>
-            </Grid>
-            <Grid size={3}>
-              <div className="Box-table-subtitle">Printing Color</div>
-            </Grid>
             {/* Header End Here */}
 
             {/* Render Component Rows */}
@@ -458,6 +641,7 @@ function EditPrint() {
                 component={component}
                 name={key}
                 onDataChange={handleComponentChange}
+                onFileUpload={handleFileUpload}
                 onViewFile={handleViewFile}
               />
             ))}
@@ -512,4 +696,6 @@ function EditPrint() {
   );
 }
 
-export default EditPrint;
+// Main Component End Here
+
+export default EditDesign;

@@ -10,14 +10,12 @@ import Pending from "../../../../assets/icons/hourglass-half-solid.svg";
 import Todaywork from "../../../../assets/icons/list-check-solid.svg";
 import AddSharpIcon from "@mui/icons-material/AddSharp";
 import { MaterialReactTable } from "material-react-table";
-import FileDownloadIcon from "@mui/icons-material/FileDownload";
-// import "../../pages/pagestyle.scss";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import excelExportI from "../../../../assets/icons/icons8-export-excel-50.png";
-import { SalesOrder } from "../../../../API/Salesorder";
 import { useNavigate } from "react-router-dom";
+import { SalesOrder } from "../../../../API/Salesorder";
 import { useDesign } from "../../../../API/Design_API";
+import "../../../pages/pagestyle.scss";
 
 const Item = styled(Paper)(({ theme }) => ({
   backgroundColor: "#fff",
@@ -32,10 +30,7 @@ const Item = styled(Paper)(({ theme }) => ({
 
 const DesigningDashboard = () => {
   const { salesOrders } = SalesOrder();
-  console.log("salesOrders", salesOrders);
   const { designs } = useDesign();
-  console.log("designs", designs);
-
   const navigate = useNavigate();
 
   const columns = useMemo(
@@ -89,7 +84,7 @@ const DesigningDashboard = () => {
       <Box className="breadcrump-con">
         <Box className="main-title">
           <div>Designing Dashboard</div>
-          <Link className="gray-md-btn" component={Link} to="/planning">
+          <Link className="gray-md-btn" to="/planning">
             <AddSharpIcon /> Add Plan
           </Link>
         </Box>
@@ -148,7 +143,7 @@ const DesigningDashboard = () => {
         <Box className="Dashboard-table" sx={{ mt: 1 }}>
           <MaterialReactTable
             columns={columns}
-            data={salesOrders}
+            data={salesOrders || []}
             positionActionsColumn="last"
             initialState={{
               showGlobalFilter: true,
@@ -162,7 +157,23 @@ const DesigningDashboard = () => {
             }}
             muiTableBodyRowProps={({ row }) => ({
               onClick: () => {
-                navigate(`/editprint`, { state: row.original });
+                const salesOrderNo = row.original.saleorder_no;
+                const relatedDesign = designs?.find(
+                  (design) => design.saleorder_no === salesOrderNo
+                );
+
+                navigate(`/editdesign`, {
+                  state: {
+                    salesOrder: row.original,
+                    design: relatedDesign || null,
+                  },
+                });
+              },
+              sx: {
+                cursor: "pointer",
+                "&:hover": {
+                  backgroundColor: "rgba(0, 0, 0, 0.04)",
+                },
               },
             })}
             muiTableFooterCellProps={{
@@ -183,14 +194,6 @@ const DesigningDashboard = () => {
                 }}
               >
                 <div className="table-title">Processing Team</div>
-
-                <button className="export-btn">
-                  <img
-                    src={excelExportI}
-                    alt="Export Excel"
-                    style={{ width: 30, height: 30 }}
-                  />
-                </button>
               </Box>
             )}
           />

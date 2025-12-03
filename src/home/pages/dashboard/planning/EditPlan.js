@@ -107,7 +107,6 @@ function EditPlan() {
   const location = useLocation();
   const rowData = location.state;
 
-  console.log("rowData", rowData);
 
   const modalStyle = {
     position: "absolute",
