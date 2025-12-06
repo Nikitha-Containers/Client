@@ -33,6 +33,11 @@ const DesigningDashboard = () => {
   const { designs } = useDesign();
   const navigate = useNavigate();
 
+  const formatDate = (value) => {
+    const date = value?.$date ? new Date(value.$date) : new Date(value);
+    return isNaN(date) ? "" : date.toLocaleDateString("en-IN");
+  };
+
   const columns = useMemo(
     () => [
       {
@@ -41,7 +46,15 @@ const DesigningDashboard = () => {
         header: "SO No",
         size: 30,
       },
-      { id: 2, accessorKey: "posting_date", header: "SO Date", size: 30 },
+      {
+        id: 2,
+        accessorKey: "posting_date",
+        header: "SO Date",
+        size: 30,
+        Cell: ({ row }) => {
+          return formatDate(row.original.posting_date);
+        },
+      },
       {
         id: 3,
         accessorKey: "customer_name",
@@ -50,8 +63,24 @@ const DesigningDashboard = () => {
       },
       { id: 4, accessorKey: "item_description", header: "Size", size: 30 },
       { id: 5, accessorKey: "quantity", header: "Qty", size: 30 },
-      { id: 6, accessorKey: "posting_date", header: "Start Date", size: 30 },
-      { id: 7, accessorKey: "due_date", header: "End Date", size: 30 },
+      {
+        id: 6,
+        accessorKey: "posting_date",
+        header: "Start Date",
+        size: 30,
+        Cell: ({ row }) => {
+          return formatDate(row.original.posting_date);
+        },
+      },
+      {
+        id: 7,
+        accessorKey: "due_date",
+        header: "End Date",
+        size: 30,
+        Cell: ({ row }) => {
+          return formatDate(row.original.due_date);
+        },
+      },
       {
         id: 8,
         accessorKey: "actions",

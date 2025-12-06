@@ -212,7 +212,11 @@ function EditDesign() {
 
   console.log("Sales Order:", salesOrder);
   console.log("Design data:", design);
-
+  const formatDateISO = (value) => {
+    if (!value) return "";
+    const date = value.$date ? new Date(value.$date) : new Date(value);
+    return isNaN(date) ? "" : date.toISOString().split("T")[0]; // YYYY-MM-DD
+  };
   const [formData, setFormData] = useState({
     soNumber: salesOrder?.saleorder_no || "",
     soDate: salesOrder?.posting_date
@@ -222,61 +226,23 @@ function EditDesign() {
     totalQty: salesOrder?.quantity || "",
   });
 
+  const createComponent = () => ({
+    selected: false,
+    length: "",
+    breadth: "",
+    thickness: salesOrder?.thickness || "",
+    ups: "",
+    sheets: "",
+    file: null,
+  });
+
   const initialComponentsState = {
-    Lid: {
-      selected: false,
-      length: "",
-      breadth: "",
-      thickness: salesOrder?.thickness || "",
-      ups: "",
-      sheets: "",
-      file: null,
-    },
-    Body: {
-      selected: false,
-      length: "",
-      breadth: "",
-      thickness: salesOrder?.thickness || "",
-      ups: "",
-      sheets: "",
-      file: null,
-    },
-    Bottom: {
-      selected: false,
-      length: "",
-      breadth: "",
-      thickness: salesOrder?.thickness || "",
-      ups: "",
-      sheets: "",
-      file: null,
-    },
-    "Lid & Body": {
-      selected: false,
-      length: "",
-      breadth: "",
-      thickness: salesOrder?.thickness || "",
-      ups: "",
-      sheets: "",
-      file: null,
-    },
-    "Lid & Body & Bottom": {
-      selected: false,
-      length: "",
-      breadth: "",
-      thickness: salesOrder?.thickness || "",
-      ups: "",
-      sheets: "",
-      file: null,
-    },
-    "Body & Bottom": {
-      selected: false,
-      length: "",
-      breadth: "",
-      thickness: salesOrder?.thickness || "",
-      ups: "",
-      sheets: "",
-      file: null,
-    },
+    Lid: createComponent(),
+    Body: createComponent(),
+    Bottom: createComponent(),
+    "Lid & Body": createComponent(),
+    "Lid & Body & Bottom": createComponent(),
+    "Body & Bottom": createComponent(),
   };
 
   const [open, setOpen] = useState(false);
@@ -284,47 +250,34 @@ function EditDesign() {
   const [components, setComponents] = useState(initialComponentsState);
 
   useEffect(() => {
-    if (design?.components) {
-      const updatedComponents = { ...initialComponentsState };
+    if (!design?.components) return;
 
-      if (Array.isArray(design.components)) {
-        design.components.forEach((comp) => {
-          if (comp.name && updatedComponents[comp.name]) {
-            updatedComponents[comp.name] = {
-              ...updatedComponents[comp.name],
-              selected: comp.selected !== undefined ? comp.selected : true,
-              length: comp.length || "",
-              breadth: comp.breadth || "",
-              thickness: comp.thickness || salesOrder?.thickness || "",
-              ups: comp.ups || "",
-              sheets: comp.sheets || "",
-              file: comp.file || null,
-            };
-          }
-        });
-      } else if (typeof design.components === "object") {
-        Object.keys(design.components).forEach((key) => {
-          if (updatedComponents[key]) {
-            updatedComponents[key] = {
-              ...updatedComponents[key],
-              selected:
-                design.components[key].selected !== undefined
-                  ? design.components[key].selected
-                  : true,
-              length: design.components[key].length || "",
-              breadth: design.components[key].breadth || "",
-              thickness:
-                design.components[key].thickness || salesOrder?.thickness || "",
-              ups: design.components[key].ups || "",
-              sheets: design.components[key].sheets || "",
-              file: design.components[key].file || null,
-            };
-          }
-        });
+    const updatedComponents = { ...initialComponentsState };
+
+    const componentsArray = Array.isArray(design.components)
+      ? design.components
+      : Object.entries(design.components).map(([name, data]) => ({
+          name,
+          ...data,
+        }));
+
+    componentsArray.forEach((comp) => {
+      const { name } = comp;
+      if (name && updatedComponents[name]) {
+        updatedComponents[name] = {
+          ...updatedComponents[name],
+          selected: comp?.selected !== undefined ? comp.selected : true,
+          length: comp?.length || "",
+          breadth: comp?.breadth || "",
+          thickness: comp?.thickness || salesOrder?.thickness || "",
+          ups: comp?.ups || "",
+          sheets: comp?.sheets || "",
+          file: comp?.file || null,
+        };
       }
+    });
 
-      setComponents(updatedComponents);
-    }
+    setComponents(updatedComponents);
   }, [design]);
 
   const handleOpen = () => setOpen(true);
@@ -377,50 +330,54 @@ function EditDesign() {
   };
 
   const handleSubmit = async () => {
-    const selectedComponents = Object.entries(components)
-      .filter(([_, data]) => data.selected)
-      .map(([name, data]) => ({
-        name,
-        selected: data.selected,
-        length: data.length,
-        breadth: data.breadth,
-        thickness: data.thickness,
-        ups: data.ups,
-        sheets: data.sheets,
-        fileName: data.file ? data.file.name : "",
-      }));
+    const fullComponents = {};
 
-    if (selectedComponents.length === 0) {
+    Object.entries(components).forEach(([name, data]) => {
+      if (data.selected) {
+        fullComponents[name] = {
+          selected: data?.selected,
+          length: data?.length,
+          breadth: data?.breadth,
+          thickness: data?.thickness,
+          ups: data?.ups,
+          sheets: data?.sheets,
+          fileName: data.file ? data.file.name : "",
+        };
+      }
+    });
+
+    if (Object.keys(fullComponents).length === 0) {
       alert("Please select at least one component");
-      return false;
+      return;
     }
 
-    const incompleteComponents = selectedComponents.filter(
-      (comp) =>
-        !comp.length ||
-        !comp.breadth ||
-        !comp.thickness ||
-        !comp.ups ||
-        !comp.sheets
-    );
-
-    if (incompleteComponents.length > 0) {
-      alert("Please fill all fields for selected components");
-      return false;
+    // Validation
+    for (const key in fullComponents) {
+      const item = fullComponents[key];
+      if (
+        !item.length ||
+        !item.breadth ||
+        !item.thickness ||
+        !item.ups ||
+        !item.sheets
+      ) {
+        alert(`Please fill all fields for component: ${key}`);
+        return;
+      }
     }
 
     try {
       const response = await server.post("/design/add", {
+        saleorder_no: formData?.soNumber,
         art_work: salesOrder?.art_work,
         size: salesOrder?.item_description,
         customer_name: salesOrder?.customer_name,
         start_date: salesOrder?.posting_date,
         end_date: salesOrder?.due_date,
-        soNumber: formData?.soNumber,
         soDate: formData?.soDate,
         machine: formData?.machine,
         totalQty: formData?.totalQty,
-        components: selectedComponents,
+        components: fullComponents,
       });
 
       const result = response.data;

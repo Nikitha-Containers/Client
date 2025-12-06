@@ -11,305 +11,337 @@ import {
   Modal,
 } from "@mui/material";
 import Button from "@mui/joy/Button";
-import SvgIcon from "@mui/joy/SvgIcon";
-import { styled } from "@mui/joy";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import "../../../pages/pagestyle.scss";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import upsImage from "../../../../assets/Pagesimage/ups-image.jpg";
 import server from "../../../../server/server";
-
-const label = { inputProps: { "aria-label": "Checkbox demo" } };
-
-const VisuallyHiddenInput = styled("input")`
-  clip: rect(0 0 0 0);
-  clip-path: inset(50%);
-  height: 1px;
-  overflow: hidden;
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  white-space: nowrap;
-  width: 1px;
-`;
+import PrintingColorDialog from "./PrintingColorDialog";
+import CoatingTypeDialog from "./CoatingTypeDialog";
 
 // Component Row Start Here
-const ComponentRow = ({
-  component,
-  name,
-  onDataChange,
-  onFileUpload,
-  onViewFile,
-}) => (
-  <>
-    <Grid size={12} sx={{ borderBottom: "1px solid #dcdddd" }} />
+const ComponentRow = ({ component, name, onDataChange, onViewFile }) => {
+  const [coatingDialogOpen, setCoatingDialogOpen] = useState(false);
+  const [printingDialogOpen, setPrintingDialogOpen] = useState(false);
 
-    <Grid size={1}>
-      <div className="Box-table-checkbox">
-        <Checkbox
-          checked={component.selected}
-          onChange={(e) => onDataChange(name, "selected", e.target.checked)}
-          {...label}
+  const handleCoatingTypeClick = () => {
+    setCoatingDialogOpen(true);
+  };
+
+  const handlePrintingColorClick = () => {
+    setPrintingDialogOpen(true);
+  };
+
+  const handleCoatingSelect = (value) => {
+    onDataChange(name, "coatingType", value);
+  };
+
+  const handlePrintingSelect = (value) => {
+    onDataChange(name, "printingColor", value);
+  };
+
+  return (
+    <>
+      <Grid size={12} sx={{ borderBottom: "1px solid #dcdddd" }} />
+
+      <Grid size={2}>
+        <div className="Box-table-text">{name}</div>
+      </Grid>
+
+      <Grid size={1}>
+        <div className="Box-table-content">
+          <TextField
+            id="outlined-size-small"
+            name=""
+            size="small"
+            type="text"
+            value={component.length}
+            onChange={(e) => onDataChange(name, "length", e.target.value)}
+          />
+        </div>
+      </Grid>
+
+      <Grid size={1}>
+        <div className="Box-table-content">
+          <TextField
+            id="outlined-size-small"
+            name=""
+            size="small"
+            type="text"
+            value={component.breadth}
+            onChange={(e) => onDataChange(name, "breadth", e.target.value)}
+          />
+        </div>
+      </Grid>
+
+      <Grid size={1}>
+        <div className="Box-table-content">
+          <TextField
+            id="outlined-size-small"
+            name=""
+            size="small"
+            type="text"
+            value={component.thickness}
+            onChange={(e) => onDataChange(name, "thickness", e.target.value)}
+          />
+        </div>
+      </Grid>
+
+      <Grid size={1.5}>
+        <div className="Box-table-content">
+          <TextField
+            id="outlined-size-small"
+            name=""
+            size="small"
+            type="text"
+            value={component.ups}
+            onChange={(e) => onDataChange(name, "ups", e.target.value)}
+          />
+        </div>
+      </Grid>
+
+      <Grid size={1.5}>
+        <div className="Box-table-content">
+          <TextField
+            id="outlined-size-small"
+            name=""
+            size="small"
+            type="text"
+            value={component.sheets}
+            onChange={(e) => onDataChange(name, "sheets", e.target.value)}
+          />
+        </div>
+      </Grid>
+
+      <Grid size={1}>
+        <FileUpload
+          onViewFile={onViewFile}
+          componentName={name}
+          file={component.file}
         />
-      </div>
-    </Grid>
+      </Grid>
+      <Grid size={1}>
+        <div className="Box-table-content">
+          <Select
+            labelId="demo-simple-select-label"
+            id="demo-simple-select"
+            value={component.coatingType || ""}
+            size="small"
+            displayEmpty
+            fullWidth
+            renderValue={
+              component.coatingType !== "" ? undefined : () => "Select"
+            }
+            onClick={handleCoatingTypeClick}
+            readOnly
+            sx={{
+              cursor: "pointer",
+              "& .MuiSelect-select": {
+                cursor: "pointer !important",
+              },
+            }}
+          >
+            <MenuItem value="">Select</MenuItem>
+            <MenuItem value="Gloss">Gloss</MenuItem>
+            <MenuItem value="Matt">Matt</MenuItem>
+            <MenuItem value="Soft Touch">Soft Touch</MenuItem>
+            <MenuItem value="UV">UV</MenuItem>
+          </Select>
+        </div>
+      </Grid>
 
-    <Grid size={2}>
-      <div className="Box-table-text">{name}</div>
-    </Grid>
+      <Grid size={1}>
+        <div className="Box-table-content">
+          <Select
+            labelId="demo-simple-select-label"
+            id="demo-simple-select"
+            value={component.printingColor || ""}
+            size="small"
+            displayEmpty
+            fullWidth
+            renderValue={
+              component.printingColor !== "" ? undefined : () => "Select"
+            }
+            onClick={handlePrintingColorClick}
+            readOnly
+            sx={{
+              cursor: "pointer",
+              "& .MuiSelect-select": {
+                cursor: "pointer !important",
+              },
+            }}
+          >
+            <MenuItem value="">Select</MenuItem>
+            <MenuItem value="1 Color">1 Color</MenuItem>
+            <MenuItem value="2 Colors">2 Colors</MenuItem>
+            <MenuItem value="3 Colors">3 Colors</MenuItem>
+            <MenuItem value="4 Colors">4 Colors</MenuItem>
+            <MenuItem value="Full Color">Full Color</MenuItem>
+          </Select>
+        </div>
+      </Grid>
 
-    <Grid size={1}>
-      <div className="Box-table-content">
-        <TextField
-          id="outlined-size-small"
-          name=""
-          size="small"
-          type="text"
-          value={component.length}
-          onChange={(e) => onDataChange(name, "length", e.target.value)}
-          disabled={!component.selected}
-        />
-      </div>
-    </Grid>
-
-    <Grid size={1}>
-      <div className="Box-table-content">
-        <TextField
-          id="outlined-size-small"
-          name=""
-          size="small"
-          type="text"
-          value={component.breadth}
-          onChange={(e) => onDataChange(name, "breadth", e.target.value)}
-          disabled={!component.selected}
-        />
-      </div>
-    </Grid>
-
-    <Grid size={1}>
-      <div className="Box-table-content">
-        <TextField
-          id="outlined-size-small"
-          name=""
-          size="small"
-          type="text"
-          value={component.thickness}
-          onChange={(e) => onDataChange(name, "thickness", e.target.value)}
-          disabled={!component.selected}
-        />
-      </div>
-    </Grid>
-
-    <Grid size={1.5}>
-      <div className="Box-table-content">
-        <TextField
-          id="outlined-size-small"
-          name=""
-          size="small"
-          type="text"
-          value={component.ups}
-          onChange={(e) => onDataChange(name, "ups", e.target.value)}
-          disabled={!component.selected}
-        />
-      </div>
-    </Grid>
-
-    <Grid size={1.5}>
-      <div className="Box-table-content">
-        <TextField
-          id="outlined-size-small"
-          name=""
-          size="small"
-          type="text"
-          value={component.sheets}
-          onChange={(e) => onDataChange(name, "sheets", e.target.value)}
-          disabled={!component.selected}
-        />
-      </div>
-    </Grid>
-
-    <Grid size={3}>
-      <FileUpload
-        onFileUpload={onFileUpload}
-        onViewFile={onViewFile}
-        componentName={name}
-        file={component.file}
-        disabled={!component.selected}
+      <CoatingTypeDialog
+        open={coatingDialogOpen}
+        onClose={() => setCoatingDialogOpen(false)}
+        onSelect={handleCoatingSelect}
+        currentValue={component.coatingType}
       />
-    </Grid>
-  </>
-);
+
+      <PrintingColorDialog
+        open={printingDialogOpen}
+        onClose={() => setPrintingDialogOpen(false)}
+        onSelect={handlePrintingSelect}
+        currentValue={component.printingColor}
+      />
+    </>
+  );
+};
 
 // Component Row End Here
 
 // File Upload Component
-const FileUpload = ({
-  onFileUpload,
-  onViewFile,
-  componentName,
-  file,
-  disabled,
-}) => (
+const FileUpload = ({ onViewFile, componentName, file, disabled }) => (
   <Box
     className="Box-table-upload"
     sx={{ display: "flex", alignItems: "center", columnGap: 2.5 }}
   >
-    <Button
-      component="label"
-      variant="outlined"
-      color="neutral"
-      disabled={disabled}
-      startDecorator={
-        <SvgIcon>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={1.5}
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"
-            />
-          </svg>
-        </SvgIcon>
-      }
+    <Link
+      className="gray-md-btn"
+      onClick={() => onViewFile(componentName)}
+      style={{ cursor: "pointer" }}
     >
-      {file ? "Change File" : "Upload a file"}
-      <VisuallyHiddenInput
-        type="file"
-        onChange={(e) => onFileUpload(componentName, e.target.files[0])}
-      />
-    </Button>
-
-    {file && (
-      <Link
-        className="gray-md-btn"
-        onClick={() => onViewFile(componentName)}
-        style={{ cursor: "pointer" }}
-      >
-        <VisibilityIcon /> View
-      </Link>
-    )}
+      <VisibilityIcon /> View
+    </Link>
   </Box>
 );
 
 // Main Component Started Here
 
-function EditDesign() {
+function EditPrint() {
   const location = useLocation();
-  const { salesOrder, design } = location.state || {};
+  const { design } = location.state || {};
 
-  console.log("Sales Order:", salesOrder);
-  console.log("Design data:", design);
-
-  const [formData, setFormData] = useState({
-    soNumber: salesOrder?.saleorder_no || "",
-    soDate: salesOrder?.posting_date
-      ? new Date(salesOrder?.posting_date).toISOString().split("T")[0]
-      : "",
-    machine: design?.machine || "",
-    totalQty: salesOrder?.quantity || "",
-  });
+  console.log("Received design data in EditPrint:", design);
 
   const initialComponentsState = {
     Lid: {
-      selected: false,
       length: "",
       breadth: "",
-      thickness: salesOrder?.thickness || "",
+      thickness: "",
       ups: "",
       sheets: "",
+      coatingType: "",
+      printingColor: "",
       file: null,
     },
     Body: {
-      selected: false,
       length: "",
       breadth: "",
-      thickness: salesOrder?.thickness || "",
+      thickness: "",
       ups: "",
       sheets: "",
+      coatingType: "",
+      printingColor: "",
       file: null,
     },
     Bottom: {
-      selected: false,
       length: "",
       breadth: "",
-      thickness: salesOrder?.thickness || "",
+      thickness: "",
       ups: "",
       sheets: "",
+      coatingType: "",
+      printingColor: "",
       file: null,
     },
     "Lid & Body": {
-      selected: false,
       length: "",
       breadth: "",
-      thickness: salesOrder?.thickness || "",
+      thickness: "",
       ups: "",
       sheets: "",
+      coatingType: "",
+      printingColor: "",
       file: null,
     },
     "Lid & Body & Bottom": {
-      selected: false,
       length: "",
       breadth: "",
-      thickness: salesOrder?.thickness || "",
+      thickness: "",
       ups: "",
       sheets: "",
+      coatingType: "",
+      printingColor: "",
       file: null,
     },
     "Body & Bottom": {
-      selected: false,
       length: "",
       breadth: "",
-      thickness: salesOrder?.thickness || "",
+      thickness: "",
       ups: "",
       sheets: "",
+      coatingType: "",
+      printingColor: "",
       file: null,
     },
   };
+
+  const [formData, setFormData] = useState({
+    soNumber: "",
+    soDate: "",
+    machine: "",
+    totalQty: "",
+  });
 
   const [open, setOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState("");
   const [components, setComponents] = useState(initialComponentsState);
 
   useEffect(() => {
-    if (design?.components) {
+    if (design) {
+      const formatDate = (dateObj) => {
+        if (!dateObj) return "";
+        try {
+          const date = dateObj.$date
+            ? new Date(dateObj.$date)
+            : new Date(dateObj);
+          return date.toISOString().split("T")[0];
+        } catch (error) {
+          console.error("Error formatting date:", error);
+          return "";
+        }
+      };
+
+      setFormData({
+        soNumber: design.saleorder_no || "",
+        soDate: formatDate(design.posting_date) || "",
+        machine: design.machine || "",
+        totalQty: design.totalQty || design.quantity || "",
+      });
+
       const updatedComponents = { ...initialComponentsState };
 
-      if (Array.isArray(design.components)) {
-        design.components.forEach((comp) => {
-          if (comp.name && updatedComponents[comp.name]) {
-            updatedComponents[comp.name] = {
-              ...updatedComponents[comp.name],
-              selected: comp.selected !== undefined ? comp.selected : true,
+      if (design.components) {
+        const componentEntries = Array.isArray(design.components)
+          ? design.components
+          : Object.entries(design.components).map(([name, comp]) => ({
+              name,
+              ...comp,
+            }));
+
+        componentEntries.forEach((comp) => {
+          const componentName = comp.name;
+          if (updatedComponents[componentName]) {
+            updatedComponents[componentName] = {
+              ...updatedComponents[componentName],
               length: comp.length || "",
               breadth: comp.breadth || "",
-              thickness: comp.thickness || salesOrder?.thickness || "",
+              thickness: comp.thickness || "",
               ups: comp.ups || "",
               sheets: comp.sheets || "",
-              file: comp.file || null,
-            };
-          }
-        });
-      } else if (typeof design.components === "object") {
-        Object.keys(design.components).forEach((key) => {
-          if (updatedComponents[key]) {
-            updatedComponents[key] = {
-              ...updatedComponents[key],
-              selected:
-                design.components[key].selected !== undefined
-                  ? design.components[key].selected
-                  : true,
-              length: design.components[key].length || "",
-              breadth: design.components[key].breadth || "",
-              thickness:
-                design.components[key].thickness || salesOrder?.thickness || "",
-              ups: design.components[key].ups || "",
-              sheets: design.components[key].sheets || "",
-              file: design.components[key].file || null,
+              coatingType: comp.coatingType || "",
+              printingColor: comp.printingColor || "",
             };
           }
         });
@@ -323,10 +355,10 @@ function EditDesign() {
 
   const handleClose = () => {
     setOpen(false);
-    if (currentImage) {
+    if (currentImage && currentImage.startsWith("blob:")) {
       URL.revokeObjectURL(currentImage);
-      setCurrentImage("");
     }
+    setCurrentImage("");
   };
 
   const handleFormChange = (field, value) => {
@@ -370,20 +402,31 @@ function EditDesign() {
 
   const handleSubmit = async () => {
     const selectedComponents = Object.entries(components)
-      .filter(([_, data]) => data.selected)
+      .filter(([name, data]) => {
+        return (
+          data.length.trim() !== "" ||
+          data.breadth.trim() !== "" ||
+          data.thickness.trim() !== "" ||
+          data.ups.trim() !== "" ||
+          data.sheets.trim() !== "" ||
+          data.coatingType.trim() !== "" ||
+          data.printingColor.trim() !== ""
+        );
+      })
       .map(([name, data]) => ({
         name,
-        selected: data.selected,
         length: data.length,
         breadth: data.breadth,
         thickness: data.thickness,
         ups: data.ups,
         sheets: data.sheets,
+        coatingType: data.coatingType,
+        printingColor: data.printingColor,
         fileName: data.file ? data.file.name : "",
       }));
 
     if (selectedComponents.length === 0) {
-      alert("Please select at least one component");
+      alert("Please fill data for at least one component");
       return false;
     }
 
@@ -393,33 +436,51 @@ function EditDesign() {
         !comp.breadth ||
         !comp.thickness ||
         !comp.ups ||
-        !comp.sheets
+        !comp.sheets ||
+        !comp.coatingType ||
+        !comp.printingColor
     );
 
     if (incompleteComponents.length > 0) {
-      alert("Please fill all fields for selected components");
+      alert("Please fill all fields for the components you've started");
       return false;
     }
 
     try {
-      const response = await server.post("/design/add", {
-        art_work: salesOrder?.art_work,
-        size: salesOrder?.item_description,
-        customer_name: salesOrder?.customer_name,
-        start_date: salesOrder?.posting_date,
-        end_date: salesOrder?.due_date,
-        soNumber: formData?.soNumber,
-        soDate: formData?.soDate,
-        machine: formData?.machine,
-        totalQty: formData?.totalQty,
-        components: selectedComponents,
+      const formDataToSend = new FormData();
+
+      formDataToSend.append("art_work", design?.art_work || "");
+      formDataToSend.append("size", design?.size || "");
+      formDataToSend.append("customer_name", design?.customer_name || "");
+      formDataToSend.append("start_date", design?.start_date || "");
+      formDataToSend.append("end_date", design?.end_date || "");
+      formDataToSend.append("soNumber", formData.soNumber);
+      formDataToSend.append("soDate", formData.soDate);
+      formDataToSend.append("machine", formData.machine);
+      formDataToSend.append("totalQty", formData.totalQty);
+      formDataToSend.append("components", JSON.stringify(selectedComponents));
+
+      selectedComponents.forEach((comp, index) => {
+        const componentData = components[comp.name];
+        if (componentData?.file) {
+          formDataToSend.append(`file_${index}`, componentData.file);
+        }
       });
+
+      const response = await server.put(
+        `/design/update/${design._id}`,
+        formDataToSend,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
       const result = response.data;
 
       if (result.success) {
         alert("Design updated successfully!");
-        console.log("Updated in MongoDB:", result.design);
       } else {
         throw new Error(result.error || "Failed to update design");
       }
@@ -432,36 +493,46 @@ function EditDesign() {
 
   const handleCancel = () => {
     if (design) {
+      const formatDate = (dateObj) => {
+        if (!dateObj) return "";
+        try {
+          const date = dateObj.$date
+            ? new Date(dateObj.$date)
+            : new Date(dateObj);
+          return date.toISOString().split("T")[0];
+        } catch (error) {
+          return "";
+        }
+      };
+
       setFormData({
-        soNumber: salesOrder?.saleorder_no || "",
-        soDate: salesOrder?.posting_date
-          ? new Date(salesOrder?.posting_date).toISOString().split("T")[0]
-          : "",
-        machine: design?.machine || "",
-        totalQty: salesOrder?.quantity || "",
+        soNumber: design.saleorder_no || "",
+        soDate: formatDate(design.posting_date) || "",
+        machine: design.machine || "",
+        totalQty: design.totalQty || design.quantity || "",
       });
 
-      if (design.components) {
-        const resetComponents = { ...initialComponentsState };
+      const resetComponents = { ...initialComponentsState };
 
-        if (Array.isArray(design.components)) {
-          design.components.forEach((comp) => {
-            if (comp.name && resetComponents[comp.name]) {
-              resetComponents[comp.name] = {
-                ...resetComponents[comp.name],
-                selected: comp.selected !== undefined ? comp.selected : true,
-                length: comp.length || "",
-                breadth: comp.breadth || "",
-                thickness: comp.thickness || salesOrder?.thickness || "",
-                ups: comp.ups || "",
-                sheets: comp.sheets || "",
-                file: comp.file || null,
-              };
-            }
-          });
-        }
-        setComponents(resetComponents);
+      if (design.components && Array.isArray(design.components)) {
+        design.components.forEach((comp) => {
+          const componentName = comp.name;
+          if (resetComponents[componentName]) {
+            resetComponents[componentName] = {
+              ...resetComponents[componentName],
+              length: comp.length || "",
+              breadth: comp.breadth || "",
+              thickness: comp.thickness || "",
+              ups: comp.ups || "",
+              sheets: comp.sheets || "",
+              coatingType: comp.coatingType || "",
+              printingColor: comp.printingColor || "",
+            };
+          }
+        });
       }
+
+      setComponents(resetComponents);
     } else {
       setFormData({
         soNumber: "",
@@ -496,10 +567,10 @@ function EditDesign() {
               style={{ color: "#0a85cb", textDecoration: "none" }}
               to={"/desigining_dashboard"}
             >
-              Design Dashboard
+              Printing Manager
             </Link>
             <KeyboardArrowRightIcon sx={{ color: "#0a85cb" }} />
-            <div>Edit Design </div>
+            <div>Edit Print </div>
           </div>
         </Box>
       </Box>
@@ -593,12 +664,7 @@ function EditDesign() {
                   alignItems: "center",
                 }}
               >
-                <div>
-                  Today's Work - ({new Date().toLocaleDateString()}){" "}
-                  <span className={getArtWorkClass(salesOrder?.art_work)}>
-                    {salesOrder?.art_work || "NA"}
-                  </span>
-                </div>
+                <div>Today's Work - ({new Date().toLocaleDateString()})</div>
 
                 <button className="gray-md-btn">
                   <VisibilityIcon style={{ fontSize: 20 }} />
@@ -608,9 +674,6 @@ function EditDesign() {
             </Grid>
 
             {/* Header Start Here  */}
-            <Grid size={1}>
-              <div className="Box-table-subtitle">Select Job</div>
-            </Grid>
             <Grid size={2}>
               <div className="Box-table-subtitle">Component</div>
             </Grid>
@@ -629,22 +692,33 @@ function EditDesign() {
             <Grid size={1.5}>
               <div className="Box-table-subtitle">No. of Sheets</div>
             </Grid>
-            <Grid size={3}>
+            <Grid size={1}>
               <div className="Box-table-subtitle">Source File</div>
             </Grid>
+            <Grid size={1}>
+              <div className="Box-table-subtitle">Coating Type</div>
+            </Grid>
+            <Grid size={1}>
+              <div className="Box-table-subtitle">Printing Color</div>
+            </Grid>
+
             {/* Header End Here */}
 
             {/* Render Component Rows */}
-            {Object.entries(components).map(([key, component]) => (
-              <ComponentRow
-                key={key}
-                component={component}
-                name={key}
-                onDataChange={handleComponentChange}
-                onFileUpload={handleFileUpload}
-                onViewFile={handleViewFile}
-              />
-            ))}
+            {Object.entries(components)
+              .filter(([key]) => {
+                return Object.keys(design?.components || {}).includes(key);
+              })
+
+              .map(([key, component]) => (
+                <ComponentRow
+                  key={key}
+                  component={component}
+                  name={key}
+                  onDataChange={handleComponentChange}
+                  onViewFile={handleViewFile}
+                />
+              ))}
           </Grid>
 
           {/* Action Buttons */}
@@ -681,7 +755,7 @@ function EditDesign() {
           <Box sx={modalStyle}>
             <img
               src={currentImage || upsImage}
-              alt="ups-modal"
+              alt="preview"
               style={{
                 width: "100%",
                 height: "auto",
@@ -696,6 +770,4 @@ function EditDesign() {
   );
 }
 
-// Main Component End Here
-
-export default EditDesign;
+export default EditPrint;

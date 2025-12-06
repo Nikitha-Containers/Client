@@ -11,8 +11,8 @@ import { MaterialReactTable } from "material-react-table";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useDesign } from "../../../../API/Design_API";
-import { SalesOrder } from "../../../../API/Salesorder";
 import { useNavigate } from "react-router-dom";
+
 const Item = styled(Paper)(({ theme }) => ({
   backgroundColor: "#fff",
   ...theme.typography.body2,
@@ -25,12 +25,15 @@ const Item = styled(Paper)(({ theme }) => ({
 }));
 
 const PrintingManager = () => {
-  const { salesOrders } = SalesOrder();
-
-
   const { designs } = useDesign();
-
   const navigate = useNavigate();
+
+  console.log("designs from API:", designs);
+
+  const formatDate = (value) => {
+    const date = value?.$date ? new Date(value.$date) : new Date(value);
+    return isNaN(date) ? "" : date.toLocaleDateString("en-IN");
+  };
 
   const columns = useMemo(
     () => [
@@ -45,6 +48,9 @@ const PrintingManager = () => {
         accessorKey: "posting_date",
         header: "SO Date",
         size: 30,
+        Cell: ({ row }) => {
+          return formatDate(row.original.posting_date);
+        },
       },
       {
         id: 3,
@@ -54,27 +60,33 @@ const PrintingManager = () => {
       },
       {
         id: 4,
-        accessorKey: "item_description",
+        accessorKey: "size",
         header: "Size",
         size: 30,
       },
       {
         id: 5,
-        accessorKey: "quantity",
+        accessorKey: "totalQty",
         header: "Qty",
         size: 30,
       },
       {
         id: 6,
-        accessorKey: "posting_date",
+        accessorKey: "start_date",
         header: "Start Date",
         size: 30,
+        Cell: ({ row }) => {
+          return formatDate(row.original.start_date);
+        },
       },
       {
         id: 7,
-        accessorKey: "due_date",
+        accessorKey: "end_date",
         header: "End Date",
         size: 30,
+        Cell: ({ row }) => {
+          return formatDate(row.original.end_date);
+        },
       },
       {
         id: 8,
@@ -164,7 +176,7 @@ const PrintingManager = () => {
         <Box className="Dashboard-table" sx={{ mt: 1 }}>
           <MaterialReactTable
             columns={columns}
-            data={salesOrders}
+            data={designs || []}
             positionActionsColumn="last"
             initialState={{
               showGlobalFilter: true,
@@ -178,7 +190,13 @@ const PrintingManager = () => {
             }}
             muiTableBodyRowProps={({ row }) => ({
               onClick: () => {
-                navigate(`/editprint`, { state: row.original });
+                navigate(`/editprint`, { state: { design: row.original } });
+              },
+              sx: {
+                cursor: "pointer",
+                "&:hover": {
+                  backgroundColor: "rgba(0, 0, 0, 0.04)",
+                },
               },
             })}
             muiTableFooterCellProps={{
