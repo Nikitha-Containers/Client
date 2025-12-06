@@ -210,20 +210,16 @@ function EditDesign() {
   const location = useLocation();
   const { salesOrder, design } = location.state || {};
 
-  console.log("Sales Order:", salesOrder);
-  console.log("Design data:", design);
-  const formatDateISO = (value) => {
-    if (!value) return "";
-    const date = value.$date ? new Date(value.$date) : new Date(value);
-    return isNaN(date) ? "" : date.toISOString().split("T")[0]; // YYYY-MM-DD
-  };
+  console.log("Edit Design SO:", salesOrder);
+  console.log("Edit Design Design", design);
+
   const [formData, setFormData] = useState({
-    soNumber: salesOrder?.saleorder_no || "",
-    soDate: salesOrder?.posting_date
+    saleorder_no: salesOrder?.saleorder_no || "",
+    posting_date: salesOrder?.posting_date
       ? new Date(salesOrder?.posting_date).toISOString().split("T")[0]
       : "",
+    quantity: salesOrder?.quantity || "",
     machine: design?.machine || "",
-    totalQty: salesOrder?.quantity || "",
   });
 
   const createComponent = () => ({
@@ -368,19 +364,19 @@ function EditDesign() {
 
     try {
       const response = await server.post("/design/add", {
-        saleorder_no: formData?.soNumber,
-        art_work: salesOrder?.art_work,
-        size: salesOrder?.item_description,
-        customer_name: salesOrder?.customer_name,
-        start_date: salesOrder?.posting_date,
-        end_date: salesOrder?.due_date,
-        soDate: formData?.soDate,
+        saleorder_no: formData?.saleorder_no,
+        posting_date: formData?.posting_date,
+        quantity: formData?.quantity,
         machine: formData?.machine,
-        totalQty: formData?.totalQty,
         components: fullComponents,
+        art_work: salesOrder?.art_work,
+        item_description: salesOrder?.item_description,
+        customer_name: salesOrder?.customer_name,
+        due_date: salesOrder?.due_date,
       });
 
       const result = response.data;
+      console.log(result);
 
       if (result.success) {
         alert("Design updated successfully!");
@@ -398,12 +394,12 @@ function EditDesign() {
   const handleCancel = () => {
     if (design) {
       setFormData({
-        soNumber: salesOrder?.saleorder_no || "",
-        soDate: salesOrder?.posting_date
+        saleorder_no: salesOrder?.saleorder_no || "",
+        posting_date: salesOrder?.posting_date
           ? new Date(salesOrder?.posting_date).toISOString().split("T")[0]
           : "",
         machine: design?.machine || "",
-        totalQty: salesOrder?.quantity || "",
+        quantity: salesOrder?.quantity || "",
       });
 
       if (design.components) {
@@ -429,10 +425,10 @@ function EditDesign() {
       }
     } else {
       setFormData({
-        soNumber: "",
-        soDate: "",
+        saleorder_no: "",
+        posting_date: "",
         machine: "",
-        totalQty: "",
+        quantity: "",
       });
       setComponents(initialComponentsState);
     }
@@ -479,8 +475,10 @@ function EditDesign() {
                   id="outlined-size-small"
                   name=""
                   size="small"
-                  value={formData.soNumber}
-                  onChange={(e) => handleFormChange("soNumber", e.target.value)}
+                  value={formData.saleorder_no}
+                  onChange={(e) =>
+                    handleFormChange("saleorder_no", e.target.value)
+                  }
                   disabled
                 />
               </FormGroup>
@@ -494,8 +492,10 @@ function EditDesign() {
                   name=""
                   size="small"
                   type="date"
-                  value={formData.soDate}
-                  onChange={(e) => handleFormChange("soDate", e.target.value)}
+                  value={formData.posting_date}
+                  onChange={(e) =>
+                    handleFormChange("posting_date", e.target.value)
+                  }
                   disabled
                 />
               </FormGroup>
@@ -531,7 +531,7 @@ function EditDesign() {
                   name=""
                   size="small"
                   type="text"
-                  value={formData.totalQty}
+                  value={formData.quantity}
                   onChange={(e) => handleFormChange("totalQty", e.target.value)}
                   disabled
                 />

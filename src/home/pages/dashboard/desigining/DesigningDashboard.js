@@ -31,6 +31,10 @@ const Item = styled(Paper)(({ theme }) => ({
 const DesigningDashboard = () => {
   const { salesOrders } = SalesOrder();
   const { designs } = useDesign();
+
+  console.log("Desiging Dashboard SO", salesOrders);
+  console.log("Desiging Dashboard Designs", designs);
+
   const navigate = useNavigate();
 
   const formatDate = (value) => {

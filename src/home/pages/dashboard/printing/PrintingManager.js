@@ -60,32 +60,32 @@ const PrintingManager = () => {
       },
       {
         id: 4,
-        accessorKey: "size",
+        accessorKey: "item_description",
         header: "Size",
         size: 30,
       },
       {
         id: 5,
-        accessorKey: "totalQty",
-        header: "Qty",
+        accessorKey: "quantity",
+        header: "Quantity",
         size: 30,
       },
       {
         id: 6,
-        accessorKey: "start_date",
+        accessorKey: "posting_date",
         header: "Start Date",
         size: 30,
         Cell: ({ row }) => {
-          return formatDate(row.original.start_date);
+          return formatDate(row.original.posting_date);
         },
       },
       {
         id: 7,
-        accessorKey: "end_date",
+        accessorKey: "due_date",
         header: "End Date",
         size: 30,
         Cell: ({ row }) => {
-          return formatDate(row.original.end_date);
+          return formatDate(row.original.due_date);
         },
       },
       {
