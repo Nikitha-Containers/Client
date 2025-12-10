@@ -73,7 +73,7 @@ const DesigningDashboard = () => {
         header: "Start Date",
         size: 30,
         Cell: ({ row }) => {
-          return formatDate(row.original.posting_date);
+          return formatDate(row?.original?.posting_date);
         },
       },
       {
@@ -82,7 +82,7 @@ const DesigningDashboard = () => {
         header: "End Date",
         size: 30,
         Cell: ({ row }) => {
-          return formatDate(row.original.due_date);
+          return formatDate(row?.original?.due_date);
         },
       },
       {
@@ -190,14 +190,14 @@ const DesigningDashboard = () => {
             }}
             muiTableBodyRowProps={({ row }) => ({
               onClick: () => {
-                const salesOrderNo = row.original.saleorder_no;
+                const salesOrderNo = row?.original?.saleorder_no;
                 const relatedDesign = designs?.find(
-                  (design) => design.saleorder_no === salesOrderNo
+                  (design) => design?.saleorder_no === salesOrderNo
                 );
 
                 navigate(`/editdesign`, {
                   state: {
-                    salesOrder: row.original,
+                    salesOrder: row?.original,
                     design: relatedDesign || null,
                   },
                 });

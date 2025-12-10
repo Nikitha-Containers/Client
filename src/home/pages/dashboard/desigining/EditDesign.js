@@ -141,7 +141,7 @@ const ComponentRow = ({
         onFileUpload={onFileUpload}
         onViewFile={onViewFile}
         componentName={name}
-        file={component.file}
+        file={component.fileObj || component.file}
         disabled={!component.selected}
       />
     </Grid>
@@ -220,6 +220,11 @@ function EditDesign() {
       : "",
     quantity: salesOrder?.quantity || "",
     machine: design?.machine || "",
+    art_work: design?.art_work || salesOrder?.art_work || "NA",
+    item_description:
+      design?.item_description || salesOrder?.item_description || "",
+    customer_name: design?.customer_name || salesOrder?.customer_name || "",
+    due_date: design?.due_date || salesOrder?.due_date || "",
   });
 
   const createComponent = () => ({
@@ -250,31 +255,24 @@ function EditDesign() {
 
     const updatedComponents = { ...initialComponentsState };
 
-    const componentsArray = Array.isArray(design.components)
-      ? design.components
-      : Object.entries(design.components).map(([name, data]) => ({
-          name,
-          ...data,
-        }));
-
-    componentsArray.forEach((comp) => {
-      const { name } = comp;
-      if (name && updatedComponents[name]) {
+    Object.entries(design?.components).forEach(([name, comp]) => {
+      if (updatedComponents[name]) {
         updatedComponents[name] = {
           ...updatedComponents[name],
-          selected: comp?.selected !== undefined ? comp.selected : true,
+          selected: comp?.selected ?? true,
           length: comp?.length || "",
           breadth: comp?.breadth || "",
           thickness: comp?.thickness || salesOrder?.thickness || "",
           ups: comp?.ups || "",
           sheets: comp?.sheets || "",
           file: comp?.file || null,
+          fileObj: null,
         };
       }
     });
 
     setComponents(updatedComponents);
-  }, [design]);
+  }, []);
 
   const handleOpen = () => setOpen(true);
 
@@ -304,29 +302,42 @@ function EditDesign() {
   };
 
   const handleFileUpload = (componentName, file) => {
-    if (file) {
-      handleComponentChange(componentName, "file", file);
-    }
+    if (!file) return;
+
+    setComponents((prev) => ({
+      ...prev,
+      [componentName]: {
+        ...prev[componentName],
+        fileObj: file,
+      },
+    }));
   };
 
   const handleViewFile = (componentName) => {
-    const file = components[componentName]?.file;
-    if (file) {
-      if (file.type?.startsWith("image/")) {
-        const imageUrl = URL.createObjectURL(file);
-        setCurrentImage(imageUrl);
-        setOpen(true);
+    const { file, fileObj } = components[componentName];
+    const fileToView = fileObj || file;
+
+    if (!fileToView) return;
+
+    let imageUrl;
+    if (fileToView instanceof File) {
+      imageUrl = URL.createObjectURL(fileToView);
+    } else if (typeof fileToView === "string") {
+      if (fileToView.startsWith("http")) {
+        imageUrl = fileToView;
+      } else if (fileToView.startsWith("/")) {
+        imageUrl = `${server?.defaults?.baseURL}${fileToView}`;
       } else {
-        window.open(URL.createObjectURL(file), "_blank");
+        imageUrl = `${server?.defaults?.baseURL}/uploads/${fileToView}`;
       }
-    } else {
-      setCurrentImage(upsImage);
-      setOpen(true);
     }
+    setCurrentImage(imageUrl);
+    setOpen(true);
   };
 
   const handleSubmit = async () => {
     const fullComponents = {};
+    const formDataToSend = new FormData();
 
     Object.entries(components).forEach(([name, data]) => {
       if (data.selected) {
@@ -337,8 +348,13 @@ function EditDesign() {
           thickness: data?.thickness,
           ups: data?.ups,
           sheets: data?.sheets,
-          fileName: data.file ? data.file.name : "",
+          file: data?.fileObj instanceof File ? undefined : data?.file,
         };
+        if (data?.fileObj instanceof File) {
+          formDataToSend.append(name, data?.fileObj);
+        } else if (data.file && typeof data?.file === "string") {
+          fullComponents[name].file = data?.file;
+        }
       }
     });
 
@@ -347,40 +363,36 @@ function EditDesign() {
       return;
     }
 
-    // Validation
-    for (const key in fullComponents) {
-      const item = fullComponents[key];
-      if (
-        !item.length ||
-        !item.breadth ||
-        !item.thickness ||
-        !item.ups ||
-        !item.sheets
-      ) {
-        alert(`Please fill all fields for component: ${key}`);
-        return;
-      }
-    }
+    formDataToSend.append("saleorder_no", formData?.saleorder_no);
+    formDataToSend.append("posting_date", formData?.posting_date);
+    formDataToSend.append("quantity", formData?.quantity);
+    formDataToSend.append("machine", formData?.machine);
+    formDataToSend.append("components", JSON.stringify(fullComponents));
+    formDataToSend.append(
+      "art_work",
+      formData?.art_work || salesOrder?.art_work || "NA"
+    );
+    formDataToSend.append(
+      "item_description",
+      formData?.item_description || salesOrder?.item_description || ""
+    );
+    formDataToSend.append(
+      "customer_name",
+      formData?.customer_name || salesOrder?.customer_name || ""
+    );
+    formDataToSend.append(
+      "due_date",
+      formData?.due_date || salesOrder?.due_date || ""
+    );
 
     try {
-      const response = await server.post("/design/add", {
-        saleorder_no: formData?.saleorder_no,
-        posting_date: formData?.posting_date,
-        quantity: formData?.quantity,
-        machine: formData?.machine,
-        components: fullComponents,
-        art_work: salesOrder?.art_work,
-        item_description: salesOrder?.item_description,
-        customer_name: salesOrder?.customer_name,
-        due_date: salesOrder?.due_date,
+      const response = await server.post("/design/add", formDataToSend, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
       const result = response.data;
-      console.log(result);
-
       if (result.success) {
-        alert("Design updated successfully!");
-        console.log("Updated in MongoDB:", result.design);
+        alert(result.message);
       } else {
         throw new Error(result.error || "Failed to update design");
       }
@@ -394,50 +406,46 @@ function EditDesign() {
   const handleCancel = () => {
     if (design) {
       setFormData({
-        saleorder_no: salesOrder?.saleorder_no || "",
-        posting_date: salesOrder?.posting_date
-          ? new Date(salesOrder?.posting_date).toISOString().split("T")[0]
+        saleorder_no: design?.saleorder_no || salesOrder?.saleorder_no || "",
+        posting_date: design?.posting_date
+          ? new Date(design.posting_date).toISOString().split("T")[0]
+          : salesOrder?.posting_date
+          ? new Date(salesOrder.posting_date).toISOString().split("T")[0]
           : "",
+        quantity: design?.quantity || salesOrder?.quantity || "",
         machine: design?.machine || "",
-        quantity: salesOrder?.quantity || "",
+        art_work: design?.art_work || salesOrder?.art_work || "NA",
+        item_description:
+          design?.item_description || salesOrder?.item_description || "",
+        customer_name: design?.customer_name || salesOrder?.customer_name || "",
+        due_date: design?.due_date || salesOrder?.due_date || "",
       });
 
       if (design.components) {
         const resetComponents = { ...initialComponentsState };
-
-        if (Array.isArray(design.components)) {
-          design.components.forEach((comp) => {
-            if (comp.name && resetComponents[comp.name]) {
-              resetComponents[comp.name] = {
-                ...resetComponents[comp.name],
-                selected: comp.selected !== undefined ? comp.selected : true,
-                length: comp.length || "",
-                breadth: comp.breadth || "",
-                thickness: comp.thickness || salesOrder?.thickness || "",
-                ups: comp.ups || "",
-                sheets: comp.sheets || "",
-                file: comp.file || null,
-              };
-            }
-          });
-        }
+        Object.entries(design.components).forEach(([name, comp]) => {
+          if (resetComponents[name]) {
+            resetComponents[name] = {
+              ...resetComponents[name],
+              selected: comp?.selected ?? true,
+              length: comp?.length || "",
+              breadth: comp?.breadth || "",
+              thickness: comp?.thickness || salesOrder?.thickness || "",
+              ups: comp?.ups || "",
+              sheets: comp?.sheets || "",
+              file: comp?.file || null,
+              fileObj: null,
+            };
+          }
+        });
         setComponents(resetComponents);
       }
-    } else {
-      setFormData({
-        saleorder_no: "",
-        posting_date: "",
-        machine: "",
-        quantity: "",
-      });
-      setComponents(initialComponentsState);
     }
 
     if (open) {
       handleClose();
     }
   };
-
   const modalStyle = {
     position: "absolute",
     top: "50%",
@@ -532,7 +540,7 @@ function EditDesign() {
                   size="small"
                   type="text"
                   value={formData.quantity}
-                  onChange={(e) => handleFormChange("totalQty", e.target.value)}
+                  onChange={(e) => handleFormChange("quantity", e.target.value)}
                   disabled
                 />
               </FormGroup>
@@ -560,8 +568,12 @@ function EditDesign() {
               >
                 <div>
                   Today's Work - ({new Date().toLocaleDateString()}){" "}
-                  <span className={getArtWorkClass(salesOrder?.art_work)}>
-                    {salesOrder?.art_work || "NA"}
+                  <span
+                    className={getArtWorkClass(
+                      formData?.art_work || salesOrder?.art_work
+                    )}
+                  >
+                    {formData?.art_work || salesOrder?.art_work || "NA"}
                   </span>
                 </div>
 
@@ -645,7 +657,7 @@ function EditDesign() {
         <Modal open={open} onClose={handleClose}>
           <Box sx={modalStyle}>
             <img
-              src={currentImage || upsImage}
+              src={currentImage}
               alt="ups-modal"
               style={{
                 width: "100%",
