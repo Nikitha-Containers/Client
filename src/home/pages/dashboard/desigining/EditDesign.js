@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useState, useEffect, useMemo } from "react";
+import { Link, useLocation,useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
 import {
   MenuItem,
@@ -17,7 +17,6 @@ import { styled } from "@mui/joy";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import "../../../pages/pagestyle.scss";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import upsImage from "../../../../assets/Pagesimage/ups-image.jpg";
 import server from "../../../../server/server";
 
 const label = { inputProps: { "aria-label": "Checkbox demo" } };
@@ -207,6 +206,7 @@ const FileUpload = ({
 // Main Component Started Here
 
 function EditDesign() {
+  const navigate = useNavigate()
   const location = useLocation();
   const { salesOrder, design } = location.state || {};
 
@@ -237,14 +237,17 @@ function EditDesign() {
     file: null,
   });
 
-  const initialComponentsState = {
-    Lid: createComponent(),
-    Body: createComponent(),
-    Bottom: createComponent(),
-    "Lid & Body": createComponent(),
-    "Lid & Body & Bottom": createComponent(),
-    "Body & Bottom": createComponent(),
-  };
+  const initialComponentsState = useMemo(
+    () => ({
+      Lid: createComponent(),
+      Body: createComponent(),
+      Bottom: createComponent(),
+      "Lid & Body": createComponent(),
+      "Lid & Body & Bottom": createComponent(),
+      "Body & Bottom": createComponent(),
+    }),
+    [salesOrder?.thickness]
+  );
 
   const [open, setOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState("");
@@ -272,7 +275,7 @@ function EditDesign() {
     });
 
     setComponents(updatedComponents);
-  }, []);
+  }, [design]);
 
   const handleOpen = () => setOpen(true);
 
@@ -393,6 +396,7 @@ function EditDesign() {
       const result = response.data;
       if (result.success) {
         alert(result.message);
+        navigate("/desigining_dashboard");
       } else {
         throw new Error(result.error || "Failed to update design");
       }
