@@ -38,8 +38,14 @@ const DesigningDashboard = () => {
   const navigate = useNavigate();
 
   const formatDate = (value) => {
-    const date = value?.$date ? new Date(value.$date) : new Date(value);
-    return isNaN(date) ? "" : date.toLocaleDateString("en-IN");
+    if (!value) return "";
+    const dateString = value?.$date || value;
+    const [y, m, d] = new Date(dateString)
+      .toISOString()
+      .split("T")[0]
+      .split("-");
+
+    return `${d}/${m}/${y}`;
   };
 
   const columns = useMemo(

@@ -1,551 +1,218 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import Box from "@mui/material/Box";
 import {
-  MenuItem,
   Grid,
   FormGroup,
   Typography,
   TextField,
-  Select,
   Modal,
+  Button,
 } from "@mui/material";
-import Button from "@mui/joy/Button";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import "../../../pages/pagestyle.scss";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import upsImage from "../../../../assets/Pagesimage/ups-image.jpg";
 import server from "../../../../server/server";
-import PrintingColorDialog from "./PrintingColorDialog";
-import CoatingTypeDialog from "./CoatingTypeDialog";
 
-// Component Row Start Here
-const ComponentRow = ({ component, name, onDataChange, onViewFile }) => {
-  const [coatingDialogOpen, setCoatingDialogOpen] = useState(false);
-  const [printingDialogOpen, setPrintingDialogOpen] = useState(false);
+import { CoatingTypeModal,PrintingColorModal } from "./CoatingColorModal";
 
-  const handleCoatingTypeClick = () => {
-    setCoatingDialogOpen(true);
-  };
-
-  const handlePrintingColorClick = () => {
-    setPrintingDialogOpen(true);
-  };
-
-  const handleCoatingSelect = (value) => {
-    onDataChange(name, "coatingType", value);
-  };
-
-  const handlePrintingSelect = (value) => {
-    onDataChange(name, "printingColor", value);
-  };
-
-  return (
-    <>
-      <Grid size={12} sx={{ borderBottom: "1px solid #dcdddd" }} />
-
-      <Grid size={2}>
-        <div className="Box-table-text">{name}</div>
-      </Grid>
-
-      <Grid size={1}>
-        <div className="Box-table-content">
-          <TextField
-            id="outlined-size-small"
-            name=""
-            size="small"
-            type="text"
-            value={component.length}
-            onChange={(e) => onDataChange(name, "length", e.target.value)}
-          />
-        </div>
-      </Grid>
-
-      <Grid size={1}>
-        <div className="Box-table-content">
-          <TextField
-            id="outlined-size-small"
-            name=""
-            size="small"
-            type="text"
-            value={component.breadth}
-            onChange={(e) => onDataChange(name, "breadth", e.target.value)}
-          />
-        </div>
-      </Grid>
-
-      <Grid size={1}>
-        <div className="Box-table-content">
-          <TextField
-            id="outlined-size-small"
-            name=""
-            size="small"
-            type="text"
-            value={component.thickness}
-            onChange={(e) => onDataChange(name, "thickness", e.target.value)}
-          />
-        </div>
-      </Grid>
-
-      <Grid size={1.5}>
-        <div className="Box-table-content">
-          <TextField
-            id="outlined-size-small"
-            name=""
-            size="small"
-            type="text"
-            value={component.ups}
-            onChange={(e) => onDataChange(name, "ups", e.target.value)}
-          />
-        </div>
-      </Grid>
-
-      <Grid size={1.5}>
-        <div className="Box-table-content">
-          <TextField
-            id="outlined-size-small"
-            name=""
-            size="small"
-            type="text"
-            value={component.sheets}
-            onChange={(e) => onDataChange(name, "sheets", e.target.value)}
-          />
-        </div>
-      </Grid>
-
-      <Grid size={1}>
-        <FileUpload
-          onViewFile={onViewFile}
-          componentName={name}
-          file={component.file}
-        />
-      </Grid>
-      <Grid size={1}>
-        <div className="Box-table-content">
-          <Select
-            labelId="demo-simple-select-label"
-            id="demo-simple-select"
-            value={component.coatingType || ""}
-            size="small"
-            displayEmpty
-            fullWidth
-            renderValue={
-              component.coatingType !== "" ? undefined : () => "Select"
-            }
-            onClick={handleCoatingTypeClick}
-            readOnly
-            sx={{
-              cursor: "pointer",
-              "& .MuiSelect-select": {
-                cursor: "pointer !important",
-              },
-            }}
-          >
-            <MenuItem value="">Select</MenuItem>
-            <MenuItem value="Gloss">Gloss</MenuItem>
-            <MenuItem value="Matt">Matt</MenuItem>
-            <MenuItem value="Soft Touch">Soft Touch</MenuItem>
-            <MenuItem value="UV">UV</MenuItem>
-          </Select>
-        </div>
-      </Grid>
-
-      <Grid size={1}>
-        <div className="Box-table-content">
-          <Select
-            labelId="demo-simple-select-label"
-            id="demo-simple-select"
-            value={component.printingColor || ""}
-            size="small"
-            displayEmpty
-            fullWidth
-            renderValue={
-              component.printingColor !== "" ? undefined : () => "Select"
-            }
-            onClick={handlePrintingColorClick}
-            readOnly
-            sx={{
-              cursor: "pointer",
-              "& .MuiSelect-select": {
-                cursor: "pointer !important",
-              },
-            }}
-          >
-            <MenuItem value="">Select</MenuItem>
-            <MenuItem value="1 Color">1 Color</MenuItem>
-            <MenuItem value="2 Colors">2 Colors</MenuItem>
-            <MenuItem value="3 Colors">3 Colors</MenuItem>
-            <MenuItem value="4 Colors">4 Colors</MenuItem>
-            <MenuItem value="Full Color">Full Color</MenuItem>
-          </Select>
-        </div>
-      </Grid>
-
-      <CoatingTypeDialog
-        open={coatingDialogOpen}
-        onClose={() => setCoatingDialogOpen(false)}
-        onSelect={handleCoatingSelect}
-        currentValue={component.coatingType}
-      />
-
-      <PrintingColorDialog
-        open={printingDialogOpen}
-        onClose={() => setPrintingDialogOpen(false)}
-        onSelect={handlePrintingSelect}
-        currentValue={component.printingColor}
-      />
-    </>
-  );
+const getArtWorkClass = (art) => {
+  if (!art || art === "NA") return "art-badge art-blue";
+  if (art.toLowerCase() === "old") return "art-badge art-red";
+  if (art.toLowerCase() === "new") return "art-badge art-green";
+  return "art-badge";
 };
 
+// Component Row Start Here
+const ComponentRow = ({
+  component,
+  name,
+  onViewFile,
+  onOpenCoating,
+  onOpenColor,
+  selectedCoating,
+  selectedColor,
+}) => (
+  <>
+    <Grid size={12} sx={{ borderBottom: "1px solid #dcdddd" }} />
+
+    <Grid size={2}>
+      <div className="Box-table-text">{name}</div>
+    </Grid>
+
+    <Grid size={1}>
+      <div className="Box-table-content">
+        <TextField size="small" type="text" value={component.length} disabled />
+      </div>
+    </Grid>
+
+    <Grid size={1}>
+      <div className="Box-table-content">
+        <TextField
+          size="small"
+          type="text"
+          value={component.breadth}
+          disabled
+        />
+      </div>
+    </Grid>
+
+    <Grid size={1}>
+      <div className="Box-table-content">
+        <TextField
+          size="small"
+          type="text"
+          value={component.thickness}
+          disabled
+        />
+      </div>
+    </Grid>
+
+    <Grid size={1.5}>
+      <div className="Box-table-content">
+        <TextField size="small" type="text" value={component.ups} disabled />
+      </div>
+    </Grid>
+
+    <Grid size={1.5}>
+      <div className="Box-table-content">
+        <TextField size="small" type="text" value={component.sheets} disabled />
+      </div>
+    </Grid>
+
+    <Grid size={1}>
+      <Box sx={{ display: "flex", alignItems: "center", columnGap: 2.5 }}>
+        <div className="Box-table-content">
+          <div
+            className="gray-md-btn"
+            onClick={() => onViewFile(name)}
+            style={{ cursor: "pointer" }}
+          >
+            <VisibilityIcon /> View
+          </div>
+        </div>
+      </Box>
+    </Grid>
+
+    {/* Coating Type */}
+    <Grid size={1}>
+      <div className="Box-table-upload">
+        <Button onClick={() => onOpenCoating(name)}>
+          {selectedCoating[name] || "Select"}
+        </Button>
+      </div>
+    </Grid>
+
+    {/* Printing Color */}
+    <Grid size={1}>
+      <div className="Box-table-upload">
+        <Button onClick={() => onOpenColor(name)}>
+          {selectedColor[name] || "Select"}
+        </Button>
+      </div>
+    </Grid>
+  </>
+);
 // Component Row End Here
 
-// File Upload Component
-const FileUpload = ({ onViewFile, componentName, file, disabled }) => (
-  <Box
-    className="Box-table-upload"
-    sx={{ display: "flex", alignItems: "center", columnGap: 2.5 }}
-  >
-    <Link
-      className="gray-md-btn"
-      onClick={() => onViewFile(componentName)}
-      style={{ cursor: "pointer" }}
-    >
-      <VisibilityIcon /> View
-    </Link>
-  </Box>
-);
-
 // Main Component Started Here
-
 function EditPrint() {
   const location = useLocation();
   const { design } = location.state || {};
-
-  console.log("Received design data in EditPrint:", design);
-
-  const initialComponentsState = {
-    Lid: {
-      length: "",
-      breadth: "",
-      thickness: "",
-      ups: "",
-      sheets: "",
-      coatingType: "",
-      printingColor: "",
-      file: null,
-    },
-    Body: {
-      length: "",
-      breadth: "",
-      thickness: "",
-      ups: "",
-      sheets: "",
-      coatingType: "",
-      printingColor: "",
-      file: null,
-    },
-    Bottom: {
-      length: "",
-      breadth: "",
-      thickness: "",
-      ups: "",
-      sheets: "",
-      coatingType: "",
-      printingColor: "",
-      file: null,
-    },
-    "Lid & Body": {
-      length: "",
-      breadth: "",
-      thickness: "",
-      ups: "",
-      sheets: "",
-      coatingType: "",
-      printingColor: "",
-      file: null,
-    },
-    "Lid & Body & Bottom": {
-      length: "",
-      breadth: "",
-      thickness: "",
-      ups: "",
-      sheets: "",
-      coatingType: "",
-      printingColor: "",
-      file: null,
-    },
-    "Body & Bottom": {
-      length: "",
-      breadth: "",
-      thickness: "",
-      ups: "",
-      sheets: "",
-      coatingType: "",
-      printingColor: "",
-      file: null,
-    },
-  };
-
-  const [formData, setFormData] = useState({
-    soNumber: "",
-    soDate: "",
-    machine: "",
-    totalQty: "",
-  });
-
+  const [components, setComponents] = useState({});
   const [open, setOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState("");
-  const [components, setComponents] = useState(initialComponentsState);
+
+  // Coating & Color
+  const [selectedComponent, setSelectedComponent] = useState("");
+  const [selectedCoating, setSelectedCoating] = useState({});
+  const [selectedColor, setSelectedColor] = useState({});
+
+  const [coatingModal, setCoatingModal] = useState(false);
+  const [colorModal, setColorModal] = useState(false);
+
+  const initialComponentsState = useMemo(() => {
+    const compNames = [
+      "Lid",
+      "Body",
+      "Bottom",
+      "Lid & Body",
+      "Lid & Body & Bottom",
+      "Body & Bottom",
+    ];
+    const obj = {};
+    compNames.forEach((name) => {
+      obj[name] = {
+        length: "",
+        breadth: "",
+        thickness: "",
+        ups: "",
+        sheets: "",
+        file: null,
+      };
+    });
+    return obj;
+  }, []);
 
   useEffect(() => {
-    if (design) {
-      const formatDate = (dateObj) => {
-        if (!dateObj) return "";
-        try {
-          const date = dateObj.$date
-            ? new Date(dateObj.$date)
-            : new Date(dateObj);
-          return date.toISOString().split("T")[0];
-        } catch (error) {
-          console.error("Error formatting date:", error);
-          return "";
-        }
-      };
+    if (!design?.components) return;
+    const updatedComponents = { ...initialComponentsState };
+    Object.entries(design.components).forEach(([name, comp]) => {
+      if (updatedComponents[name]) updatedComponents[name] = { ...comp };
+    });
+    setComponents(updatedComponents);
+  }, [design, initialComponentsState]);
 
-      setFormData({
-        soNumber: design.saleorder_no || "",
-        soDate: formatDate(design.posting_date) || "",
-        machine: design.machine || "",
-        totalQty: design.totalQty || design.quantity || "",
-      });
+  const handleViewFile = (componentName) => {
+    const { file } = components[componentName];
+    if (!file) return;
 
-      const updatedComponents = { ...initialComponentsState };
-
-      if (design.components) {
-        const componentEntries = Array.isArray(design.components)
-          ? design.components
-          : Object.entries(design.components).map(([name, comp]) => ({
-              name,
-              ...comp,
-            }));
-
-        componentEntries.forEach((comp) => {
-          const componentName = comp.name;
-          if (updatedComponents[componentName]) {
-            updatedComponents[componentName] = {
-              ...updatedComponents[componentName],
-              length: comp.length || "",
-              breadth: comp.breadth || "",
-              thickness: comp.thickness || "",
-              ups: comp.ups || "",
-              sheets: comp.sheets || "",
-              coatingType: comp.coatingType || "",
-              printingColor: comp.printingColor || "",
-            };
-          }
-        });
-      }
-
-      setComponents(updatedComponents);
+    let imageUrl;
+    if (file instanceof File) {
+      imageUrl = URL.createObjectURL(file);
+    } else if (typeof file === "string") {
+      imageUrl = file.startsWith("http")
+        ? file
+        : `${server?.defaults?.baseURL}/uploads/${file}`;
     }
-  }, [design]);
-
-  const handleOpen = () => setOpen(true);
+    setCurrentImage(imageUrl);
+    setOpen(true);
+  };
 
   const handleClose = () => {
     setOpen(false);
-    if (currentImage && currentImage.startsWith("blob:")) {
-      URL.revokeObjectURL(currentImage);
-    }
+    if (currentImage) URL.revokeObjectURL(currentImage);
     setCurrentImage("");
   };
 
-  const handleFormChange = (field, value) => {
-    setFormData((prev) => ({
+  // Handle Coating & Color
+  const handleCoatingModal = (name) => {
+    setSelectedComponent(name);
+    setCoatingModal(true);
+  };
+
+  const handleColorModal = (name) => {
+    setSelectedComponent(name);
+    setColorModal(true);
+  };
+
+  const handleCloseCoating = () => setCoatingModal(false);
+  const handleCloseColor = () => setColorModal(false);
+
+  const handleSubmitCoating = (value) => {
+    setSelectedCoating((prev) => ({
       ...prev,
-      [field]: value,
+      [selectedComponent]: value,
     }));
+    setCoatingModal(false);
   };
 
-  const handleComponentChange = (componentName, field, value) => {
-    setComponents((prev) => ({
+  const handleSubmitColor = (value) => {
+    setSelectedColor((prev) => ({
       ...prev,
-      [componentName]: {
-        ...prev[componentName],
-        [field]: value,
-      },
+      [selectedComponent]: value,
     }));
-  };
-
-  const handleFileUpload = (componentName, file) => {
-    if (file) {
-      handleComponentChange(componentName, "file", file);
-    }
-  };
-
-  const handleViewFile = (componentName) => {
-    const file = components[componentName]?.file;
-    if (file) {
-      if (file.type?.startsWith("image/")) {
-        const imageUrl = URL.createObjectURL(file);
-        setCurrentImage(imageUrl);
-        setOpen(true);
-      } else {
-        window.open(URL.createObjectURL(file), "_blank");
-      }
-    } else {
-      setCurrentImage(upsImage);
-      setOpen(true);
-    }
-  };
-
-  const handleSubmit = async () => {
-    const selectedComponents = Object.entries(components)
-      .filter(([name, data]) => {
-        return (
-          data.length.trim() !== "" ||
-          data.breadth.trim() !== "" ||
-          data.thickness.trim() !== "" ||
-          data.ups.trim() !== "" ||
-          data.sheets.trim() !== "" ||
-          data.coatingType.trim() !== "" ||
-          data.printingColor.trim() !== ""
-        );
-      })
-      .map(([name, data]) => ({
-        name,
-        length: data.length,
-        breadth: data.breadth,
-        thickness: data.thickness,
-        ups: data.ups,
-        sheets: data.sheets,
-        coatingType: data.coatingType,
-        printingColor: data.printingColor,
-        fileName: data.file ? data.file.name : "",
-      }));
-
-    if (selectedComponents.length === 0) {
-      alert("Please fill data for at least one component");
-      return false;
-    }
-
-    const incompleteComponents = selectedComponents.filter(
-      (comp) =>
-        !comp.length ||
-        !comp.breadth ||
-        !comp.thickness ||
-        !comp.ups ||
-        !comp.sheets ||
-        !comp.coatingType ||
-        !comp.printingColor
-    );
-
-    if (incompleteComponents.length > 0) {
-      alert("Please fill all fields for the components you've started");
-      return false;
-    }
-
-    try {
-      const formDataToSend = new FormData();
-
-      formDataToSend.append("art_work", design?.art_work || "");
-      formDataToSend.append("size", design?.size || "");
-      formDataToSend.append("customer_name", design?.customer_name || "");
-      formDataToSend.append("start_date", design?.start_date || "");
-      formDataToSend.append("end_date", design?.end_date || "");
-      formDataToSend.append("soNumber", formData.soNumber);
-      formDataToSend.append("soDate", formData.soDate);
-      formDataToSend.append("machine", formData.machine);
-      formDataToSend.append("totalQty", formData.totalQty);
-      formDataToSend.append("components", JSON.stringify(selectedComponents));
-
-      selectedComponents.forEach((comp, index) => {
-        const componentData = components[comp.name];
-        if (componentData?.file) {
-          formDataToSend.append(`file_${index}`, componentData.file);
-        }
-      });
-
-      const response = await server.put(
-        `/design/update/${design._id}`,
-        formDataToSend,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-
-      const result = response.data;
-
-      if (result.success) {
-        alert("Design updated successfully!");
-      } else {
-        throw new Error(result.error || "Failed to update design");
-      }
-    } catch (error) {
-      console.error("Error updating data:", error);
-      const errorMessage = error.response?.data?.error || error.message;
-      alert(`Error: ${errorMessage}`);
-    }
-  };
-
-  const handleCancel = () => {
-    if (design) {
-      const formatDate = (dateObj) => {
-        if (!dateObj) return "";
-        try {
-          const date = dateObj.$date
-            ? new Date(dateObj.$date)
-            : new Date(dateObj);
-          return date.toISOString().split("T")[0];
-        } catch (error) {
-          return "";
-        }
-      };
-
-      setFormData({
-        soNumber: design.saleorder_no || "",
-        soDate: formatDate(design.posting_date) || "",
-        machine: design.machine || "",
-        totalQty: design.totalQty || design.quantity || "",
-      });
-
-      const resetComponents = { ...initialComponentsState };
-
-      if (design.components && Array.isArray(design.components)) {
-        design.components.forEach((comp) => {
-          const componentName = comp.name;
-          if (resetComponents[componentName]) {
-            resetComponents[componentName] = {
-              ...resetComponents[componentName],
-              length: comp.length || "",
-              breadth: comp.breadth || "",
-              thickness: comp.thickness || "",
-              ups: comp.ups || "",
-              sheets: comp.sheets || "",
-              coatingType: comp.coatingType || "",
-              printingColor: comp.printingColor || "",
-            };
-          }
-        });
-      }
-
-      setComponents(resetComponents);
-    } else {
-      setFormData({
-        soNumber: "",
-        soDate: "",
-        machine: "",
-        totalQty: "",
-      });
-      setComponents(initialComponentsState);
-    }
-
-    if (open) {
-      handleClose();
-    }
+    setColorModal(false);
   };
 
   const modalStyle = {
@@ -582,11 +249,8 @@ function EditPrint() {
               <FormGroup>
                 <Typography mb={1}>SO Number</Typography>
                 <TextField
-                  id="outlined-size-small"
-                  name=""
                   size="small"
-                  value={formData.soNumber}
-                  onChange={(e) => handleFormChange("soNumber", e.target.value)}
+                  value={design?.saleorder_no || ""}
                   disabled
                 />
               </FormGroup>
@@ -596,36 +260,28 @@ function EditPrint() {
               <FormGroup>
                 <Typography mb={1}>SO Date</Typography>
                 <TextField
-                  id="outlined-size-small"
-                  name=""
                   size="small"
                   type="date"
-                  value={formData.soDate}
-                  onChange={(e) => handleFormChange("soDate", e.target.value)}
+                  value={
+                    design?.posting_date
+                      ? new Date(design.posting_date)
+                          .toISOString()
+                          .split("T")[0]
+                      : ""
+                  }
                   disabled
                 />
               </FormGroup>
             </Grid>
 
             <Grid size={3}>
-              <FormGroup fullWidth>
+              <FormGroup>
                 <Typography mb={1}>Machine</Typography>
-                <Select
-                  labelId="demo-simple-select-label"
-                  id="demo-simple-select"
-                  value={formData.machine}
+                <TextField
                   size="small"
-                  displayEmpty
-                  renderValue={
-                    formData.machine !== "" ? undefined : () => "Select"
-                  }
-                  onChange={(e) => handleFormChange("machine", e.target.value)}
-                >
-                  <MenuItem value="">Select</MenuItem>
-                  <MenuItem value="Machine 1">Machine 1</MenuItem>
-                  <MenuItem value="Machine 2">Machine 2</MenuItem>
-                  <MenuItem value="Machine 3">Machine 3</MenuItem>
-                </Select>
+                  value={design?.machine || ""}
+                  disabled
+                />
               </FormGroup>
             </Grid>
 
@@ -633,19 +289,14 @@ function EditPrint() {
               <FormGroup>
                 <Typography mb={1}>Total Qty</Typography>
                 <TextField
-                  id="outlined-size-small"
-                  name=""
                   size="small"
-                  type="text"
-                  value={formData.totalQty}
-                  onChange={(e) => handleFormChange("totalQty", e.target.value)}
+                  value={design?.quantity || ""}
                   disabled
                 />
               </FormGroup>
             </Grid>
           </Grid>
         </Box>
-
         <Box
           sx={{
             background: "#fff",
@@ -664,11 +315,14 @@ function EditPrint() {
                   alignItems: "center",
                 }}
               >
-                <div>Today's Work - ({new Date().toLocaleDateString()})</div>
-
+                <div>
+                  Today's Work - ({new Date().toLocaleDateString()}){" "}
+                  <span className={getArtWorkClass(design?.art_work)}>
+                    {design?.art_work || "NA"}
+                  </span>
+                </div>
                 <button className="gray-md-btn">
-                  <VisibilityIcon style={{ fontSize: 20 }} />
-                  Artwork Image
+                  <VisibilityIcon style={{ fontSize: 20 }} /> Artwork Image
                 </button>
               </div>
             </Grid>
@@ -695,7 +349,7 @@ function EditPrint() {
             <Grid size={1}>
               <div className="Box-table-subtitle">Source File</div>
             </Grid>
-            <Grid size={1}>
+            <Grid size={1.5}>
               <div className="Box-table-subtitle">Coating Type</div>
             </Grid>
             <Grid size={1}>
@@ -706,55 +360,29 @@ function EditPrint() {
 
             {/* Render Component Rows */}
             {Object.entries(components)
-              .filter(([key]) => {
-                return Object.keys(design?.components || {}).includes(key);
-              })
-
+              .filter(([key]) =>
+                Object.keys(design?.components || {}).includes(key)
+              )
               .map(([key, component]) => (
                 <ComponentRow
                   key={key}
                   component={component}
                   name={key}
-                  onDataChange={handleComponentChange}
                   onViewFile={handleViewFile}
+                  onOpenCoating={handleCoatingModal}
+                  onOpenColor={handleColorModal}
+                  selectedCoating={selectedCoating}
+                  selectedColor={selectedColor}
                 />
               ))}
           </Grid>
-
-          {/* Action Buttons */}
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "flex-end",
-              p: 2,
-              mt: 2,
-              gap: 2,
-            }}
-          >
-            <Button
-              variant="outlined"
-              color="danger"
-              onClick={handleCancel}
-              sx={{ minWidth: 100 }}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="solid"
-              color="success"
-              onClick={handleSubmit}
-              sx={{ minWidth: 100 }}
-            >
-              Submit
-            </Button>
-          </Box>
         </Box>
 
         {/* File Preview Modal */}
         <Modal open={open} onClose={handleClose}>
           <Box sx={modalStyle}>
             <img
-              src={currentImage || upsImage}
+              src={currentImage}
               alt="preview"
               style={{
                 width: "100%",
@@ -765,6 +393,22 @@ function EditPrint() {
             />
           </Box>
         </Modal>
+
+        {/* Coating Type Modal */}
+        <CoatingTypeModal
+          open={coatingModal}
+          onClose={handleCloseCoating}
+          selectedComponent={selectedComponent}
+          onSubmit={handleSubmitCoating}
+        />
+
+        {/* Printing Color Modal */}
+        <PrintingColorModal
+          open={colorModal}
+          onClose={handleCloseColor}
+          selectedComponent={selectedComponent}
+          onSubmit={handleSubmitColor}
+        />
       </Box>
     </Box>
   );
