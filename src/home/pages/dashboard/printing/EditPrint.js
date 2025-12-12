@@ -36,16 +36,19 @@ const ComponentRow = ({
   <>
     <Grid size={12} sx={{ borderBottom: "1px solid #dcdddd" }} />
 
+    {/* Component Name */}
     <Grid size={2}>
-      <div className="Box-table-text">{name}</div>
+      <div className="Box-table-text"> {name}</div>
     </Grid>
 
+    {/* Length */}
     <Grid size={1}>
       <div className="Box-table-content">
         <TextField size="small" type="text" value={component.length} disabled />
       </div>
     </Grid>
 
+    {/* Breadth */}
     <Grid size={1}>
       <div className="Box-table-content">
         <TextField
@@ -57,6 +60,7 @@ const ComponentRow = ({
       </div>
     </Grid>
 
+    {/* Thickness */}
     <Grid size={1}>
       <div className="Box-table-content">
         <TextField
@@ -68,18 +72,21 @@ const ComponentRow = ({
       </div>
     </Grid>
 
+    {/* Ups */}
     <Grid size={1.5}>
       <div className="Box-table-content">
         <TextField size="small" type="text" value={component.ups} disabled />
       </div>
     </Grid>
 
+    {/* No. of Sheets */}
     <Grid size={1.5}>
       <div className="Box-table-content">
         <TextField size="small" type="text" value={component.sheets} disabled />
       </div>
     </Grid>
 
+    {/* Source File */}
     <Grid size={1}>
       <Box sx={{ display: "flex", alignItems: "center", columnGap: 2.5 }}>
         <div className="Box-table-content">
@@ -232,7 +239,7 @@ function EditPrint() {
           <div className="main-inner-txts">
             <Link
               style={{ color: "#0a85cb", textDecoration: "none" }}
-              to={"/desigining_dashboard"}
+              to={"/printing_manager"}
             >
               Printing Manager
             </Link>
@@ -349,7 +356,7 @@ function EditPrint() {
             <Grid size={1}>
               <div className="Box-table-subtitle">Source File</div>
             </Grid>
-            <Grid size={1.5}>
+            <Grid size={1}>
               <div className="Box-table-subtitle">Coating Type</div>
             </Grid>
             <Grid size={1}>
