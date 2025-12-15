@@ -1,20 +1,14 @@
 import { useState, useEffect, useMemo } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
-import {
-  Grid,
-  FormGroup,
-  Typography,
-  TextField,
-  Modal,
-  Button,
-} from "@mui/material";
+import { Grid, FormGroup, Typography, TextField, Modal } from "@mui/material";
+import { Button } from "@mui/joy";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import "../../../pages/pagestyle.scss";
 import server from "../../../../server/server";
 
-import { CoatingTypeModal,PrintingColorModal } from "./CoatingColorModal";
+import { CoatingTypeModal, PrintingColorModal } from "./CoatingColorModal";
 
 const getArtWorkClass = (art) => {
   if (!art || art === "NA") return "art-badge art-blue";
@@ -87,7 +81,7 @@ const ComponentRow = ({
     </Grid>
 
     {/* Source File */}
-    <Grid size={1}>
+    <Grid size={1.5}>
       <Box sx={{ display: "flex", alignItems: "center", columnGap: 2.5 }}>
         <div className="Box-table-content">
           <div
@@ -104,8 +98,12 @@ const ComponentRow = ({
     {/* Coating Type */}
     <Grid size={1}>
       <div className="Box-table-upload">
-        <Button onClick={() => onOpenCoating(name)}>
-          {selectedCoating[name] || "Select"}
+        <Button
+          color={selectedCoating[name] ? "success" : "neutral"}
+          variant="outlined"
+          onClick={() => onOpenCoating(name)}
+        >
+          {selectedCoating[name] ? "Selected" : "Select"}
         </Button>
       </div>
     </Grid>
@@ -113,8 +111,12 @@ const ComponentRow = ({
     {/* Printing Color */}
     <Grid size={1}>
       <div className="Box-table-upload">
-        <Button onClick={() => onOpenColor(name)}>
-          {selectedColor[name] || "Select"}
+        <Button
+          color={selectedColor[name] ? "success" : "neutral"}
+          variant="outlined"
+          onClick={() => onOpenColor(name)}
+        >
+          {selectedColor[name] ? "Selected" : "Select"}
         </Button>
       </div>
     </Grid>
@@ -124,6 +126,7 @@ const ComponentRow = ({
 
 // Main Component Started Here
 function EditPrint() {
+  const navigate = useNavigate();
   const location = useLocation();
   const { design } = location.state || {};
   const [components, setComponents] = useState({});
@@ -170,6 +173,42 @@ function EditPrint() {
     setComponents(updatedComponents);
   }, [design, initialComponentsState]);
 
+  // Initial State For Coating Type & Printing Values
+
+  useEffect(() => {
+    if (!design?.components) return;
+
+    const coatingInit = {};
+    const colorInit = {};
+
+    Object.entries(design.components).forEach(([name, comp]) => {
+      if (comp.coating) {
+        coatingInit[name] = {
+          sizing: comp.coating.sizing ? comp.coating.sizing.split(", ") : [],
+          insideColor: comp.coating.insideColor
+            ? comp.coating.insideColor.split(", ")
+            : [],
+          varnish: comp.coating.varnish ? comp.coating.varnish.split(", ") : [],
+          whitecount: comp.coating.whitecount || 1,
+        };
+      }
+      if (comp.printingColor) {
+        colorInit[name] = {
+          normalColor: comp.printingColor.normalColor
+            ? comp.printingColor.normalColor.split(", ")
+            : [],
+          splColor: comp.printingColor.splColor
+            ? comp.printingColor.splColor.split(", ")
+            : [],
+        };
+      }
+    });
+
+    setSelectedCoating(coatingInit);
+    setSelectedColor(colorInit);
+  }, [design]);
+
+  // Handle View
   const handleViewFile = (componentName) => {
     const { file } = components[componentName];
     if (!file) return;
@@ -206,7 +245,7 @@ function EditPrint() {
   const handleCloseCoating = () => setCoatingModal(false);
   const handleCloseColor = () => setColorModal(false);
 
-  const handleSubmitCoating = (value) => {
+  const handleSaveCoating = (value) => {
     setSelectedCoating((prev) => ({
       ...prev,
       [selectedComponent]: value,
@@ -214,12 +253,97 @@ function EditPrint() {
     setCoatingModal(false);
   };
 
-  const handleSubmitColor = (value) => {
+  const handleSaveColor = (value) => {
     setSelectedColor((prev) => ({
       ...prev,
       [selectedComponent]: value,
     }));
     setColorModal(false);
+  };
+
+  // Hansle Submit
+  const handleSubmit = async () => {
+    const missingComponents = [];
+
+    Object.entries(design?.components || {}).forEach(
+      ([componentName, componentData]) => {
+        if (!componentData.selected) return;
+
+        const coating = selectedCoating[componentName];
+        const printing = selectedColor[componentName];
+
+        if (!coating || !printing) {
+          missingComponents.push(componentName);
+        }
+      }
+    );
+
+    if (missingComponents.length > 0) {
+      alert(
+        `Please choose Printing Colors & Coating Type for: ${missingComponents.join(
+          ", "
+        )}`
+      );
+      return;
+    }
+
+    const componentsPayload = {};
+
+    Object.entries(design?.components || {}).forEach(
+      ([componentName, componentData]) => {
+        const coating = selectedCoating[componentName];
+        const printing = selectedColor[componentName];
+
+        componentsPayload[componentName] = { selected: true };
+
+        if (coating) {
+          componentsPayload[componentName].coating = {
+            sizing: Array.isArray(coating?.sizing)
+              ? coating?.sizing.join(", ")
+              : "",
+            insideColor: Array.isArray(coating?.insideColor)
+              ? coating?.insideColor.join(", ")
+              : "",
+            varnish: Array.isArray(coating?.varnish)
+              ? coating?.varnish.join(", ")
+              : "",
+            whitecount: Number(coating?.whitecount) || 0,
+          };
+        }
+
+        if (printing) {
+          componentsPayload[componentName].printingColor = {
+            normalColor: Array.isArray(printing?.normalColor)
+              ? printing?.normalColor.join(", ")
+              : "",
+            splColor: Array.isArray(printing?.splColor)
+              ? printing?.splColor.join(", ")
+              : "",
+          };
+        }
+      }
+    );
+
+    const payload = {
+      saleorder_no: design.saleorder_no,
+      components: componentsPayload,
+    };
+    // Insert  Coating Type And Printing Color Data API
+    try {
+      const response = await server.put(
+        `design/${design.saleorder_no}`,
+        payload
+      );
+      const result = response.data;
+      if (result.success) {
+        alert(result.message);
+        navigate("/printing_manager");
+      }
+    } catch (error) {
+      console.error("Error updating data:", error);
+      const errorMessage = error.response?.data?.error || error.message;
+      alert(`Error: ${errorMessage}`);
+    }
   };
 
   const modalStyle = {
@@ -353,7 +477,7 @@ function EditPrint() {
             <Grid size={1.5}>
               <div className="Box-table-subtitle">No. of Sheets</div>
             </Grid>
-            <Grid size={1}>
+            <Grid size={1.5}>
               <div className="Box-table-subtitle">Source File</div>
             </Grid>
             <Grid size={1}>
@@ -383,6 +507,27 @@ function EditPrint() {
                 />
               ))}
           </Grid>
+
+          {/* Action Buttons */}
+
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "flex-end",
+              p: 2,
+              mt: 2,
+              gap: 2,
+            }}
+          >
+            <Button
+              variant="solid"
+              color="success"
+              onClick={handleSubmit}
+              sx={{ minWidth: 100 }}
+            >
+              Submit
+            </Button>
+          </Box>
         </Box>
 
         {/* File Preview Modal */}
@@ -406,7 +551,8 @@ function EditPrint() {
           open={coatingModal}
           onClose={handleCloseCoating}
           selectedComponent={selectedComponent}
-          onSubmit={handleSubmitCoating}
+          onSubmit={handleSaveCoating}
+          value={selectedCoating[selectedComponent]}
         />
 
         {/* Printing Color Modal */}
@@ -414,7 +560,8 @@ function EditPrint() {
           open={colorModal}
           onClose={handleCloseColor}
           selectedComponent={selectedComponent}
-          onSubmit={handleSubmitColor}
+          onSubmit={handleSaveColor}
+          value={selectedColor[selectedComponent]}
         />
       </Box>
     </Box>
