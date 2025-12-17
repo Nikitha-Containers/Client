@@ -201,7 +201,7 @@ const DesigningDashboard = () => {
                   (design) => design?.saleorder_no === salesOrderNo
                 );
 
-                navigate(`/editdesign`, {
+                navigate(`/edit_design`, {
                   state: {
                     salesOrder: row?.original,
                     design: relatedDesign || null,

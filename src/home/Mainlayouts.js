@@ -10,8 +10,9 @@ import Planning from "./pages/dashboard/planning/Planning";
 import PrivateRoute from "./PrivateRouter";
 import EditPlan from "./pages/dashboard/planning/EditPlan";
 import CoatingDashboard from "./pages/dashboard/coating/CoatingDashboard";
+import EditCoating from "./pages/dashboard/coating/EditCoating";
 import AdminDashboard from "./pages/admin/AdminDashboard";
-import CreateUser from "./pages/admin/CreateUser";
+import CreateUser from "./pages/user/CreateUser";
 import NotFound from "./NotFound";
 import DesigningDashboard from "./pages/dashboard/desigining/DesigningDashboard";
 import PrintingManager from "./pages/dashboard/printing/PrintingManager";
@@ -100,7 +101,7 @@ function Mainlayouts() {
             />
 
             <Route
-              path="/editdesign"
+              path="/edit_design"
               element={
                 <PrivateRoute>
                   <EditDesign />
@@ -118,7 +119,7 @@ function Mainlayouts() {
             />
 
             <Route
-              path="/editprint"
+              path="/edit_print"
               element={
                 <PrivateRoute>
                   <EditPrint />
@@ -131,6 +132,15 @@ function Mainlayouts() {
               element={
                 <PrivateRoute>
                   <CoatingDashboard />
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/edit_coating"
+              element={
+                <PrivateRoute>
+                  <EditCoating />
                 </PrivateRoute>
               }
             />

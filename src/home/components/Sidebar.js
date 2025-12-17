@@ -132,7 +132,7 @@ const Sidebar = ({ isCollapsed }) => {
           to="/desigining_dashboard"
           className={`list-element ${
             location.pathname === "/desigining_dashboard" ||
-            location.pathname === "/editdesign"
+            location.pathname === "/edit_design"
               ? "pageactive"
               : ""
           }`}
@@ -156,7 +156,7 @@ const Sidebar = ({ isCollapsed }) => {
           to="/printing_manager"
           className={`list-element ${
             location.pathname === "/printing_manager" ||
-            location.pathname === "/editprint"
+            location.pathname === "/edit_print"
               ? "pageactive"
               : ""
           }`}
@@ -179,7 +179,10 @@ const Sidebar = ({ isCollapsed }) => {
           component={Link}
           to="/coating_dashboard"
           className={`list-element ${
-            location.pathname === "/coating_dashboard" ? "pageactive" : ""
+            location.pathname === "/coating_dashboard" ||
+            location.pathname === "/edit_coating"
+              ? "pageactive"
+              : ""
           }`}
         >
           <FormatPaintIcon className="menu-icon" />

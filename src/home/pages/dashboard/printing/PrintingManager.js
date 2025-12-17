@@ -197,7 +197,7 @@ const PrintingManager = () => {
             }}
             muiTableBodyRowProps={({ row }) => ({
               onClick: () => {
-                navigate(`/editprint`, { state: { design: row.original } });
+                navigate(`/edit_print`, { state: { design: row.original } });
               },
               sx: {
                 cursor: "pointer",

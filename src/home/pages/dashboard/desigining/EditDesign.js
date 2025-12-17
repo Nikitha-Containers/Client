@@ -469,7 +469,7 @@ function EditDesign() {
               style={{ color: "#0a85cb", textDecoration: "none" }}
               to={"/desigining_dashboard"}
             >
-              Design Dashboard
+              Designing Dashboard
             </Link>
             <KeyboardArrowRightIcon sx={{ color: "#0a85cb" }} />
             <div>Edit Design </div>
