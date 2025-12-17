@@ -7,6 +7,7 @@ import { Box, Button, Paper, TextField, Typography } from "@mui/material";
 import server from "../../../server/server";
 import "../../pages/pagestyle.scss";
 import GoogleAuth from "./GoogleAuth";
+import cryptoJS from "crypto-js";
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(4),
@@ -45,9 +46,11 @@ function Login() {
     }
 
     try {
+      const hashedPassword = cryptoJS.SHA256(getLoginVal.password).toString();
+
       const res = await server.post("/admin/login", {
         email: getLoginVal?.email,
-        password: getLoginVal?.password,
+        password: hashedPassword,
       });
 
       setLoginDetails(res?.data?.message);
@@ -64,22 +67,8 @@ function Login() {
     } catch (error) {
       setLoginDetails(error.response?.data?.message || "Login failed");
     }
-    //  const loginMenu = {
-    //   "Planning Team": {
-    //     1: "Planning_Dashboard",
-    //     2: "Planning_Report",
-    //   },
-    //   "Designing Team": {
-    //     1: "Designing_Dashboard",
-    //     2: "Designing_Report",
-    //   },
-    //   "Coating Team": {
-    //     1: "Coating_Dashboard",
-    //     2: "Coating_Report",
-    //   },
-    // };
-    // sessionStorage.setItem("loginMenu", JSON.stringify(loginMenu));
   };
+
   // Custom function end here
   return (
     <Box

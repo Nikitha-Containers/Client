@@ -9,12 +9,15 @@ import Login from "./pages/login/Login";
 import Planning from "./pages/dashboard/planning/Planning";
 import PrivateRoute from "./PrivateRouter";
 import EditPlan from "./pages/dashboard/planning/EditPlan";
-import UpsDashboard from "./pages/dashboard/upsDesign/UpsDashboard";
 import CoatingDashboard from "./pages/dashboard/coating/CoatingDashboard";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import CreateUser from "./pages/admin/CreateUser";
 import NotFound from "./NotFound";
-import DesigningDashboard from './pages/desigining/designingDashboard'
+import DesigningDashboard from "./pages/dashboard/desigining/DesigningDashboard";
+import PrintingManager from "./pages/dashboard/printing/PrintingManager";
+import EditPrint from "./pages/dashboard/printing/EditPrint";
+import EditDesign from "./pages/dashboard/desigining/EditDesign";
+
 function Mainlayouts() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const location = useLocation();
@@ -97,10 +100,28 @@ function Mainlayouts() {
             />
 
             <Route
-              path="/UpsDesignplan"
+              path="/editdesign"
               element={
                 <PrivateRoute>
-                  <UpsDashboard />
+                  <EditDesign />
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/printing_manager"
+              element={
+                <PrivateRoute>
+                  <PrintingManager />
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/editprint"
+              element={
+                <PrivateRoute>
+                  <EditPrint />
                 </PrivateRoute>
               }
             />

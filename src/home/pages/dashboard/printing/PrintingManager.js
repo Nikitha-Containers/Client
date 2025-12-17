@@ -1,21 +1,17 @@
-import React, { useMemo } from "react";
-import { Link } from "react-router-dom";
+import { useMemo } from "react";
 import { styled } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Grid from "@mui/material/Grid";
 import { IconButton } from "@mui/material";
-import Completed from "../../../assets/icons/circle-check-solid.svg";
-import Pending from "../../../assets/icons/hourglass-half-solid.svg";
-import Todaywork from "../../../assets/icons/list-check-solid.svg";
-import AddSharpIcon from "@mui/icons-material/AddSharp";
+import Completed from "../../../../assets/icons/circle-check-solid.svg";
+import Pending from "../../../../assets/icons/hourglass-half-solid.svg";
+import Todaywork from "../../../../assets/icons/list-check-solid.svg";
 import { MaterialReactTable } from "material-react-table";
-import FileDownloadIcon from "@mui/icons-material/FileDownload";
-// import "../../pages/pagestyle.scss";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-
-import excelExportI from "../../../assets/icons/icons8-export-excel-50.png";
+import { useDesign } from "../../../../API/Design_API";
+import { useNavigate } from "react-router-dom";
 
 const Item = styled(Paper)(({ theme }) => ({
   backgroundColor: "#fff",
@@ -28,113 +24,76 @@ const Item = styled(Paper)(({ theme }) => ({
   }),
 }));
 
-const data = [
-  { id: 1, item: "NK25127", steel: "Alloy", size: "M12", date: "10-12-2025" },
-  { id: 2, item: "NK25128", steel: "Carbon", size: "M14", date: "11-12-2025" },
-  {
-    id: 3,
-    item: "NK25129",
-    steel: "Tool Steel",
-    size: "M16",
-    date: "12-12-2025",
-  },
-  {
-    id: 4,
-    item: "NK25130",
-    steel: "Stainless",
-    size: "M18",
-    date: "13-12-2025",
-  },
-  { id: 5, item: "NK25131", steel: "Alloy", size: "M20", date: "14-12-2025" },
-  { id: 6, item: "NK25132", steel: "Carbon", size: "M22", date: "15-12-2025" },
-  {
-    id: 7,
-    item: "NK25133",
-    steel: "Stainless",
-    size: "M24",
-    date: "16-12-2025",
-  },
-  {
-    id: 8,
-    item: "NK25134",
-    steel: "Tool Steel",
-    size: "M26",
-    date: "17-12-2025",
-  },
-  {
-    id: 9,
-    item: "NK25134",
-    steel: "Tool Steel",
-    size: "M26",
-    date: "17-12-2025",
-  },
-  {
-    id: 10,
-    item: "NK25134",
-    steel: "Tool Steel",
-    size: "M26",
-    date: "17-12-2025",
-  },
-  {
-    id: 11,
-    item: "NK25134",
-    steel: "Tool Steel",
-    size: "M26",
-    date: "17-12-2025",
-  },
-  {
-    id: 12,
-    item: "NK25134",
-    steel: "Tool Steel",
-    size: "M26",
-    date: "17-12-2025",
-  },
-];
+const PrintingManager = () => {
+  const navigate = useNavigate();
 
-const Dashboard = () => {
+  const { designs } = useDesign();
+
+  console.log("designs from API:", designs);
+
+  const formatDate = (value) => {
+    if (!value) return "";
+    const dateString = value?.$date || value;
+    const [y, m, d] = new Date(dateString)
+      .toISOString()
+      .split("T")[0]
+      .split("-");
+
+    return `${d}/${m}/${y}`;
+  };
+
   const columns = useMemo(
     () => [
       {
         id: 1,
-        accessorKey: "id",
+        accessorKey: "saleorder_no",
         header: "SO.No",
         size: 30,
       },
       {
         id: 2,
-        accessorKey: "item",
+        accessorKey: "posting_date",
         header: "SO Date",
         size: 30,
+        Cell: ({ row }) => {
+          return formatDate(row.original.posting_date);
+        },
       },
       {
         id: 3,
-        accessorKey: "steel",
+        accessorKey: "customer_name",
         header: "Customer Name",
         size: 30,
       },
       {
         id: 4,
-        accessorKey: "size",
+        accessorKey: "item_description",
         header: "Size",
         size: 30,
       },
       {
         id: 5,
-        accessorKey: "date",
-        header: "Qty",
+        accessorKey: "quantity",
+        header: "Quantity",
         size: 30,
       },
       {
         id: 6,
-        accessorKey: "date",
+        accessorKey: "posting_date",
         header: "Start Date",
         size: 30,
+        Cell: ({ row }) => {
+          return formatDate(row.original.posting_date);
+        },
       },
       {
         id: 7,
-        accessorKey: "date",
+        accessorKey: "due_date",
         header: "End Date",
         size: 30,
+        Cell: ({ row }) => {
+          return formatDate(row.original.due_date);
+        },
       },
       {
         id: 8,
@@ -167,10 +126,7 @@ const Dashboard = () => {
     <Box className="Dashboard-con">
       <Box className="breadcrump-con">
         <Box className="main-title">
-          <div>Designing Dashboard</div>
-          <Link className="gray-md-btn" component={Link} to="/planning">
-            <AddSharpIcon /> Add Plan
-          </Link>
+          <div>Printing Manager</div>
         </Box>
       </Box>
 
@@ -227,7 +183,7 @@ const Dashboard = () => {
         <Box className="Dashboard-table" sx={{ mt: 1 }}>
           <MaterialReactTable
             columns={columns}
-            data={data}
+            data={designs || []}
             positionActionsColumn="last"
             initialState={{
               showGlobalFilter: true,
@@ -239,6 +195,17 @@ const Dashboard = () => {
                 fontWeight: "bold",
               },
             }}
+            muiTableBodyRowProps={({ row }) => ({
+              onClick: () => {
+                navigate(`/editprint`, { state: { design: row.original } });
+              },
+              sx: {
+                cursor: "pointer",
+                "&:hover": {
+                  backgroundColor: "rgba(0, 0, 0, 0.04)",
+                },
+              },
+            })}
             muiTableFooterCellProps={{
               sx: {
                 backgroundColor: "#f5f7f9",
@@ -256,15 +223,7 @@ const Dashboard = () => {
                   padding: "0px 0px 0px 0px",
                 }}
               >
-                <div class="table-title">Processing Team</div>
-
-                <button className="export-btn">
-                  <img
-                    src={excelExportI}
-                    alt="Export Excel"
-                    style={{ width: 30, height: 30 }}
-                  />
-                </button>
+                <div class="table-title">Today's Plan</div>
               </Box>
             )}
           />
@@ -274,4 +233,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default PrintingManager;

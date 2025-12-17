@@ -23,6 +23,7 @@ import "../Dashboard.scss";
 import { Link, useNavigate } from "react-router-dom";
 import CloseIcon from "@mui/icons-material/Close";
 import upsImage from "../../../../assets/Pagesimage/ups-image.jpg";
+import { useLocation } from "react-router-dom";
 
 const stepsStatus = [
   { label: "Design Team", status: "completed" },
@@ -103,6 +104,10 @@ function EditPlan() {
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
+  const location = useLocation();
+  const rowData = location.state;
+
+
   const modalStyle = {
     position: "absolute",
     top: "50%",
@@ -130,13 +135,18 @@ function EditPlan() {
       </Box>
 
       <Box className="page-layout" sx={{ marginTop: 1 }}>
-        
         <Box sx={{ flexGrow: 1 }}>
           <Grid container spacing={2.5}>
             <Grid size={3}>
               <FormGroup>
                 <Typography mb={1}>SO Number</Typography>
-                <TextField id="outlined-size-small" name="" size="small" />
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  type="text"
+                  value={rowData?.saleorder_no || ""}
+                />
               </FormGroup>
             </Grid>
 
@@ -148,6 +158,7 @@ function EditPlan() {
                   name=""
                   size="small"
                   type="date"
+                  value={rowData?.posting_date || ""}
                 />
               </FormGroup>
             </Grid>
@@ -155,30 +166,48 @@ function EditPlan() {
             <Grid size={3}>
               <FormGroup>
                 <Typography mb={1}>Customer Name</Typography>
-                <TextField id="outlined-size-small" name="" size="small" />
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  type="text"
+                  value={rowData?.customer_name || ""}
+                />
               </FormGroup>
             </Grid>
 
             <Grid size={3}>
               <FormGroup>
                 <Typography mb={1}>Sales Person</Typography>
-                <TextField id="outlined-size-small" name="" size="small" />
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  type="text"
+                  value={rowData?.sales_person || ""}
+                />
               </FormGroup>
             </Grid>
 
             <Grid size={3}>
               <FormGroup>
                 <Typography mb={1}>Dimensions</Typography>
-                <TextField id="outlined-size-small" name="" size="small" />
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  type="text"
+                  value={rowData?.item_description || ""}
+                />
               </FormGroup>
             </Grid>
 
-            <Grid size={3}>
+            {/* <Grid size={3}>
               <FormGroup>
-                <Typography mb={1}>Size '</Typography>
+                <Typography mb={1}>Size</Typography>
                 <TextField id="outlined-size-small" name="" size="small" />
               </FormGroup>
-            </Grid>
+            </Grid> */}
 
             <Grid size={3}>
               <FormGroup>
@@ -188,6 +217,7 @@ function EditPlan() {
                   name=""
                   size="small"
                   type="number"
+                  value={rowData?.quantity}
                 />
               </FormGroup>
             </Grid>

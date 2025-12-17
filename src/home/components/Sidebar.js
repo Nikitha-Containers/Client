@@ -131,7 +131,10 @@ const Sidebar = ({ isCollapsed }) => {
           component={Link}
           to="/desigining_dashboard"
           className={`list-element ${
-            location.pathname === "/desigining_dashboard" ? "pageactive" : ""
+            location.pathname === "/desigining_dashboard" ||
+            location.pathname === "/editdesign"
+              ? "pageactive"
+              : ""
           }`}
         >
           <DashboardIcon className="menu-icon" />
@@ -150,14 +153,17 @@ const Sidebar = ({ isCollapsed }) => {
         <ListItem
           button
           component={Link}
-          to="/UpsDesignplan"
+          to="/printing_manager"
           className={`list-element ${
-            location.pathname === "/UpsDesignplan" ? "pageactive" : ""
+            location.pathname === "/printing_manager" ||
+            location.pathname === "/editprint"
+              ? "pageactive"
+              : ""
           }`}
         >
           <DesignServicesIcon className="menu-icon" />
           <ListItemText
-            primary="Ups Design plan"
+            primary="Printing Manager"
             sx={{
               overflow: "hidden",
               maxWidth: isCollapsed ? 0 : 150,

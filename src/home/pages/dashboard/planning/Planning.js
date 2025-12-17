@@ -4,44 +4,23 @@ import Box from "@mui/material/Box";
 import { IconButton, Button } from "@mui/material";
 import SyncIcon from "@mui/icons-material/Sync";
 import { MaterialReactTable } from "material-react-table";
-import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import "../../../pages/pagestyle.scss";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import server from "../../../../server/server";
+import { SalesOrder } from "../../../../API/Salesorder";
+import "../../../pages/pagestyle.scss";
 
 function Planning() {
+  const { salesOrders, sync } = SalesOrder();
+
   const navigate = useNavigate();
-  const [getSO, setSO] = useState([]);
-
-  // Fetch Data
-  useEffect(() => {
-    fetchSO();
-  }, []);
-
-  //Sales Order API
-  const fetchSO = async () => {
-    try {
-      const response = await server.get("/salesorder");
-      setSO(response.data.data);
-      console.log("salesorder: ", response.data.data);
-    } catch (error) {
-      console.error(error.message);
-    }
-  };
-
-  //Sync SAP Data
-  const sapSync = async () => {
-    const response = await server.get("/sap/sync");
-    fetchSO();
-  };
 
   const columns = useMemo(
     () => [
       {
         id: 1,
-        accessorKey: "invoice_no",
-        header: "Invoice No",
+        accessorKey: "saleorder_no",
+        header: "SO No",
         size: 30,
       },
       {
@@ -112,11 +91,7 @@ function Planning() {
       <Box className="breadcrump-con">
         <Box className="main-title">
           <div>Planning</div>
-          <Link
-            className="gray-md-btn"
-            onClick={sapSync}
-            to="/planning"
-          >
+          <Link className="gray-md-btn" onClick={sync} to="/planning">
             <SyncIcon /> Sync With SO
           </Link>
         </Box>
@@ -126,7 +101,7 @@ function Planning() {
         <Box sx={{ mt: 8 }}>
           <MaterialReactTable
             columns={columns}
-            data={getSO}
+            data={salesOrders}
             positionActionsColumn="last"
             initialState={{
               showGlobalFilter: true,
@@ -140,7 +115,7 @@ function Planning() {
             }}
             muiTableBodyRowProps={({ row }) => ({
               onClick: () => {
-                navigate(`/editplan`);
+                navigate(`/editplan`,{state:row.original});
               },
               sx: {
                 cursor: "pointer",
