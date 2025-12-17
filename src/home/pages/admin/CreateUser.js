@@ -16,6 +16,7 @@ import {
   InputAdornment,
   Tab,
   Tabs,
+  Grid,
 } from "@mui/material";
 import { MaterialReactTable } from "material-react-table";
 import CloseIcon from "@mui/icons-material/Close";
@@ -58,70 +59,90 @@ const UserDialog = React.memo(
         </DialogTitle>
 
         <DialogContent dividers>
-          <TextField
-            margin="normal"
-            label="Employee ID"
-            name="empID"
-            size="small"
-            fullWidth
-            value={formValues.empID || ""}
-            onChange={handleChange}
-          />
-          <TextField
-            margin="normal"
-            label="Employee Name"
-            name="empName"
-            size="small"
-            fullWidth
-            value={formValues.empName || ""}
-            onChange={handleChange}
-          />
-          <TextField
-            margin="normal"
-            label="Email"
-            name="email"
-            type="email"
-            size="small"
-            fullWidth
-            required
-            value={formValues.email || ""}
-            onChange={handleChange}
-          />
-          <TextField
-            margin="normal"
-            label="Password"
-            type={showPassword ? "text" : "password"}
-            name="password"
-            size="small"
-            fullWidth
-            required={!isEdit}
-            helperText={isEdit ? "Leave blank to keep current password" : ""}
-            value={formValues.password || ""}
-            onChange={handleChange}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    aria-label="toggle password visibility"
-                    onClick={toggleShowPassword}
-                    edge="end"
-                  >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-          <TextField
-            margin="normal"
-            label="Department"
-            name="department"
-            size="small"
-            fullWidth
-            value={formValues.department || ""}
-            onChange={handleChange}
-          />
+          <Grid container spacing={2}>
+            <Grid size={4}>
+              <Typography>Employee ID</Typography>
+            </Grid>
+            <Grid size={8}>
+              <TextField
+                size="small"
+                fullWidth
+                name="empID"
+                value={formValues.empID || ""}
+                onChange={handleChange}
+              />
+            </Grid>
+
+            {/* Employee Name */}
+            <Grid size={4}>
+              <Typography>Employee Name</Typography>
+            </Grid>
+            <Grid size={8}>
+              <TextField
+                size="small"
+                fullWidth
+                name="empName"
+                value={formValues.empName || ""}
+                onChange={handleChange}
+              />
+            </Grid>
+
+            {/* Email */}
+            <Grid size={4}>
+              <Typography>Email</Typography>
+            </Grid>
+            <Grid size={8}>
+              <TextField
+                size="small"
+                type="email"
+                fullWidth
+                name="email"
+                value={formValues.email || ""}
+                onChange={handleChange}
+              />
+            </Grid>
+
+            {/* Password */}
+            <Grid size={4}>
+              <Typography>Password</Typography>
+            </Grid>
+            <Grid size={8}>
+              <TextField
+                size="small"
+                fullWidth
+                type={showPassword ? "text" : "password"}
+                name="password"
+                value={formValues.password || ""}
+                onChange={handleChange}
+                helperText="Leave blank to keep current password"
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={toggleShowPassword}>
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Grid>
+
+            {/* Department */}
+            <Grid size={4}>
+              <Typography>Department</Typography>
+            </Grid>
+            <Grid size={8}>
+              <TextField
+                size="small"
+                fullWidth
+                name="department"
+                value={formValues.department || ""}
+                onChange={handleChange}
+              />
+            </Grid>
+          </Grid>
         </DialogContent>
+
         <DialogActions>
           <Button onClick={handleClose} variant="outlined" disabled={loading}>
             Cancel
