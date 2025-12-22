@@ -18,7 +18,10 @@ export const SalesOrder = () => {
 
   const sapSync = async () => {
     try {
-      await server.get("/sap/sync");
+      const response = await server.post("/sap/sapSync");
+      if (response.data.success) {
+        alert(`Data was successfully synced :${response.data.TotalRec}`);
+      }
       await fetchSO();
     } catch (error) {
       dispatch(setSOError(error.message));

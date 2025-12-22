@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Link, useLocation,useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
 import {
   MenuItem,
@@ -47,105 +47,120 @@ const ComponentRow = ({
   onDataChange,
   onFileUpload,
   onViewFile,
-}) => (
-  <>
-    <Grid size={12} sx={{ borderBottom: "1px solid #dcdddd" }} />
+  totalQty,
+}) => {
+  const originalSheets =
+    component.ups && totalQty
+      ? Math.ceil(Number(totalQty) / Number(component.ups))
+      : "";
+  return (
+    <>
+      <Grid size={12} sx={{ borderBottom: "1px solid #dcdddd" }} />
 
-    <Grid size={1}>
-      <div className="Box-table-checkbox">
-        <Checkbox
-          checked={component.selected}
-          onChange={(e) => onDataChange(name, "selected", e.target.checked)}
-          {...label}
-        />
-      </div>
-    </Grid>
+      <Grid size={1}>
+        <div className="Box-table-checkbox">
+          <Checkbox
+            checked={component.selected}
+            onChange={(e) => onDataChange(name, "selected", e.target.checked)}
+            {...label}
+          />
+        </div>
+      </Grid>
 
-    <Grid size={2}>
-      <div className="Box-table-text">{name}</div>
-    </Grid>
+      <Grid size={2}>
+        <div className="Box-table-text">{name}</div>
+      </Grid>
 
-    <Grid size={1}>
-      <div className="Box-table-content">
-        <TextField
-          id="outlined-size-small"
-          name=""
-          size="small"
-          type="text"
-          value={component.length}
-          onChange={(e) => onDataChange(name, "length", e.target.value)}
+      <Grid size={1}>
+        <div className="Box-table-content">
+          <TextField
+            id="outlined-size-small"
+            name=""
+            size="small"
+            type="text"
+            value={component.length}
+            onChange={(e) => onDataChange(name, "length", e.target.value)}
+            disabled={!component.selected}
+          />
+        </div>
+      </Grid>
+
+      <Grid size={1}>
+        <div className="Box-table-content">
+          <TextField
+            id="outlined-size-small"
+            name=""
+            size="small"
+            type="text"
+            value={component.breadth}
+            onChange={(e) => onDataChange(name, "breadth", e.target.value)}
+            disabled={!component.selected}
+          />
+        </div>
+      </Grid>
+
+      <Grid size={1}>
+        <div className="Box-table-content">
+          <TextField
+            id="outlined-size-small"
+            name=""
+            size="small"
+            type="text"
+            value={component.thickness}
+            onChange={(e) => onDataChange(name, "thickness", e.target.value)}
+            disabled={!component.selected}
+          />
+        </div>
+      </Grid>
+
+      <Grid size={1.5}>
+        <div className="Box-table-content">
+          <TextField
+            id="outlined-size-small"
+            name=""
+            size="small"
+            type="text"
+            value={component.ups}
+            onChange={(e) => onDataChange(name, "ups", e.target.value)}
+            disabled={!component.selected}
+          />
+        </div>
+      </Grid>
+
+      <Grid size={1.5}>
+        <div className="Box-table-content">
+          <TextField
+            size="small"
+            type="text"
+            label={originalSheets}
+            value={component.sheets}
+            onChange={(e) => onDataChange(name, "sheets", e.target.value)}
+            disabled={!component.selected}
+            InputLabelProps={{ shrink: true }}
+            sx={{
+              "& .MuiInputLabel-root": {
+                color: "green",
+              },
+              "& .MuiInputLabel-root.Mui-focused": {
+                color: "green",
+              },
+            }}
+          />
+        </div>
+      </Grid>
+
+      <Grid size={3}>
+        <FileUpload
+          onFileUpload={onFileUpload}
+          onViewFile={onViewFile}
+          componentName={name}
+          file={component.fileObj || component.file}
           disabled={!component.selected}
         />
-      </div>
-    </Grid>
-
-    <Grid size={1}>
-      <div className="Box-table-content">
-        <TextField
-          id="outlined-size-small"
-          name=""
-          size="small"
-          type="text"
-          value={component.breadth}
-          onChange={(e) => onDataChange(name, "breadth", e.target.value)}
-          disabled={!component.selected}
-        />
-      </div>
-    </Grid>
-
-    <Grid size={1}>
-      <div className="Box-table-content">
-        <TextField
-          id="outlined-size-small"
-          name=""
-          size="small"
-          type="text"
-          value={component.thickness}
-          onChange={(e) => onDataChange(name, "thickness", e.target.value)}
-          disabled={!component.selected}
-        />
-      </div>
-    </Grid>
-
-    <Grid size={1.5}>
-      <div className="Box-table-content">
-        <TextField
-          id="outlined-size-small"
-          name=""
-          size="small"
-          type="text"
-          value={component.ups}
-          onChange={(e) => onDataChange(name, "ups", e.target.value)}
-          disabled={!component.selected}
-        />
-      </div>
-    </Grid>
-
-    <Grid size={1.5}>
-      <div className="Box-table-content">
-        <TextField
-          id="outlined-size-small"
-          name=""
-          size="small"
-          type="text"
-          value={component.sheets}
-          onChange={(e) => onDataChange(name, "sheets", e.target.value)}
-          disabled={!component.selected}
-        />
-      </div>
-    </Grid>
-
-    <Grid size={3}>
-      <FileUpload
-        onFileUpload={onFileUpload}
-        onViewFile={onViewFile}
-        componentName={name}
-        file={component.fileObj || component.file}
-        disabled={!component.selected}
-      />
-    </Grid>
-  </>
-);
+      </Grid>
+    </>
+  );
+};
 
 // Component Row End Here
 
@@ -206,7 +221,7 @@ const FileUpload = ({
 // Main Component Started Here
 
 function EditDesign() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const location = useLocation();
   const { salesOrder, design } = location.state || {};
 
@@ -218,7 +233,7 @@ function EditDesign() {
     posting_date: salesOrder?.posting_date
       ? new Date(salesOrder?.posting_date).toISOString().split("T")[0]
       : "",
-    quantity: salesOrder?.quantity || "",
+    item_quantity: salesOrder?.item_quantity || "",
     machine: design?.machine || "",
     art_work: design?.art_work || salesOrder?.art_work || "NA",
     item_description:
@@ -368,7 +383,7 @@ function EditDesign() {
 
     formDataToSend.append("saleorder_no", formData?.saleorder_no);
     formDataToSend.append("posting_date", formData?.posting_date);
-    formDataToSend.append("quantity", formData?.quantity);
+    formDataToSend.append("item_quantity", formData?.item_quantity);
     formDataToSend.append("machine", formData?.machine);
     formDataToSend.append("components", JSON.stringify(fullComponents));
     formDataToSend.append(
@@ -416,7 +431,7 @@ function EditDesign() {
           : salesOrder?.posting_date
           ? new Date(salesOrder.posting_date).toISOString().split("T")[0]
           : "",
-        quantity: design?.quantity || salesOrder?.quantity || "",
+        item_quantity: design?.item_quantity || salesOrder?.item_quantity || "",
         machine: design?.machine || "",
         art_work: design?.art_work || salesOrder?.art_work || "NA",
         item_description:
@@ -543,8 +558,10 @@ function EditDesign() {
                   name=""
                   size="small"
                   type="text"
-                  value={formData.quantity}
-                  onChange={(e) => handleFormChange("quantity", e.target.value)}
+                  value={formData.item_quantity}
+                  onChange={(e) =>
+                    handleFormChange("item_quantity", e.target.value)
+                  }
                   disabled
                 />
               </FormGroup>
@@ -624,6 +641,7 @@ function EditDesign() {
                 onDataChange={handleComponentChange}
                 onFileUpload={handleFileUpload}
                 onViewFile={handleViewFile}
+                totalQty={formData.item_quantity}
               />
             ))}
           </Grid>

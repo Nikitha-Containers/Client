@@ -26,102 +26,114 @@ const ComponentRow = ({
   onOpenColor,
   selectedCoating,
   selectedColor,
-}) => (
-  <>
-    <Grid size={12} sx={{ borderBottom: "1px solid #dcdddd" }} />
+}) => {
+  return (
+    <>
+      <Grid size={12} sx={{ borderBottom: "1px solid #dcdddd" }} />
 
-    {/* Component Name */}
-    <Grid size={2}>
-      <div className="Box-table-text"> {name}</div>
-    </Grid>
+      {/* Component Name */}
+      <Grid size={2}>
+        <div className="Box-table-text"> {name}</div>
+      </Grid>
 
-    {/* Length */}
-    <Grid size={1}>
-      <div className="Box-table-content">
-        <TextField size="small" type="text" value={component.length} disabled />
-      </div>
-    </Grid>
-
-    {/* Breadth */}
-    <Grid size={1}>
-      <div className="Box-table-content">
-        <TextField
-          size="small"
-          type="text"
-          value={component.breadth}
-          disabled
-        />
-      </div>
-    </Grid>
-
-    {/* Thickness */}
-    <Grid size={1}>
-      <div className="Box-table-content">
-        <TextField
-          size="small"
-          type="text"
-          value={component.thickness}
-          disabled
-        />
-      </div>
-    </Grid>
-
-    {/* Ups */}
-    <Grid size={1.5}>
-      <div className="Box-table-content">
-        <TextField size="small" type="text" value={component.ups} disabled />
-      </div>
-    </Grid>
-
-    {/* No. of Sheets */}
-    <Grid size={1.5}>
-      <div className="Box-table-content">
-        <TextField size="small" type="text" value={component.sheets} disabled />
-      </div>
-    </Grid>
-
-    {/* Source File */}
-    <Grid size={1.5}>
-      <Box sx={{ display: "flex", alignItems: "center", columnGap: 2.5 }}>
+      {/* Length */}
+      <Grid size={1}>
         <div className="Box-table-content">
-          <div
-            className="gray-md-btn"
-            onClick={() => onViewFile(name)}
-            style={{ cursor: "pointer" }}
-          >
-            <VisibilityIcon /> View
-          </div>
+          <TextField
+            size="small"
+            type="text"
+            value={component.length}
+            disabled
+          />
         </div>
-      </Box>
-    </Grid>
+      </Grid>
 
-    {/* Coating Type */}
-    <Grid size={1}>
-      <div className="Box-table-upload">
-        <Button
-          color={selectedCoating[name] ? "success" : "neutral"}
-          variant="outlined"
-          onClick={() => onOpenCoating(name)}
-        >
-          {selectedCoating[name] ? "Selected" : "Select"}
-        </Button>
-      </div>
-    </Grid>
+      {/* Breadth */}
+      <Grid size={1}>
+        <div className="Box-table-content">
+          <TextField
+            size="small"
+            type="text"
+            value={component.breadth}
+            disabled
+          />
+        </div>
+      </Grid>
 
-    {/* Printing Color */}
-    <Grid size={1}>
-      <div className="Box-table-upload">
-        <Button
-          color={selectedColor[name] ? "success" : "neutral"}
-          variant="outlined"
-          onClick={() => onOpenColor(name)}
-        >
-          {selectedColor[name] ? "Selected" : "Select"}
-        </Button>
-      </div>
-    </Grid>
-  </>
-);
+      {/* Thickness */}
+      <Grid size={1}>
+        <div className="Box-table-content">
+          <TextField
+            size="small"
+            type="text"
+            value={component.thickness}
+            disabled
+          />
+        </div>
+      </Grid>
+
+      {/* Ups */}
+      <Grid size={1.5}>
+        <div className="Box-table-content">
+          <TextField size="small" type="text" value={component.ups} disabled />
+        </div>
+      </Grid>
+
+      {/* No. of Sheets */}
+      <Grid size={1.5}>
+        <div className="Box-table-content">
+          <TextField
+            size="small"
+            type="text"
+            value={component.sheets}
+            disabled
+          />
+        </div>
+      </Grid>
+
+      {/* Source File */}
+      <Grid size={1.5}>
+        <Box sx={{ display: "flex", alignItems: "center", columnGap: 2.5 }}>
+          <div className="Box-table-content">
+            <div
+              className="gray-md-btn"
+              onClick={() => onViewFile(name)}
+              style={{ cursor: "pointer" }}
+            >
+              <VisibilityIcon /> View
+            </div>
+          </div>
+        </Box>
+      </Grid>
+
+      {/* Coating Type */}
+      <Grid size={1}>
+        <div className="Box-table-upload">
+          <Button
+            color={selectedCoating[name] ? "success" : "neutral"}
+            variant="outlined"
+            onClick={() => onOpenCoating(name)}
+          >
+            {selectedCoating[name] ? "Selected" : "Select"}
+          </Button>
+        </div>
+      </Grid>
+
+      {/* Printing Color */}
+      <Grid size={1}>
+        <div className="Box-table-upload">
+          <Button
+            color={selectedColor[name] ? "success" : "neutral"}
+            variant="outlined"
+            onClick={() => onOpenColor(name)}
+          >
+            {selectedColor[name] ? "Selected" : "Select"}
+          </Button>
+        </div>
+      </Grid>
+    </>
+  );
+};
 // Component Row End Here
 
 // Main Component Started Here
@@ -421,7 +433,7 @@ function EditPrint() {
                 <Typography mb={1}>Total Qty</Typography>
                 <TextField
                   size="small"
-                  value={design?.quantity || ""}
+                  value={design?.item_quantity || ""}
                   disabled
                 />
               </FormGroup>

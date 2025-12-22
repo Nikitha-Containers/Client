@@ -1,21 +1,21 @@
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
   DialogTitle,
+  DialogActions,
   FormControlLabel,
   IconButton,
   TextField,
   Typography,
-} from "@mui/material";
-import { useEffect, useState } from "react";
-import {
-  Box,
-  Button,
+  Select,
+  MenuItem,
   Checkbox,
-  DialogActions,
-  FormControl,
+  Button,
+  Box,
   Stack,
-} from "@mui/joy";
+  FormControl,
+} from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 
 export const CoatingTypeModal = ({ open, onClose, onSubmit, value }) => {
@@ -24,13 +24,15 @@ export const CoatingTypeModal = ({ open, onClose, onSubmit, value }) => {
     sizing: [],
     insideColor: [],
     varnish: [],
-    whitecount: 1,
+    coatingColor: "",
+    coatingCount: 1,
   };
 
   // Static Data
   const getCoatingType = {
-    sizing: ["Vinyl Sizing", "White"],
-    insideColor: ["Gold", "Clear White", "Others"],
+    sizing: ["Vinyl Sizing"],
+    coatingColor: ["Bombay White", "Mixing White", "Untoned White"],
+    insideColor: ["Gold Lacquer", "Clear Lacquer", ],
     varnish: ["Glossy Finish", "Matte Finish"],
   };
 
@@ -42,44 +44,17 @@ export const CoatingTypeModal = ({ open, onClose, onSubmit, value }) => {
     }
   }, [open, value]);
 
-  // Select All
-  const handleSelectAll = (checked) => {
-    setCoatingValues(
-      checked
-        ? {
-            sizing: [...getCoatingType?.sizing],
-            insideColor: [...getCoatingType?.insideColor],
-            varnish: [...getCoatingType?.varnish],
-            whitecount: getCoatingValues?.whitecount,
-          }
-        : coatingInitialVal
-    );
-  };
-
   // Checkbox Handling
   const handleCheckbox = (section, item, checked) => {
-    setCoatingValues((prev) => {
-      const exists = prev[section].includes(item);
-
-      const updatedList = checked
-        ? exists
-          ? prev[section]
-          : [...prev[section], item]
-        : prev[section].filter((i) => i !== item);
-
-      return {
-        ...prev,
-        [section]: updatedList,
-        whitecount:
-          section === "sizing" && item === "White" && !checked
-            ? 0
-            : prev.whitecount,
-      };
-    });
+    setCoatingValues((prev) => ({
+      ...prev,
+      [section]: checked
+        ? [...prev[section], item]
+        : prev[section].filter((i) => i !== item),
+    }));
   };
 
   // Handle Submit
-
   const handleSubmit = () => {
     if (
       getCoatingValues.sizing.length === 0 &&
@@ -90,11 +65,8 @@ export const CoatingTypeModal = ({ open, onClose, onSubmit, value }) => {
       return;
     }
 
-    if (
-      getCoatingValues.sizing.includes("White") &&
-      getCoatingValues.whitecount <= 0
-    ) {
-      alert("Please enter valid white coating count");
+    if (getCoatingValues?.coatingCount <= 0) {
+      alert("Please enter valid coating count");
       return;
     }
 
@@ -107,22 +79,13 @@ export const CoatingTypeModal = ({ open, onClose, onSubmit, value }) => {
     onClose();
   };
 
-  // Select All Active Check
-  const selectAllChecked =
-    getCoatingValues?.sizing?.length === getCoatingType?.sizing?.length &&
-    getCoatingValues?.insideColor?.length ===
-      getCoatingType?.insideColor?.length &&
-    getCoatingValues?.varnish?.length === getCoatingType?.varnish?.length;
-
   return (
     <Dialog
       open={open}
       onClose={handleCancel}
       fullWidth
       maxWidth="sm"
-      PaperProps={{
-        sx: { borderRadius: "16px" },
-      }}
+      PaperProps={{ sx: { borderRadius: "16px" } }}
     >
       <DialogTitle sx={{ display: "flex", justifyContent: "space-between" }}>
         <Typography variant="h6" fontWeight="bold" color="#0a85cb">
@@ -135,25 +98,14 @@ export const CoatingTypeModal = ({ open, onClose, onSubmit, value }) => {
       </DialogTitle>
 
       <DialogContent dividers>
-        <Stack spacing={2}>
-          {/* Select All */}
-          <FormControlLabel
-            control={
-              <Checkbox
-                color="success"
-                checked={selectAllChecked}
-                onChange={(e) => handleSelectAll(e.target.checked)}
-                label="Select All"
-              />
-            }
-          />
-
+        <Stack spacing={1}>
           {/* Sizing */}
           <Box pl={5}>
-            <Stack direction="row" spacing={7}>
+            <Stack direction="row" spacing={6}>
               {getCoatingType?.sizing?.map((item) => (
                 <FormControlLabel
                   key={item}
+                  label={item}
                   control={
                     <Checkbox
                       color="success"
@@ -163,10 +115,31 @@ export const CoatingTypeModal = ({ open, onClose, onSubmit, value }) => {
                       }
                     />
                   }
-                  label={item}
-                  sx={{ gap: 1 }}
                 />
               ))}
+
+              {/* Coating Color */}
+              <FormControl sx={{ minWidth: 200 }} size="small">
+                <Select
+                  value={getCoatingValues.coatingColor}
+                  displayEmpty
+                  onChange={(e) =>
+                    setCoatingValues((prev) => ({
+                      ...prev,
+                      coatingColor: e.target.value,
+                      coatingCount: 1,
+                    }))
+                  }
+                  sx={{ borderRadius: "8px", marginTop: "3px" }}
+                >
+                  <MenuItem value="">Selct Coating Color</MenuItem>
+                  {getCoatingType.coatingColor.map((color) => (
+                    <MenuItem key={color} value={color}>
+                      {color}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             </Stack>
           </Box>
 
@@ -174,13 +147,13 @@ export const CoatingTypeModal = ({ open, onClose, onSubmit, value }) => {
           <Typography variant="subtitle2">
             Inside food-grade lacquer :
           </Typography>
+
           <Box pl={5}>
-            <Stack direction="row" spacing={13}>
+            <Stack direction="row" spacing={3}>
               {getCoatingType?.insideColor?.map((item) => (
                 <FormControlLabel
                   key={item}
                   label={item}
-                  sx={{ gap: 1 }}
                   control={
                     <Checkbox
                       color="success"
@@ -197,13 +170,13 @@ export const CoatingTypeModal = ({ open, onClose, onSubmit, value }) => {
 
           {/* Varnish */}
           <Typography variant="subtitle2">Varnish :</Typography>
+
           <Box pl={5}>
-            <Stack direction="row" spacing={5}>
+            <Stack direction="row" spacing={3}>
               {getCoatingType?.varnish?.map((item) => (
                 <FormControlLabel
                   key={item}
                   label={item}
-                  sx={{ gap: 1 }}
                   control={
                     <Checkbox
                       color="success"
@@ -218,30 +191,30 @@ export const CoatingTypeModal = ({ open, onClose, onSubmit, value }) => {
             </Stack>
           </Box>
 
-          {/* White Count */}
-          {getCoatingValues?.sizing?.includes("White") && (
+          {/* Coating Count */}
+          {getCoatingValues?.coatingColor && (
             <Box display="flex" alignItems="center" gap={2} pt={2}>
-              <Typography variant="body2">White Coating Count :</Typography>
-              <FormControl>
-                <TextField
-                  type="number"
-                  size="small"
-                  sx={{ width: "70px", height: "40px" }}
-                  error={getCoatingValues.whitecount <= 0 ? true : false}
-                  value={getCoatingValues.whitecount}
-                  onChange={(e) =>
-                    setCoatingValues((prev) => ({
-                      ...prev,
-                      whitecount: Number(e.target.value),
-                    }))
-                  }
-                />
-              </FormControl>
-              {getCoatingValues.whitecount <= 0 ? (
-                <Typography sx={{ color: "#d32f2f", fontSize: "14px" }}>
-                  Please Enter The Correct Value
+              <Typography variant="body2">Coating Count :</Typography>
+
+              <TextField
+                type="number"
+                size="small"
+                sx={{ width: 80 }}
+                value={getCoatingValues.coatingCount}
+                error={getCoatingValues.coatingCount <= 0}
+                onChange={(e) =>
+                  setCoatingValues((prev) => ({
+                    ...prev,
+                    coatingCount: Number(e.target.value),
+                  }))
+                }
+              />
+
+              {getCoatingValues.coatingCount <= 0 && (
+                <Typography color="error" fontSize={13}>
+                  Please enter valid value
                 </Typography>
-              ) : null}
+              )}
             </Box>
           )}
         </Stack>
@@ -256,11 +229,25 @@ export const CoatingTypeModal = ({ open, onClose, onSubmit, value }) => {
           columnGap: "15px",
         }}
       >
-        <Button variant="solid" color="success" onClick={handleSubmit}>
-          Save
-        </Button>
-        <Button variant="outlined" color="danger" onClick={handleCancel}>
+        <Button
+          variant="outlined"
+          color="error"
+          onClick={handleCancel}
+          sx={{
+            borderRadius: "8px",
+          }}
+        >
           Cancel
+        </Button>
+        <Button
+          variant="contained"
+          color="success"
+          onClick={handleSubmit}
+          sx={{
+            borderRadius: "8px",
+          }}
+        >
+          Save
         </Button>
       </DialogActions>
     </Dialog>
@@ -287,23 +274,10 @@ export const PrintingColorModal = ({ open, onClose, onSubmit, value }) => {
   const [getPrintingValues, setPrintingValues] = useState(printingInitVal);
 
   useEffect(() => {
-    if (open && value) {
-      setPrintingValues(value);
+    if (open) {
+      setPrintingValues(value || printingInitVal);
     }
   }, [open, value]);
-
-  // Select All
-
-  const handleSelectAll = (checked) => {
-    if (checked) {
-      setPrintingValues({
-        normalColor: [...getPrintColors.normalColors],
-        splColor: [...getPrintColors.splColors],
-      });
-    } else {
-      setPrintingValues(printingInitVal);
-    }
-  };
 
   // Checkbox Handling
   const handleCheckbox = (section, item, checked) => {
@@ -334,112 +308,102 @@ export const PrintingColorModal = ({ open, onClose, onSubmit, value }) => {
     onClose();
   };
 
-  // Select All Active Check
-  const selectAllChecked =
-    getPrintingValues?.normalColor?.length ===
-      getPrintColors?.normalColors?.length &&
-    getPrintingValues?.splColor?.length === getPrintColors?.splColors?.length;
-
   return (
-    <>
-      <Dialog
-        open={open}
-        onClose={handleCancel}
-        fullWidth
-        maxWidth="sm"
-        PaperProps={{ sx: { borderRadius: "16px" } }}
-      >
-        <DialogTitle sx={{ display: "flex", justifyContent: "space-between" }}>
-          <Typography variant="h6" fontWeight="bold" color="#0a85cb">
-            Printing Color
-          </Typography>
+    <Dialog
+      open={open}
+      onClose={handleCancel}
+      fullWidth
+      maxWidth="sm"
+      PaperProps={{ sx: { borderRadius: "16px" } }}
+    >
+      <DialogTitle sx={{ display: "flex", justifyContent: "space-between" }}>
+        <Typography variant="h6" fontWeight="bold" color="#0a85cb">
+          Printing Color
+        </Typography>
+        <IconButton onClick={handleCancel}>
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
 
-          <IconButton onClick={handleCancel}>
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-
-        <DialogContent dividers>
-          <Stack spacing={3}>
-            {/* Select All */}
-            <FormControlLabel
-              control={
-                <Checkbox
-                  color="success"
-                  checked={selectAllChecked}
-                  onChange={(e) => handleSelectAll(e.target.checked)}
-                  label="Select All"
+      <DialogContent dividers>
+        <Stack spacing={1}>
+          {/* Normal Colors */}
+          <Box pl={1}>
+            <Stack direction="row">
+              {getPrintColors?.normalColors?.map((item) => (
+                <FormControlLabel
+                  key={item}
+                  control={
+                    <Checkbox
+                      color="success"
+                      checked={getPrintingValues.normalColor.includes(item)}
+                      onChange={(e) =>
+                        handleCheckbox("normalColor", item, e.target.checked)
+                      }
+                    />
+                  }
+                  label={item}
+                  sx={{ gap: 1 }}
                 />
-              }
-            />
+              ))}
+            </Stack>
+          </Box>
+          {/* Special Colors */}
+          <Typography variant="subtitle2">Special Colors :</Typography>
 
-            {/* Normal Colors */}
-            <Box pl={5}>
-              <Stack direction="row" spacing={3}>
-                {getPrintColors?.normalColors?.map((item) => (
-                  <FormControlLabel
-                    key={item}
-                    control={
-                      <Checkbox
-                        color="success"
-                        checked={getPrintingValues?.normalColor?.includes(item)}
-                        onChange={(e) =>
-                          handleCheckbox("normalColor", item, e.target.checked)
-                        }
-                      />
-                    }
-                    label={item}
-                    sx={{ gap: 1 }}
-                  />
-                ))}
-              </Stack>
-            </Box>
-
-            {/* Special Colors */}
-
-            <Typography variant="subtitle2">Special Colors :</Typography>
-            <Box pl={5}>
-              <Stack direction="row" spacing={3}>
-                {getPrintColors?.splColors?.map((item) => (
-                  <FormControlLabel
-                    key={item}
-                    control={
-                      <Checkbox
-                        color="success"
-                        checked={getPrintingValues?.splColor?.includes(item)}
-                        onChange={(e) =>
-                          handleCheckbox("splColor", item, e.target.checked)
-                        }
-                      />
-                    }
-                    label={item}
-                    sx={{ gap: 1 }}
-                  />
-                ))}
-              </Stack>
-            </Box>
-          </Stack>
-        </DialogContent>
-
-        {/* Action Button */}
-
-        <DialogActions
+          <Box pl={1}>
+            <Stack direction="row">
+              {getPrintColors?.splColors?.map((item) => (
+                <FormControlLabel
+                  key={item}
+                  control={
+                    <Checkbox
+                      color="success"
+                      checked={getPrintingValues.splColor.includes(item)}
+                      onChange={(e) =>
+                        handleCheckbox("splColor", item, e.target.checked)
+                      }
+                    />
+                  }
+                  label={item}
+                  sx={{ gap: 1 }}
+                />
+              ))}
+            </Stack>
+          </Box>
+        </Stack>
+      </DialogContent>
+      {/* Action Button */}
+      <DialogActions
+        sx={{
+          padding: "10px 18px 10px 10px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "end",
+          columnGap: "15px",
+        }}
+      >
+        <Button
+          variant="outlined"
+          color="error"
+          onClick={handleCancel}
           sx={{
-            padding: "10px 18px 10px 10px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "end",
-            columnGap: "15px",
+            borderRadius: "8px",
           }}
         >
-          <Button variant="solid" color="success" onClick={handleSubmit}>
-            Save
-          </Button>
-          <Button variant="outlined" color="danger" onClick={handleCancel}>
-            Cancel
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </>
+          Cancel
+        </Button>
+        <Button
+          variant="contained"
+          color="success"
+          onClick={handleSubmit}
+          sx={{
+            borderRadius: "8px",
+          }}
+        >
+          Save
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 };

@@ -91,9 +91,9 @@ function Planning() {
       <Box className="breadcrump-con">
         <Box className="main-title">
           <div>Planning</div>
-          <Link className="gray-md-btn" onClick={sync} to="/planning">
+          <button className="gray-md-btn" onClick={sync}>
             <SyncIcon /> Sync With SO
-          </Link>
+          </button>
         </Box>
       </Box>
 
@@ -115,7 +115,7 @@ function Planning() {
             }}
             muiTableBodyRowProps={({ row }) => ({
               onClick: () => {
-                navigate(`/editplan`,{state:row.original});
+                navigate(`/editplan`, { state: row?.original });
               },
               sx: {
                 cursor: "pointer",
