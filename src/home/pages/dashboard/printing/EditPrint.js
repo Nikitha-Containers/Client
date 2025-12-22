@@ -201,7 +201,8 @@ function EditPrint() {
             ? comp.coating.insideColor.split(", ")
             : [],
           varnish: comp.coating.varnish ? comp.coating.varnish.split(", ") : [],
-          whitecount: comp.coating.whitecount || 1,
+          coatingColor: comp.coating.coatingColor || "",
+          coatingCount: comp.coating.coatingCount || 1,
         };
       }
       if (comp.printingColor) {
@@ -319,7 +320,8 @@ function EditPrint() {
             varnish: Array.isArray(coating?.varnish)
               ? coating?.varnish.join(", ")
               : "",
-            whitecount: Number(coating?.whitecount) || 0,
+            coatingColor: coating?.coatingColor || "",
+            coatingCount: Number(coating?.coatingCount) || 1,
           };
         }
 
@@ -388,7 +390,18 @@ function EditPrint() {
       <Box className="page-layout" sx={{ marginTop: 1 }}>
         <Box sx={{ flexGrow: 1 }}>
           <Grid container spacing={2.5}>
-            <Grid size={3}>
+            <Grid size={4}>
+              <FormGroup>
+                <Typography mb={1}>Customer Name</Typography>
+                <TextField
+                  size="small"
+                  value={design?.customer_name || ""}
+                  disabled
+                />
+              </FormGroup>
+            </Grid>
+            
+            <Grid size={2}>
               <FormGroup>
                 <Typography mb={1}>SO Number</Typography>
                 <TextField
@@ -399,7 +412,7 @@ function EditPrint() {
               </FormGroup>
             </Grid>
 
-            <Grid size={3}>
+            <Grid size={2}>
               <FormGroup>
                 <Typography mb={1}>SO Date</Typography>
                 <TextField
@@ -417,7 +430,7 @@ function EditPrint() {
               </FormGroup>
             </Grid>
 
-            <Grid size={3}>
+            <Grid size={2}>
               <FormGroup>
                 <Typography mb={1}>Machine</Typography>
                 <TextField
@@ -428,7 +441,7 @@ function EditPrint() {
               </FormGroup>
             </Grid>
 
-            <Grid size={3}>
+            <Grid size={2}>
               <FormGroup>
                 <Typography mb={1}>Total Qty</Typography>
                 <TextField

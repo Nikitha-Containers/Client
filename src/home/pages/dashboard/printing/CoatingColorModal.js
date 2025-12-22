@@ -326,7 +326,7 @@ export const PrintingColorModal = ({ open, onClose, onSubmit, value }) => {
       </DialogTitle>
 
       <DialogContent dividers>
-        <Stack spacing={1}>
+        <Stack spacing={2}>
           {/* Normal Colors */}
           <Box pl={1}>
             <Stack direction="row">

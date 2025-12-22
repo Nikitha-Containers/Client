@@ -495,7 +495,22 @@ function EditDesign() {
       <Box className="page-layout" sx={{ marginTop: 1 }}>
         <Box sx={{ flexGrow: 1 }}>
           <Grid container spacing={2.5}>
-            <Grid size={3}>
+            <Grid size={4}>
+              <FormGroup>
+                <Typography mb={1}>Customer Name</Typography>
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  value={formData?.customer_name}
+                  onChange={(e) =>
+                    handleFormChange("customer_name", e.target.value)
+                  }
+                  disabled
+                />
+              </FormGroup>
+            </Grid>
+            <Grid size={2}>
               <FormGroup>
                 <Typography mb={1}>SO Number</Typography>
                 <TextField
@@ -511,7 +526,7 @@ function EditDesign() {
               </FormGroup>
             </Grid>
 
-            <Grid size={3}>
+            <Grid size={2}>
               <FormGroup>
                 <Typography mb={1}>SO Date</Typography>
                 <TextField
@@ -528,7 +543,7 @@ function EditDesign() {
               </FormGroup>
             </Grid>
 
-            <Grid size={3}>
+            <Grid size={2}>
               <FormGroup fullWidth>
                 <Typography mb={1}>Machine</Typography>
                 <Select
@@ -550,7 +565,7 @@ function EditDesign() {
               </FormGroup>
             </Grid>
 
-            <Grid size={3}>
+            <Grid size={2}>
               <FormGroup>
                 <Typography mb={1}>Total Qty</Typography>
                 <TextField
