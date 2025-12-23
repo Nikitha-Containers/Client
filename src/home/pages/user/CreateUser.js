@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import server from "../../../server/server";
 import Box from "@mui/material/Box";
 import {
-  IconButton,
   Button,
   Dialog,
   DialogTitle,
@@ -13,30 +12,43 @@ import {
   Typography,
   Snackbar,
   Alert,
-  InputAdornment,
+  IconButton,
   Tab,
   Tabs,
   Grid,
+  MenuItem,
+  Select,
+  ListItemText,
+  InputAdornment,
 } from "@mui/material";
-import { MaterialReactTable } from "material-react-table";
-import CloseIcon from "@mui/icons-material/Close";
-import AddSharpIcon from "@mui/icons-material/AddSharp";
 import "../../pages/pagestyle.scss";
+import Checkbox from "@mui/material/Checkbox";
 import EditIcon from "@mui/icons-material/Edit";
+import { useTheme } from "@mui/material/styles";
+import CloseIcon from "@mui/icons-material/Close";
 import DeleteIcon from "@mui/icons-material/Delete";
 import Visibility from "@mui/icons-material/Visibility";
-import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import OutlinedInput from "@mui/material/OutlinedInput";
+import AddSharpIcon from "@mui/icons-material/AddSharp";
+import { MaterialReactTable } from "material-react-table";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
 
 const UserDialog = React.memo(
   ({
+    pages,
+    theme,
+    isEdit,
+    getPages,
+    setPages,
+    MenuProps,
+    openDialog,
+    handleSave,
+    formValues,
     handleClose,
     handleChange,
-    formValues,
-    handleSave,
-    openDialog,
-    isEdit,
     showPassword,
+    setFormValues,
     toggleShowPassword,
   }) => {
     return (
@@ -91,6 +103,20 @@ const UserDialog = React.memo(
               />
             </Grid>
 
+            {/* Employee Name */}
+            <Grid size={4}>
+              <Typography>Ip Address</Typography>
+            </Grid>
+            <Grid size={8}>
+              <TextField
+                size="small"
+                fullWidth
+                name="ipAddress"
+                value={formValues.ipAddress || ""}
+                onChange={handleChange}
+              />
+            </Grid>
+
             {/* Email */}
             <Grid size={4}>
               <Typography>Email</Typography>
@@ -136,13 +162,62 @@ const UserDialog = React.memo(
               <Typography>Department</Typography>
             </Grid>
             <Grid size={8}>
-              <TextField
+              <Select
                 size="small"
                 fullWidth
                 name="department"
                 value={formValues.department || ""}
-                onChange={handleChange}
-              />
+                onChange={(e) => {
+                  let val = e.target.value;
+                  setFormValues((prev) => ({ ...prev, department: val }));
+                  setFormValues((prev) => ({ ...prev, pages: [] }));
+                }}
+              >
+                <MenuItem value={"Planning"}>Planning</MenuItem>
+                <MenuItem value={"Stores"}>Stores</MenuItem>
+                <MenuItem value={"Designing"}>Designing</MenuItem>
+                <MenuItem value={"Printing Manager"}>Printing Manager</MenuItem>
+                <MenuItem value={"Coating"}>Coating</MenuItem>
+                <MenuItem value={"Printing"}>Printing</MenuItem>
+                <MenuItem value={"Fabrication"}>Fabrication</MenuItem>
+              </Select>
+            </Grid>
+
+            {/* Department */}
+            <Grid size={4}>
+              <Typography>Pages</Typography>
+            </Grid>
+            <Grid size={8}>
+              <Select
+                size="small"
+                fullWidth
+                multiple
+                name="pages"
+                value={formValues.pages}
+                input={<OutlinedInput />}
+                renderValue={(selected) => {
+                  if (selected.length === 0) {
+                    return <em>Select pages</em>;
+                  } else {
+                    return selected.join(",");
+                  }
+                }}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setFormValues((prev) => ({
+                    ...prev,
+                    pages: typeof value === "string" ? value.split(",") : value,
+                  }));
+                }}
+                MenuProps={MenuProps}
+              >
+                {(pages?.[formValues.department] || [])?.map((val) => (
+                  <MenuItem key={val} value={val}>
+                    <Checkbox checked={formValues?.pages?.includes(val)} />
+                    <ListItemText primary={val} />
+                  </MenuItem>
+                ))}
+              </Select>
             </Grid>
           </Grid>
         </DialogContent>
@@ -237,6 +312,26 @@ const DeleteConfirmationDialog = ({ open, onClose, onConfirm, user }) => {
   );
 };
 
+function getStyles(name, personName, theme) {
+  return {
+    fontWeight: personName.includes(name)
+      ? theme.typography.fontWeightMedium
+      : theme.typography.fontWeightRegular,
+  };
+}
+
+const ITEM_HEIGHT = 48;
+const ITEM_PADDING_TOP = 8;
+
+const MenuProps = {
+  PaperProps: {
+    style: {
+      maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
+      width: 250,
+    },
+  },
+};
+
 // CreateUser Component
 function CreateUser() {
   const [users, setUsers] = useState([]);
@@ -244,6 +339,7 @@ function CreateUser() {
   const [isEdit, setIsEdit] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
+  const [getPages, setPages] = useState([]);
   const [deleteDialog, setDeleteDialog] = useState({
     open: false,
     user: null,
@@ -261,7 +357,11 @@ function CreateUser() {
     email: "",
     password: "",
     department: "",
+    ipAddress: "",
+    pages: [],
   });
+
+  const theme = useTheme();
 
   useEffect(() => {
     fetchUsers();
@@ -312,6 +412,8 @@ function CreateUser() {
       email: "",
       password: "",
       department: "",
+      ipAddress: "",
+      pages: [],
     });
     setShowPassword(false);
     setOpenDialog(true);
@@ -331,16 +433,55 @@ function CreateUser() {
 
   // Validation
   const validateForm = () => {
-    if (!formValues.email) {
+    if (formValues?.empID?.trim() === "") {
+      showSnackbar("Employee ID is required", "error");
+      return false;
+    }
+
+    if (formValues.empName?.trim() === "") {
+      showSnackbar("Employee Name is required", "error");
+      return false;
+    }
+
+    if (formValues.ipAddress?.trim() === "") {
+      showSnackbar("Ip Address is required", "error");
+      return false;
+    }
+
+    if (!formValues?.email.trim() === "") {
       showSnackbar("Email is required", "error");
       return false;
     }
-    if (!isEdit && !formValues.password) {
+
+    if (!isEdit && !formValues?.password) {
       showSnackbar("Password is required", "error");
       return false;
     }
+
+    if (formValues?.department?.trim() === "") {
+      showSnackbar("Department is required", "error");
+      return false;
+    }
+
+    if (formValues?.pages?.length === 0) {
+      showSnackbar("Pages is required", "error");
+      return false;
+    }
+
     return true;
   };
+
+  const pages = {
+    Planning: ["Dashboard", "Sync with SO"],
+    Designing: ["Dashboard", "Sheet Store"],
+    Stores: ["Dashboard", "Sheet Taken"],
+    "Printing Manager": ["Dashboard", "Sheet Store"],
+    Coating: ["Dashboard", "Sheet Store"],
+    Printing: ["Dashboard", "Sheet Store"],
+    Fabrication: ["Dashboard", "Quality Control"],
+  };
+
+  console.log("formValues", formValues);
 
   // Save handler
   const handleSave = async () => {
@@ -353,7 +494,7 @@ function CreateUser() {
           delete updateData.password;
         }
 
-        await server.put(`/user/${formValues.userID}`, updateData);
+        await server.put(`/user/${formValues?.userID}`, { updateData });
         showSnackbar("User updated successfully");
       } else {
         await server.post("/user/register", formValues);
@@ -378,8 +519,10 @@ function CreateUser() {
       empID: user.empID || "",
       empName: user.empName || "",
       email: user.email || "",
+      ipAddress: user.ipAddress || "",
       password: "",
       department: user.department || "",
+      pages: user?.sidemenus?.split(",") || [],
     });
     setShowPassword(false);
     setOpenDialog(true);
@@ -438,36 +581,36 @@ function CreateUser() {
   };
 
   // Active & Inactive Table Coloumns
-  
+
   const getColumns = (userType) => [
     {
       id: 1,
-      accessorKey: "userID",
-      header: "User ID",
-      size: 30,
-    },
-    {
-      id: 2,
       accessorKey: "empID",
       header: "Employee ID",
       size: 30,
     },
     {
-      id: 3,
+      id: 2,
       accessorKey: "empName",
       header: "Name",
       size: 30,
     },
     {
-      id: 4,
+      id: 3,
       accessorKey: "email",
       header: "Email",
       size: 30,
     },
     {
-      id: 5,
+      id: 4,
       accessorKey: "department",
       header: "Department",
+      size: 30,
+    },
+    {
+      id: 5,
+      accessorKey: "sidemenus",
+      header: "Pages",
       size: 30,
     },
     {
@@ -652,13 +795,19 @@ function CreateUser() {
 
       {/* User Dialog */}
       <UserDialog
-        handleClose={handleClose}
-        handleChange={handleChange}
-        formValues={formValues}
-        handleSave={handleSave}
-        openDialog={openDialog}
+        pages={pages}
+        theme={theme}
         isEdit={isEdit}
+        getPages={getPages}
+        setPages={setPages}
+        MenuProps={MenuProps}
+        handleSave={handleSave}
+        formValues={formValues}
+        openDialog={openDialog}
+        handleClose={handleClose}
         showPassword={showPassword}
+        handleChange={handleChange}
+        setFormValues={setFormValues}
         toggleShowPassword={toggleShowPassword}
       />
 
