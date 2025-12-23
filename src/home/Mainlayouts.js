@@ -23,10 +23,10 @@ function Mainlayouts() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const location = useLocation();
   const isLoginPage = location.pathname === "/login";
-
+ 
   const notfound = sessionStorage.getItem("isLoggedIn");
 
-  console.log(notfound, "notfound");
+
 
   const handleToggleSidebar = () => {
     setIsSidebarCollapsed((prev) => !prev);
@@ -36,6 +36,8 @@ function Mainlayouts() {
     if (isLoginPage) {
       setIsSidebarCollapsed(false);
     }
+
+
   }, [isLoginPage]);
 
   return (

@@ -19,12 +19,7 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   textAlign: "center",
 }));
 
-const adminMenu = {
-  admin_dashboard: {
-    1: "create_user",
-    2: "credentials_details",
-  },
-};
+
 
 function Login() {
   const navigate = useNavigate();
@@ -48,8 +43,8 @@ function Login() {
     try {
       const hashedPassword = cryptoJS.SHA256(getLoginVal.password).toString();
 
-      const res = await server.post("/admin/login", {
-        email: getLoginVal?.email,
+      const res = await server.post("/user/login", {
+        empID: getLoginVal?.email,
         password: hashedPassword,
       });
 
@@ -59,10 +54,11 @@ function Login() {
         res?.data?.message === "Password correct, proceed to OTP verification"
       ) {
         sessionStorage.setItem("adminID", res.data.adminID);
-        sessionStorage.setItem("loginMenu", JSON.stringify(adminMenu));
         setTimeout(() => {
           setAuthPage(true);
         }, 300);
+      } else {
+        console.log("USer Login");
       }
     } catch (error) {
       setLoginDetails(error.response?.data?.message || "Login failed");

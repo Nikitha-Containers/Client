@@ -95,7 +95,7 @@ export default function GoogleAuth() {
 
   const handleVerify = async () => {
     const otpCode = otp.join("");
-    const adminID = sessionStorage.getItem("adminID");
+    const empID = sessionStorage.getItem("adminID");
 
     if (isVerifying || otpCode.length !== OTP_LENGTH) {
       return;
@@ -104,17 +104,26 @@ export default function GoogleAuth() {
     setIsVerifying(true);
 
     try {
-      const res = await server.post("/admin/verify-otp", {
-        adminID,
+      const res = await server.post("/user/verify-otp", {
+        empID,
         otp: otpCode,
       });
 
       if (res.data.success) {
         showSnackbar("OTP Verified Successfully", "success");
 
-        if (res.data.token) {
-          sessionStorage.setItem("token", res.data.token);
+        if (res?.data?.token) {
+          sessionStorage.setItem("token", res?.data?.token);
         }
+
+        if (res?.data?.access) {
+          sessionStorage.setItem("access", res?.data?.access);
+        }
+
+        if (res?.data?.sidemenus) {
+          sessionStorage.setItem("sidemenus", res?.data?.sidemenus);
+        }
+
         sessionStorage.setItem("isLoggedIn", "true");
 
         setTimeout(() => {
