@@ -53,8 +53,47 @@ function Login() {
         setTimeout(() => {
           setAuthPage(true);
         }, 300);
-      } else {
+      }
+
+      if (res?.data?.message === "Login successful") {
         console.log("USer Login");
+
+        if (res.data.adminID) {
+          sessionStorage.setItem("adminID", res.data.adminID);
+        }
+
+        if (res?.data?.token) {
+          sessionStorage.setItem("token", res?.data?.token);
+        }
+
+        if (res?.data?.access) {
+          sessionStorage.setItem("access", res?.data?.access);
+        }
+
+        if (res?.data?.sidemenus) {
+          sessionStorage.setItem("sidemenus", res?.data?.sidemenus);
+          sessionStorage.setItem("isLoggedIn", "true");
+        }
+
+        if (
+          res?.data?.adminID &&
+          res?.data?.token &&
+          res?.data?.access &&
+          res?.data?.sidemenus
+        ) {
+          if (
+            res?.data?.sidemenus?.toString()?.split(",")?.includes("Dashboard")
+          ) {
+            let pageLink = `/${res?.data?.access
+              ?.toString()
+              ?.replace(" ", "")}_dashboard`;
+            if (pageLink !== "") {
+              navigate(pageLink);
+            }
+          } else {
+            navigate("/Default_dashboard");
+          }
+        }
       }
     } catch (error) {
       setLoginDetails(error.response?.data?.message || "Login failed");
@@ -92,7 +131,8 @@ function Login() {
                 <Alert
                   severity={
                     getLoginDetails ===
-                    "Password correct, proceed to OTP verification"
+                      "Password correct, proceed to OTP verification" ||
+                    "Login successful"
                       ? "success"
                       : "error"
                   }

@@ -98,9 +98,9 @@ const Sidebar = ({ isCollapsed }) => {
           <ListItem
             button
             component={Link}
-            to="/dashboard"
+            to="/Planning_dashboard"
             className={`list-element ${
-              location.pathname === "/dashboard" ? "pageactive" : ""
+              location.pathname === "/Planning_dashboard" ? "pageactive" : ""
             }`}
           >
             <DashboardIcon className="menu-icon" />
@@ -151,9 +151,9 @@ const Sidebar = ({ isCollapsed }) => {
           <ListItem
             button
             component={Link}
-            to="/desigining_dashboard"
+            to="/Designing_dashboard"
             className={`list-element ${
-              location.pathname === "/desigining_dashboard" ||
+              location.pathname === "/Designing_dashboard" ||
               location.pathname === "/edit_design"
                 ? "pageactive"
                 : ""
@@ -202,13 +202,14 @@ const Sidebar = ({ isCollapsed }) => {
 
         {/* Printing manager menu pages start here  */}
 
-        {getAccess === "Printing Manager" && menuPages?.includes("Dashboard") ? (
+        {getAccess === "Printing Manager" &&
+        menuPages?.includes("Dashboard") ? (
           <ListItem
             button
             component={Link}
-            to="/printing_manager"
+            to="/PrintingManager_dashboard"
             className={`list-element ${
-              location.pathname === "/printing_manager" ||
+              location.pathname === "/PrintingManager_dashboard" ||
               location.pathname === "/edit_print"
                 ? "pageactive"
                 : ""
@@ -262,9 +263,9 @@ const Sidebar = ({ isCollapsed }) => {
           <ListItem
             button
             component={Link}
-            to="/coating_dashboard"
+            to="/Coating_dashboard"
             className={`list-element ${
-              location.pathname === "/coating_dashboard" ||
+              location.pathname === "/Coating_dashboard" ||
               location.pathname === "/edit_coating"
                 ? "pageactive"
                 : ""
@@ -313,7 +314,7 @@ const Sidebar = ({ isCollapsed }) => {
 
         {/* Admin sidemenu pages start here  */}
 
-        {getAccess === "Admin" && menuPages?.includes("Dashboard") ? (
+        {getAccess === "Admin" && menuPages?.includes("All") ? (
           <ListItem
             button
             component={Link}
@@ -336,28 +337,28 @@ const Sidebar = ({ isCollapsed }) => {
           </ListItem>
         ) : null}
 
-        {/* {getAccess === "Admin" && menuPages?.includes("usercreation") ? ( */}
-        <ListItem
-          button
-          component={Link}
-          to="/create_user"
-          className={`list-element ${
-            location.pathname === "/create_user" ? "pageactive" : ""
-          }`}
-        >
-          <PersonAddIcon className="menu-icon" />
-          <ListItemText
-            primary="Create User"
-            sx={{
-              overflow: "hidden",
-              maxWidth: isCollapsed ? 0 : 150,
-              opacity: isCollapsed ? 0 : 1,
-              transition: "max-width 0.3s ease, opacity 0.3s ease",
-              whiteSpace: "nowrap",
-            }}
-          />
-        </ListItem>
-        {/* ) : null} */}
+        {getAccess === "Admin" && menuPages?.includes("All") ? (
+          <ListItem
+            button
+            component={Link}
+            to="/create_user"
+            className={`list-element ${
+              location.pathname === "/create_user" ? "pageactive" : ""
+            }`}
+          >
+            <PersonAddIcon className="menu-icon" />
+            <ListItemText
+              primary="Create User"
+              sx={{
+                overflow: "hidden",
+                maxWidth: isCollapsed ? 0 : 150,
+                opacity: isCollapsed ? 0 : 1,
+                transition: "max-width 0.3s ease, opacity 0.3s ease",
+                whiteSpace: "nowrap",
+              }}
+            />
+          </ListItem>
+        ) : null}
         {/* Admin sidemenu pages start here  */}
       </List>
     </Box>

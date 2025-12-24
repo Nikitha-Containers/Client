@@ -411,7 +411,7 @@ function EditDesign() {
       const result = response.data;
       if (result.success) {
         alert(result.message);
-        navigate("/desigining_dashboard");
+        navigate("/Designing_dashboard");
       } else {
         throw new Error(result.error || "Failed to update design");
       }
@@ -476,13 +476,13 @@ function EditDesign() {
   };
 
   return (
-    <Box className="Dashboard-con">
+    <Box className="Dashboard-con" >
       <Box className="breadcrump-con">
         <Box className="main-title">
           <div className="main-inner-txts">
             <Link
               style={{ color: "#0a85cb", textDecoration: "none" }}
-              to={"/desigining_dashboard"}
+              to={"/Designing_dashboard"}
             >
               Designing Dashboard
             </Link>

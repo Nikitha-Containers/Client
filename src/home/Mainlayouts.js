@@ -4,7 +4,7 @@ import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import TopBar from "./components/Topbar";
 import Sidebar from "./components/Sidebar";
 import Dashboard from "./pages/dashboard/Dashboard";
-import Reports from "./pages/Reports";
+import Default_Dashboard from "./pages/dashboard/DefaultDashboard";
 import Login from "./pages/login/Login";
 import Planning from "./pages/dashboard/planning/Planning";
 import PrivateRoute from "./PrivateRouter";
@@ -69,7 +69,7 @@ function Mainlayouts() {
 
             {getAccess === "Planning" && menuPages?.includes("Dashboard") ? (
               <Route
-                path="/dashboard"
+                path="/Planning_dashboard"
                 element={
                   <PrivateRoute>
                     <Dashboard />
@@ -102,7 +102,7 @@ function Mainlayouts() {
 
             {getAccess === "Designing" && menuPages?.includes("Dashboard") ? (
               <Route
-                path="/desigining_dashboard"
+                path="/Designing_dashboard"
                 element={
                   <PrivateRoute>
                     <DesigningDashboard />
@@ -125,7 +125,7 @@ function Mainlayouts() {
             {getAccess === "Printing Manager" &&
             menuPages?.includes("Dashboard") ? (
               <Route
-                path="/printing_manager"
+                path="/PrintingManager_dashboard"
                 element={
                   <PrivateRoute>
                     <PrintingManager />
@@ -148,7 +148,7 @@ function Mainlayouts() {
 
             {getAccess === "Coating" && menuPages?.includes("Dashboard") ? (
               <Route
-                path="/coating_dashboard"
+                path="/Coating_dashboard"
                 element={
                   <PrivateRoute>
                     <CoatingDashboard />
@@ -174,30 +174,35 @@ function Mainlayouts() {
             ) : null}
 
             {/* Admin pages start here  */}
-            <Route
-              path="/admin_dashboard"
-              element={
-                <PrivateRoute>
-                  <AdminDashboard />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/create_user"
-              element={
-                <PrivateRoute>
-                  <CreateUser />
-                </PrivateRoute>
-              }
-            />
+            {getAccess === "Admin" && menuPages?.includes("All") ? (
+              <Route
+                path="/admin_dashboard"
+                element={
+                  <PrivateRoute>
+                    <AdminDashboard />
+                  </PrivateRoute>
+                }
+              />
+            ) : null}
+
+            {getAccess === "Admin" && menuPages?.includes("All") ? (
+              <Route
+                path="/create_user"
+                element={
+                  <PrivateRoute>
+                    <CreateUser />
+                  </PrivateRoute>
+                }
+              />
+            ) : null}
 
             {/* Admin pages end here  */}
 
             <Route
-              path="/about"
+              path="/Default_dashboard"
               element={
                 <PrivateRoute>
-                  <Reports />
+                  <Default_Dashboard />
                 </PrivateRoute>
               }
             />
