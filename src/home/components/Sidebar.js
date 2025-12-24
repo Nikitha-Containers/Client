@@ -50,7 +50,7 @@ const Sidebar = ({ isCollapsed }) => {
   const [getAccess, setAccess] = useState("");
   const [getMenus, setMenus] = useState([]);
 
-  const menuPages = getMenus.toString().split(",");
+  const menuPages = getMenus?.toString()?.split(",");
 
   console.log("menuPages", menuPages);
 
@@ -94,7 +94,7 @@ const Sidebar = ({ isCollapsed }) => {
       <List className="side-list">
         {/* Planning menu pages start here  */}
 
-        {getAccess === "Planning" && menuPages.includes("Dashboard") ? (
+        {getAccess === "Planning" && menuPages?.includes("Dashboard") ? (
           <ListItem
             button
             component={Link}
@@ -117,7 +117,7 @@ const Sidebar = ({ isCollapsed }) => {
           </ListItem>
         ) : null}
 
-        {getAccess === "Planning" && menuPages.includes("Sync with SO") ? (
+        {getAccess === "Planning" && menuPages?.includes("Sync with SO") ? (
           <ListItem
             button
             component={Link}
@@ -147,7 +147,7 @@ const Sidebar = ({ isCollapsed }) => {
 
         {/* Designing menu pages start here  */}
 
-        {getAccess === "Designing" && menuPages.includes("Dashboard") ? (
+        {getAccess === "Designing" && menuPages?.includes("Dashboard") ? (
           <ListItem
             button
             component={Link}
@@ -173,7 +173,7 @@ const Sidebar = ({ isCollapsed }) => {
           </ListItem>
         ) : null}
 
-        {getAccess === "Designing" && menuPages.includes("Sheet Store") ? (
+        {getAccess === "Designing" && menuPages?.includes("Sheet Store") ? (
           <ListItem
             button
             component={Link}
@@ -202,7 +202,7 @@ const Sidebar = ({ isCollapsed }) => {
 
         {/* Printing manager menu pages start here  */}
 
-        {getAccess === "Printing Manager" && menuPages.includes("Dashboard") ? (
+        {getAccess === "Printing Manager" && menuPages?.includes("Dashboard") ? (
           <ListItem
             button
             component={Link}
@@ -229,7 +229,7 @@ const Sidebar = ({ isCollapsed }) => {
         ) : null}
 
         {getAccess === "Printing Manager" &&
-        menuPages.includes("Sheet Store") ? (
+        menuPages?.includes("Sheet Store") ? (
           <ListItem
             button
             component={Link}
@@ -258,7 +258,7 @@ const Sidebar = ({ isCollapsed }) => {
 
         {/* Coating menu pages start here  */}
 
-        {getAccess === "Coating" && menuPages.includes("Dashboard") ? (
+        {getAccess === "Coating" && menuPages?.includes("Dashboard") ? (
           <ListItem
             button
             component={Link}
@@ -284,7 +284,7 @@ const Sidebar = ({ isCollapsed }) => {
           </ListItem>
         ) : null}
 
-        {getAccess === "Coating" && menuPages.includes("Sheet Store") ? (
+        {getAccess === "Coating" && menuPages?.includes("Sheet Store") ? (
           <ListItem
             button
             component={Link}
@@ -313,7 +313,7 @@ const Sidebar = ({ isCollapsed }) => {
 
         {/* Admin sidemenu pages start here  */}
 
-        {getAccess === "Admin" && menuPages.includes("Dashboard") ? (
+        {getAccess === "Admin" && menuPages?.includes("Dashboard") ? (
           <ListItem
             button
             component={Link}
@@ -336,7 +336,7 @@ const Sidebar = ({ isCollapsed }) => {
           </ListItem>
         ) : null}
 
-        {/* {getAccess === "Admin" && menuPages.includes("usercreation") ? ( */}
+        {/* {getAccess === "Admin" && menuPages?.includes("usercreation") ? ( */}
         <ListItem
           button
           component={Link}

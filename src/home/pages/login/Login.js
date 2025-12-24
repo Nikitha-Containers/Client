@@ -41,7 +41,7 @@ function Login() {
     }
 
     try {
-      const hashedPassword = cryptoJS.SHA256(getLoginVal.password).toString();
+      const hashedPassword = cryptoJS.SHA256(getLoginVal.password)?.toString();
 
       const res = await server.post("/user/login", {
         empID: getLoginVal?.email,

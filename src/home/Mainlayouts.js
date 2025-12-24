@@ -22,11 +22,12 @@ import EditDesign from "./pages/dashboard/desigining/EditDesign";
 function Mainlayouts() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const location = useLocation();
+  const [getAccess, setAccess] = useState("");
+  const [getMenus, setMenus] = useState([]);
   const isLoginPage = location.pathname === "/login";
- 
+  const menuPages = getMenus?.toString()?.split(",");
+
   const notfound = sessionStorage.getItem("isLoggedIn");
-
-
 
   const handleToggleSidebar = () => {
     setIsSidebarCollapsed((prev) => !prev);
@@ -36,8 +37,8 @@ function Mainlayouts() {
     if (isLoginPage) {
       setIsSidebarCollapsed(false);
     }
-
-
+    setAccess(sessionStorage.getItem("access"));
+    setMenus(sessionStorage.getItem("sidemenus"));
   }, [isLoginPage]);
 
   return (
@@ -66,86 +67,111 @@ function Mainlayouts() {
 
             <Route path="/login" element={<Login />} />
 
-            <Route
-              path="/dashboard"
-              element={
-                <PrivateRoute>
-                  <Dashboard />
-                </PrivateRoute>
-              }
-            />
+            {getAccess === "Planning" && menuPages?.includes("Dashboard") ? (
+              <Route
+                path="/dashboard"
+                element={
+                  <PrivateRoute>
+                    <Dashboard />
+                  </PrivateRoute>
+                }
+              />
+            ) : null}
 
-            <Route
-              path="/planning"
-              element={
-                <PrivateRoute>
-                  <Planning />
-                </PrivateRoute>
-              }
-            />
+            {getAccess === "Planning" && menuPages?.includes("Sync with SO") ? (
+              <Route
+                path="/planning"
+                element={
+                  <PrivateRoute>
+                    <Planning />
+                  </PrivateRoute>
+                }
+              />
+            ) : null}
 
-            <Route
-              path="/editplan"
-              element={
-                <PrivateRoute>
-                  <EditPlan />
-                </PrivateRoute>
-              }
-            />
+            {getAccess === "Planning" && menuPages?.includes("Sync with SO") ? (
+              <Route
+                path="/editplan"
+                element={
+                  <PrivateRoute>
+                    <EditPlan />
+                  </PrivateRoute>
+                }
+              />
+            ) : null}
 
-            <Route
-              path="/desigining_dashboard"
-              element={
-                <PrivateRoute>
-                  <DesigningDashboard />
-                </PrivateRoute>
-              }
-            />
+            {getAccess === "Designing" && menuPages?.includes("Dashboard") ? (
+              <Route
+                path="/desigining_dashboard"
+                element={
+                  <PrivateRoute>
+                    <DesigningDashboard />
+                  </PrivateRoute>
+                }
+              />
+            ) : null}
 
-            <Route
-              path="/edit_design"
-              element={
-                <PrivateRoute>
-                  <EditDesign />
-                </PrivateRoute>
-              }
-            />
+            {getAccess === "Designing" && menuPages?.includes("Dashboard") ? (
+              <Route
+                path="/edit_design"
+                element={
+                  <PrivateRoute>
+                    <EditDesign />
+                  </PrivateRoute>
+                }
+              />
+            ) : null}
 
-            <Route
-              path="/printing_manager"
-              element={
-                <PrivateRoute>
-                  <PrintingManager />
-                </PrivateRoute>
-              }
-            />
+            {getAccess === "Printing Manager" &&
+            menuPages?.includes("Dashboard") ? (
+              <Route
+                path="/printing_manager"
+                element={
+                  <PrivateRoute>
+                    <PrintingManager />
+                  </PrivateRoute>
+                }
+              />
+            ) : null}
 
-            <Route
-              path="/edit_print"
-              element={
-                <PrivateRoute>
-                  <EditPrint />
-                </PrivateRoute>
-              }
-            />
+            {getAccess === "Printing Manager" &&
+            menuPages?.includes("Dashboard") ? (
+              <Route
+                path="/edit_print"
+                element={
+                  <PrivateRoute>
+                    <EditPrint />
+                  </PrivateRoute>
+                }
+              />
+            ) : null}
 
-            <Route
-              path="/coating_dashboard"
-              element={
-                <PrivateRoute>
-                  <CoatingDashboard />
-                </PrivateRoute>
-              }
-            />
+            {getAccess === "Coating" && menuPages?.includes("Dashboard") ? (
+              <Route
+                path="/coating_dashboard"
+                element={
+                  <PrivateRoute>
+                    <CoatingDashboard />
+                  </PrivateRoute>
+                }
+              />
+            ) : null}
 
-            <Route
-              path="/edit_coating"
-              element={
-                <PrivateRoute>
-                  <EditCoating />
-                </PrivateRoute>
-              }
-            />
+            {getAccess === "Coating" && menuPages?.includes("Dashboard") ? (
+              <Route
+                path="/coating_dashboard"
+                element={
+                  <Route
+                    path="/edit_coating"
+                    element={
+                      <PrivateRoute>
+                        <EditCoating />
+                      </PrivateRoute>
+                    }
+                  />
+                }
+              />
+            ) : null}
 
             {/* Admin pages start here  */}
             <Route
