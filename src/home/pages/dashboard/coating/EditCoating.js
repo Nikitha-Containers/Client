@@ -1,8 +1,7 @@
-import { useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
 import {
-  IconButton,
   MenuItem,
   Grid,
   FormGroup,
@@ -19,89 +18,18 @@ import {
   ToggleButtonGroup,
 } from "@mui/material";
 import Button from "@mui/joy/Button";
-import SvgIcon from "@mui/joy/SvgIcon";
-import { styled } from "@mui/joy";
-import { MaterialReactTable } from "material-react-table";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import "../../../pages/pagestyle.scss";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import upsImage from "../../../../assets/Pagesimage/ups-image.jpg";
+import server from "../../../../server/server";
 
-const ITEM_HEIGHT = 48;
-const ITEM_PADDING_TOP = 8;
-const MenuProps = {
-  PaperProps: {
-    style: {
-      maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
-      width: 250,
-    },
-  },
+const getArtWorkClass = (art) => {
+  if (!art || art === "NA") return "art-badge art-blue";
+  if (art.toLowerCase() === "old") return "art-badge art-red";
+  if (art.toLowerCase() === "new") return "art-badge art-green";
+  return "art-badge";
 };
-
-const data = [
-  { id: 1, item: "NK25127", steel: "Alloy", size: "M12", date: "10-12-2025" },
-  { id: 2, item: "NK25128", steel: "Carbon", size: "M14", date: "11-12-2025" },
-  {
-    id: 3,
-    item: "NK25129",
-    steel: "Tool Steel",
-    size: "M16",
-    date: "12-12-2025",
-  },
-  {
-    id: 4,
-    item: "NK25130",
-    steel: "Stainless",
-    size: "M18",
-    date: "13-12-2025",
-  },
-  { id: 5, item: "NK25131", steel: "Alloy", size: "M20", date: "14-12-2025" },
-  { id: 6, item: "NK25132", steel: "Carbon", size: "M22", date: "15-12-2025" },
-  {
-    id: 7,
-    item: "NK25133",
-    steel: "Stainless",
-    size: "M24",
-    date: "16-12-2025",
-  },
-  {
-    id: 8,
-    item: "NK25134",
-    steel: "Tool Steel",
-    size: "M26",
-    date: "17-12-2025",
-  },
-  {
-    id: 9,
-    item: "NK25134",
-    steel: "Tool Steel",
-    size: "M26",
-    date: "17-12-2025",
-  },
-  {
-    id: 10,
-    item: "NK25134",
-    steel: "Tool Steel",
-    size: "M26",
-    date: "17-12-2025",
-  },
-  {
-    id: 11,
-    item: "NK25134",
-    steel: "Tool Steel",
-    size: "M26",
-    date: "17-12-2025",
-  },
-  {
-    id: 12,
-    item: "NK25134",
-    steel: "Tool Steel",
-    size: "M26",
-    date: "17-12-2025",
-  },
-];
 
 const groupedNames = [
   { label: "Inside Food - Grade Locqur" },
@@ -112,23 +40,7 @@ const groupedNames = [
   { type: "item", label: "Matte Finish" },
 ];
 
-const label = { inputProps: { "aria-label": "Checkbox demo" } };
-
-const VisuallyHiddenInput = styled("input")`
-  clip: rect(0 0 0 0);
-  clip-path: inset(50%);
-  height: 1px;
-  overflow: hidden;
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  white-space: nowrap;
-  width: 1px;
-`;
-
-function EditCoating() {
-  const navigate = useNavigate();
-
+const ComponentRow = ({ component, name, onViewFile }) => {
   const [personName, setPersonName] = useState([]);
 
   const handleChange = (event) => {
@@ -143,11 +55,222 @@ function EditCoating() {
       setValue(newValue);
     }
   };
+  return (
+    <>
+      <Grid size={12} sx={{ borderBottom: "1px solid #dcdddd" }}></Grid>
+      {/* Component Name */}
+      <Grid size={2}>
+        <div className="Box-table-text">{name} </div>
+      </Grid>
+      {/* Sheet Size */}
+      <Grid size={1.5}>
+        <div className="Box-table-content">
+          <TextField
+            id="outlined-size-small"
+            size="small"
+            value={`${component?.length} X ${component?.breadth} X ${component?.thickness}`}
+            disabled
+          />
+        </div>
+      </Grid>
+      {/* No. of Sheets */}
+      <Grid size={1.5}>
+        <div className="Box-table-content">
+          <TextField
+            size="small"
+            type="text"
+            value={component?.sheets}
+            disabled
+          />
+        </div>
+      </Grid>
 
+      {/* Source File */}
+      <Grid size={1.5}>
+        <Box sx={{ display: "flex", alignItems: "center", columnGap: 2.5 }}>
+          <div className="Box-table-content">
+            <div
+              className="gray-md-btn"
+              onClick={() => onViewFile(name)}
+              style={{ cursor: "pointer" }}
+            >
+              <VisibilityIcon /> View
+            </div>
+          </div>
+        </Box>
+      </Grid>
+
+      {/* Coating Type */}
+      <Grid size={1.5}>
+        <div className="Box-table-multiselect">
+          <FormControl fullWidth>
+            <Select
+              multiple
+              value={personName}
+              onChange={handleChange}
+              input={<OutlinedInput />}
+              renderValue={(selected) => selected.join(", ")}
+              size="small"
+            >
+              {groupedNames.map((item, index) =>
+                item.type === "header" ? (
+                  <ListSubheader key={index}>{item.label}</ListSubheader>
+                ) : (
+                  <MenuItem key={index} value={item.label}>
+                    <Checkbox checked={personName.includes(item.label)} />
+                    <ListItemText primary={item.label} />
+                  </MenuItem>
+                )
+              )}
+            </Select>
+          </FormControl>
+        </div>
+      </Grid>
+
+      <Grid size={1.3}>
+        <Box sx={{ display: "flex", alignItems: "center", columnGap: 2.5 }}>
+          <div className="Box-table-content">
+            <div
+              className="gray-md-btn"
+              onClick={() => onViewFile(name)}
+              style={{ cursor: "pointer" }}
+            >
+              <VisibilityIcon /> View
+            </div>
+          </div>
+        </Box>
+      </Grid>
+
+      <Grid size={1.3}>
+        <Box sx={{ display: "flex", alignItems: "center", columnGap: 2.5 }}>
+          <div className="Box-table-content">
+            <div
+              className="gray-md-btn"
+              onClick={() => onViewFile(name)}
+              style={{ cursor: "pointer" }}
+            >
+              <VisibilityIcon /> View
+            </div>
+          </div>
+        </Box>
+      </Grid>
+
+      <Grid size={1.3}>
+        <div className="Box-table-content">
+          <ToggleButtonGroup
+            value={value}
+            exclusive
+            onChange={handleChange1}
+            size="small"
+          >
+            <ToggleButton
+              value="Yes"
+              sx={{
+                backgroundColor: value === "Yes" ? "green" : "",
+                color: value === "Yes" ? "white" : "",
+                "&.Mui-selected": {
+                  backgroundColor: "green",
+                  color: "white",
+                  "&:hover": {
+                    backgroundColor: "darkgreen",
+                  },
+                },
+              }}
+            >
+              Yes
+            </ToggleButton>
+
+            <ToggleButton
+              value="No"
+              sx={{
+                backgroundColor: value === "No" ? "red" : "",
+                color: value === "No" ? "white" : "",
+                "&.Mui-selected": {
+                  backgroundColor: "red",
+                  color: "white",
+                  "&:hover": {
+                    backgroundColor: "darkred",
+                  },
+                },
+              }}
+            >
+              No
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </div>
+      </Grid>
+      {/* First Row end Here  */}
+    </>
+  );
+};
+
+// Main Component Started Here
+function EditCoating() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { design } = location.state || {};
+
+  console.log("EDIT COATINGG", design);
+
+  const [components, setComponents] = useState({});
   const [open, setOpen] = useState(false);
+  const [currentImage, setCurrentImage] = useState("");
 
   const handleOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
+
+  const initialComponentsState = useMemo(() => {
+    const compNames = [
+      "Lid",
+      "Body",
+      "Bottom",
+      "Lid & Body",
+      "Lid & Body & Bottom",
+      "Body & Bottom",
+    ];
+    const obj = {};
+    compNames.forEach((name) => {
+      obj[name] = {
+        length: "",
+        breadth: "",
+        thickness: "",
+        ups: "",
+        sheets: "",
+        file: null,
+      };
+    });
+    return obj;
+  }, []);
+
+  useEffect(() => {
+    if (!design?.components) return;
+    const updatedComponents = { ...initialComponentsState };
+    Object.entries(design.components).forEach(([name, comp]) => {
+      if (updatedComponents[name]) updatedComponents[name] = { ...comp };
+    });
+    setComponents(updatedComponents);
+  }, [design, initialComponentsState]);
+
+  // Handle View
+  const handleViewFile = (componentName) => {
+    const { file } = components[componentName];
+    if (!file) return;
+
+    let imageUrl;
+    if (file instanceof File) {
+      imageUrl = URL.createObjectURL(file);
+    } else if (typeof file === "string") {
+      imageUrl = file.startsWith("http")
+        ? file
+        : `${server?.defaults?.baseURL}/uploads/${file}`;
+    }
+    setCurrentImage(imageUrl);
+    setOpen(true);
+  };
+  const handleClose = () => {
+    setOpen(false);
+    if (currentImage) URL.revokeObjectURL(currentImage);
+    setCurrentImage("");
+  };
 
   const modalStyle = {
     position: "absolute",
@@ -158,77 +281,6 @@ function EditCoating() {
     maxWidth: "90vw",
     maxHeight: "90vh",
   };
-
-  const columns = useMemo(
-    () => [
-      {
-        id: 1,
-        accessorKey: "id",
-        header: "SO.No",
-        size: 30,
-      },
-      {
-        id: 2,
-        accessorKey: "item",
-        header: "SO Date",
-        size: 30,
-      },
-      {
-        id: 3,
-        accessorKey: "steel",
-        header: "Customer Name",
-        size: 30,
-      },
-      {
-        id: 4,
-        accessorKey: "size",
-        header: "Size",
-        size: 30,
-      },
-      {
-        id: 5,
-        accessorKey: "date",
-        header: "Qty",
-        size: 30,
-      },
-      {
-        id: 6,
-        accessorKey: "date",
-        header: "Start Date",
-        size: 30,
-      },
-      {
-        id: 7,
-        accessorKey: "date",
-        header: "End Date",
-        size: 30,
-      },
-      {
-        id: 8,
-        accessorKey: "actions",
-        header: "Actions",
-        size: 30,
-        Cell: ({ row }) => (
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              columnGap: "20px",
-            }}
-          >
-            <IconButton>
-              <EditIcon />
-            </IconButton>
-            <IconButton>
-              <DeleteIcon />
-            </IconButton>
-          </Box>
-        ),
-      },
-    ],
-    []
-  );
 
   return (
     <Box className="Dashboard-con">
@@ -250,26 +302,50 @@ function EditCoating() {
       <Box className="page-layout" sx={{ marginTop: 1 }}>
         <Box sx={{ flexGrow: 1 }}>
           <Grid container spacing={2.5}>
-            <Grid size={3}>
+            <Grid size={4}>
               <FormGroup>
-                <Typography mb={1}>SO Number</Typography>
-                <TextField id="outlined-size-small" name="" size="small" />
-              </FormGroup>
-            </Grid>
-
-            <Grid size={3}>
-              <FormGroup>
-                <Typography mb={1}>SO Date</Typography>
+                <Typography mb={1}>Customer Name</Typography>
                 <TextField
                   id="outlined-size-small"
-                  name=""
                   size="small"
-                  type="date"
+                  value={design?.customer_name || ""}
+                  disabled
                 />
               </FormGroup>
             </Grid>
 
-            <Grid size={3}>
+            <Grid size={2}>
+              <FormGroup>
+                <Typography mb={1}>SO Number</Typography>
+                <TextField
+                  id="outlined-size-small"
+                  size="small"
+                  value={design?.saleorder_no || ""}
+                  disabled
+                />
+              </FormGroup>
+            </Grid>
+
+            <Grid size={2}>
+              <FormGroup>
+                <Typography mb={1}>SO Date</Typography>
+                <TextField
+                  id="outlined-size-small"
+                  size="small"
+                  type="date"
+                  value={
+                    design?.posting_date
+                      ? new Date(design.posting_date)
+                          .toISOString()
+                          .split("T")[0]
+                      : ""
+                  }
+                  disabled
+                />
+              </FormGroup>
+            </Grid>
+
+            <Grid size={2}>
               <FormGroup fullWidth>
                 <Typography mb={1}>Fab Site</Typography>
                 <Select
@@ -285,10 +361,16 @@ function EditCoating() {
               </FormGroup>
             </Grid>
 
-            <Grid size={3}>
+            <Grid size={2}>
               <FormGroup>
-                <Typography mb={1}>Job Name</Typography>
-                <TextField id="outlined-size-small" name="" size="small" />
+                <Typography mb={1}>Total Qty</Typography>
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  value={design?.item_quantity || ""}
+                  disabled
+                />
               </FormGroup>
             </Grid>
           </Grid>
@@ -304,156 +386,94 @@ function EditCoating() {
         >
           <Grid container spacing={0.5}>
             <Grid size={12}>
-              <div className="Box-table-title">
-                Todays' Work - ( 10-09-2025 )
+              <div
+                className="Box-table-title"
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <div>
+                  Today's Work - ({new Date().toLocaleDateString()}){" "}
+                  <span className={getArtWorkClass(design?.art_work)}>
+                    {design?.art_work || "NA"}
+                  </span>
+                </div>
+                <button className="gray-md-btn">
+                  <VisibilityIcon style={{ fontSize: 20 }} /> Artwork Image
+                </button>
               </div>
             </Grid>
-
             {/* Header Start Here  */}
-            <Grid size={1}>
-              <div className="Box-table-subtitle">Select Job</div>
-            </Grid>
-
             <Grid size={2}>
               <div className="Box-table-subtitle">Component</div>
             </Grid>
-
-            <Grid size={2}>
+            <Grid size={1.5}>
               <div className="Box-table-subtitle">Sheet Size</div>
             </Grid>
-
-            <Grid size={2}>
+            <Grid size={1.5}>
               <div className="Box-table-subtitle">No of Sheets</div>
             </Grid>
-
-            <Grid size={3}>
+            <Grid size={1.5}>
+              <div className="Box-table-subtitle">Source File</div>
+            </Grid>
+            <Grid size={1.5}>
               <div className="Box-table-subtitle">Coating Type</div>
             </Grid>
-
-            <Grid size={2}>
+            <Grid size={1.3}>
+              <div className="Box-table-subtitle">Start Time</div>
+            </Grid>
+            <Grid size={1.3}>
+              <div className="Box-table-subtitle">End Time</div>
+            </Grid>
+            <Grid size={1.3}>
               <div className="Box-table-subtitle">Status</div>
             </Grid>
             {/* Header End Here  */}
-
-            {/* First Row start Here  */}
-            <Grid size={12} sx={{ borderBottom: "1px solid #dcdddd" }}></Grid>
-
-            <Grid size={1}>
-              <div className="Box-table-checkbox">
-                <Checkbox {...label} />
-              </div>
-            </Grid>
-
-            <Grid size={2}>
-              <div className="Box-table-text">Lid </div>
-            </Grid>
-
-            <Grid size={2}>
-              <div className="Box-table-content">
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  value={"1000 x 1024 x 0.24"}
-                  disabled
+            {/* Render Component Rows */}
+            {Object.entries(components)
+              .filter(([key]) =>
+                Object.keys(design?.components || {}).includes(key)
+              )
+              .map(([key, component]) => (
+                <ComponentRow
+                  key={key}
+                  component={component}
+                  name={key}
+                  onViewFile={handleViewFile}
                 />
-              </div>
-            </Grid>
-
-            <Grid size={2}>
-              <div className="Box-table-content">
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  type="number"
-                  value={1000}
-                  disabled
-                />
-              </div>
-            </Grid>
-
-            <Grid size={3}>
-              <div className="Box-table-multiselect">
-                <FormControl sx={{ m: 1, width: 300 }}>
-                  <Select
-                    multiple
-                    value={personName}
-                    onChange={handleChange}
-                    input={<OutlinedInput />}
-                    renderValue={(selected) => selected.join(", ")}
-                    size="small"
-                    style={{ width: 300 }}
-                  >
-                    {groupedNames.map((item, index) =>
-                      item.type === "header" ? (
-                        <ListSubheader key={index}>{item.label}</ListSubheader>
-                      ) : (
-                        <MenuItem key={index} value={item.label}>
-                          <Checkbox checked={personName.includes(item.label)} />
-                          <ListItemText primary={item.label} />
-                        </MenuItem>
-                      )
-                    )}
-                  </Select>
-                </FormControl>
-              </div>
-            </Grid>
-
-            <Grid size={2}>
-              <div className="Box-table-content">
-                <ToggleButtonGroup
-                  value={value}
-                  exclusive
-                  onChange={handleChange1}
-                  size="small"
-                >
-                  <ToggleButton
-                    value="Yes"
-                    sx={{
-                      backgroundColor: value === "Yes" ? "green" : "",
-                      color: value === "Yes" ? "white" : "",
-                      "&.Mui-selected": {
-                        backgroundColor: "green",
-                        color: "white",
-                        "&:hover": {
-                          backgroundColor: "darkgreen",
-                        },
-                      },
-                    }}
-                  >
-                    Yes
-                  </ToggleButton>
-
-                  <ToggleButton
-                    value="No"
-                    sx={{
-                      backgroundColor: value === "No" ? "red" : "",
-                      color: value === "No" ? "white" : "",
-                      "&.Mui-selected": {
-                        backgroundColor: "red",
-                        color: "white",
-                        "&:hover": {
-                          backgroundColor: "darkred",
-                        },
-                      },
-                    }}
-                  >
-                    No
-                  </ToggleButton>
-                </ToggleButtonGroup>
-              </div>
-            </Grid>
-
-            {/* First Row end Here  */}
+              ))}
           </Grid>
+
+          {/* Action Buttons */}
+
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "flex-end",
+              p: 2,
+              mt: 2,
+              gap: 2,
+            }}
+          >
+            <Button
+              variant="solid"
+              color="success"
+              // onClick={handleSubmit}
+              sx={{ minWidth: 100 }}
+            >
+              Submit
+            </Button>
+          </Box>
         </Box>
 
+        {/* File Preview Modal */}
         <Modal open={open} onClose={handleClose}>
           <Box sx={modalStyle}>
             <img
-              src={upsImage}
-              alt="ups-modal"
+              src={currentImage}
+              alt="preview"
               style={{
                 width: "100%",
                 height: "auto",

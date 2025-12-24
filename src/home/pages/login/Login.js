@@ -7,7 +7,6 @@ import { Box, Button, Paper, TextField, Typography } from "@mui/material";
 import server from "../../../server/server";
 import "../../pages/pagestyle.scss";
 import GoogleAuth from "./GoogleAuth";
-import cryptoJS from "crypto-js";
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(4),
@@ -19,15 +18,14 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   textAlign: "center",
 }));
 
-
-
 function Login() {
   const navigate = useNavigate();
 
   const [getLoginVal, setLoginVal] = useState({
-    email: "Admin",
+    empID: "Admin",
     password: "Admin@123",
   });
+
   const [getLoginDetails, setLoginDetails] = useState("");
   const [getAuthPage, setAuthPage] = useState(false);
 
@@ -36,16 +34,14 @@ function Login() {
   // Custom function start here
 
   const handleLogin = async () => {
-    if (!getLoginVal.email || !getLoginVal.password) {
+    if (!getLoginVal.empID || !getLoginVal.password) {
       return alert("Please fill all fields");
     }
 
     try {
-      const hashedPassword = cryptoJS.SHA256(getLoginVal.password)?.toString();
-
       const res = await server.post("/user/login", {
-        empID: getLoginVal?.email,
-        password: hashedPassword,
+        empID: getLoginVal?.empID,
+        password: getLoginVal?.password,
       });
 
       setLoginDetails(res?.data?.message);
@@ -107,13 +103,13 @@ function Login() {
             </Stack>
 
             <TextField
-              label="Email"
+              label="Emp ID"
               variant="outlined"
               fullWidth
               margin="normal"
-              value={getLoginVal.email}
+              value={getLoginVal.empID}
               onChange={(e) => {
-                setLoginVal({ ...getLoginVal, email: e.target.value });
+                setLoginVal({ ...getLoginVal, empID: e.target.value });
               }}
             />
 
