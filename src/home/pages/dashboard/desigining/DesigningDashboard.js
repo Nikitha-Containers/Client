@@ -72,7 +72,7 @@ const DesigningDashboard = () => {
         size: 30,
       },
       { id: 4, accessorKey: "item_description", header: "Size", size: 30 },
-      { id: 5, accessorKey: "item_quantity", header: "Qty", size: 30 },
+      { id: 5, accessorKey: "item_quantity", header: "Quantity", size: 30 },
       {
         id: 6,
         accessorKey: "posting_date",

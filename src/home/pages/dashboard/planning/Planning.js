@@ -11,9 +11,20 @@ import { SalesOrder } from "../../../../API/Salesorder";
 import "../../../pages/pagestyle.scss";
 
 function Planning() {
-  const { salesOrders, sync } = SalesOrder();
+  const { salesOrders, sync, lastSync } = SalesOrder();
 
   const navigate = useNavigate();
+
+  const formatDate = (value) => {
+    if (!value) return "";
+    const dateString = value?.$date || value;
+    const [y, m, d] = new Date(dateString)
+      .toISOString()
+      .split("T")[0]
+      .split("-");
+
+    return `${d}/${m}/${y}`;
+  };
 
   const columns = useMemo(
     () => [
@@ -28,6 +39,9 @@ function Planning() {
         accessorKey: "posting_date",
         header: "SO Date",
         size: 30,
+        Cell: ({ row }) => {
+          return formatDate(row?.original?.posting_date);
+        },
       },
       {
         id: 3,
@@ -43,8 +57,8 @@ function Planning() {
       },
       {
         id: 5,
-        accessorKey: "quantity",
-        header: "Qty",
+        accessorKey: "item_quantity",
+        header: "Quantity",
         size: 30,
       },
       {
@@ -52,12 +66,18 @@ function Planning() {
         accessorKey: "posting_date",
         header: "Start Date",
         size: 30,
+        Cell: ({ row }) => {
+          return formatDate(row?.original?.posting_date);
+        },
       },
       {
         id: 7,
         accessorKey: "due_date",
         header: "End Date",
         size: 30,
+        Cell: ({ row }) => {
+          return formatDate(row?.original?.due_date);
+        },
       },
       {
         id: 8,
@@ -91,14 +111,28 @@ function Planning() {
       <Box className="breadcrump-con">
         <Box className="main-title">
           <div>Planning</div>
-          <button className="gray-md-btn" onClick={sync}>
-            <SyncIcon /> Sync With SO
-          </button>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+            }}
+          >
+            <button className="gray-md-btn" onClick={sync}>
+              <SyncIcon /> Sync With SO
+            </button>
+
+            {lastSync && (
+              <span style={{ fontSize: "16px", marginTop: "16px" }}>
+                Last Sync: {new Date(lastSync).toLocaleString()}
+              </span>
+            )}
+          </Box>
         </Box>
       </Box>
 
       <Box className="page-layout">
-        <Box sx={{ mt: 8 }}>
+        <Box sx={{ mt: 5 }}>
           <MaterialReactTable
             columns={columns}
             data={salesOrders}

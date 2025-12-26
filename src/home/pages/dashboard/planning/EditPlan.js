@@ -21,7 +21,6 @@ import StepConnector, {
 } from "@mui/material/StepConnector";
 import "../Dashboard.scss";
 import { Link, useNavigate } from "react-router-dom";
-import CloseIcon from "@mui/icons-material/Close";
 import upsImage from "../../../../assets/Pagesimage/ups-image.jpg";
 import { useLocation } from "react-router-dom";
 
@@ -103,10 +102,55 @@ function EditPlan() {
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
-
+  const navigate = useNavigate();
   const location = useLocation();
-  const rowData = location.state;
+  const rowData = location.state || {};
 
+  // Helper Functions
+  const extractSize = (desc = "") => {
+    const nums = desc.match(/\d+/g);
+    return nums ? nums.join(" x ") : "";
+  };
+
+  const initialComp = {
+    saleorder_no: rowData.saleorder_no || "",
+    posting_date: rowData.posting_date
+      ? new Date(rowData.posting_date).toISOString().split("T")[0]
+      : "",
+    customer_name: rowData.customer_name || "",
+    sales_person_code: rowData.sales_person_code || "",
+    item_description: rowData.item_description || "",
+    size: extractSize(rowData.item_description),
+    item_quantity: rowData.item_quantity || "",
+    machine: "",
+    shift: "",
+    fab_site: "",
+    priority: "Normal",
+  };
+
+  const [getFormData, setFormData] = useState(initialComp);
+
+  // Handle Change
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  // Handle Submit
+
+  const handleSubmit = () => {
+    console.log("Submitting Data:", getFormData);
+    alert("Plan Updated Successfully ✅");
+  };
+  // Handle Cancel
+  const handleCancel = () => {
+    navigate("/planning");
+  };
 
   const modalStyle = {
     position: "absolute",
@@ -141,11 +185,11 @@ function EditPlan() {
               <FormGroup>
                 <Typography mb={1}>SO Number</Typography>
                 <TextField
-                  id="outlined-size-small"
-                  name=""
+                  name="saleorder_no"
                   size="small"
                   type="text"
-                  value={rowData?.saleorder_no || ""}
+                  value={getFormData?.saleorder_no}
+                  onChange={handleChange}
                 />
               </FormGroup>
             </Grid>
@@ -154,11 +198,11 @@ function EditPlan() {
               <FormGroup>
                 <Typography mb={1}>SO Date</Typography>
                 <TextField
-                  id="outlined-size-small"
-                  name=""
+                  name="posting_date"
                   size="small"
                   type="date"
-                  value={rowData?.posting_date || ""}
+                  value={getFormData?.posting_date}
+                  onChange={handleChange}
                 />
               </FormGroup>
             </Grid>
@@ -167,11 +211,11 @@ function EditPlan() {
               <FormGroup>
                 <Typography mb={1}>Customer Name</Typography>
                 <TextField
-                  id="outlined-size-small"
-                  name=""
+                  name="customer_name"
                   size="small"
                   type="text"
-                  value={rowData?.customer_name || ""}
+                  value={getFormData?.customer_name}
+                  onChange={handleChange}
                 />
               </FormGroup>
             </Grid>
@@ -180,11 +224,11 @@ function EditPlan() {
               <FormGroup>
                 <Typography mb={1}>Sales Person</Typography>
                 <TextField
-                  id="outlined-size-small"
-                  name=""
+                  name="sales_person_code"
                   size="small"
                   type="text"
-                  value={rowData?.sales_person || ""}
+                  value={getFormData?.sales_person_code}
+                  onChange={handleChange}
                 />
               </FormGroup>
             </Grid>
@@ -193,85 +237,107 @@ function EditPlan() {
               <FormGroup>
                 <Typography mb={1}>Dimensions</Typography>
                 <TextField
-                  id="outlined-size-small"
-                  name=""
+                  name="item_description"
                   size="small"
                   type="text"
-                  value={rowData?.item_description || ""}
+                  value={getFormData?.item_description}
+                  onChange={handleChange}
                 />
               </FormGroup>
             </Grid>
 
-            {/* <Grid size={3}>
+            <Grid size={3}>
               <FormGroup>
                 <Typography mb={1}>Size</Typography>
-                <TextField id="outlined-size-small" name="" size="small" />
+                <TextField
+                  name="size"
+                  size="small"
+                  type="text"
+                  value={getFormData?.size}
+                  onChange={handleChange}
+                />
               </FormGroup>
-            </Grid> */}
+            </Grid>
 
             <Grid size={3}>
               <FormGroup>
-                <Typography mb={1}>Qty</Typography>
+                <Typography mb={1}>Quantity</Typography>
                 <TextField
                   id="outlined-size-small"
-                  name=""
+                  name="item_quantity"
                   size="small"
                   type="number"
-                  value={rowData?.quantity}
+                  value={getFormData?.item_quantity}
+                  onChange={handleChange}
                 />
               </FormGroup>
             </Grid>
 
             <Grid size={3}>
               <FormGroup>
-                <Typography mb={1}>MC</Typography>
-                <TextField id="outlined-size-small" name="" size="small" />
-              </FormGroup>
-            </Grid>
-
-            <Grid size={3}>
-              <FormGroup>
-                <Typography mb={1}>Print Start Date</Typography>
-                <TextField
-                  id="outlined-size-small"
-                  name=""
+                <Typography mb={1}>Machine</Typography>
+                <Select
+                  name="machine"
+                  value={getFormData?.machine}
                   size="small"
-                  type="date"
-                />
-              </FormGroup>
-            </Grid>
-
-            <Grid size={3}>
-              <FormGroup>
-                <Typography mb={1}>Print End Date</Typography>
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  type="date"
-                />
+                  onChange={handleChange}
+                  displayEmpty
+                >
+                  <MenuItem value="">Select</MenuItem>
+                  <MenuItem value="Machine 1">Machine 1</MenuItem>
+                  <MenuItem value="Machine 2">Machine 2</MenuItem>
+                  <MenuItem value="Machine 3">Machine 3</MenuItem>
+                </Select>
               </FormGroup>
             </Grid>
 
             <Grid size={3}>
               <FormGroup>
                 <Typography mb={1}>Shift</Typography>
-                <TextField id="outlined-size-small" name="" size="small" />
+                <Select
+                  name="shift"
+                  value={getFormData?.shift}
+                  size="small"
+                  onChange={handleChange}
+                  displayEmpty
+                >
+                  <MenuItem value="">Select</MenuItem>
+                  <MenuItem value="Shift 1">Shift 1</MenuItem>
+                  <MenuItem value="Shift 2">Shift 2</MenuItem>
+                  <MenuItem value="Shift 3">Shift 3</MenuItem>
+                </Select>
               </FormGroup>
             </Grid>
 
             <Grid size={3}>
-              <FormGroup fullWidth>
+              <FormGroup>
                 <Typography mb={1}>Fab Site</Typography>
                 <Select
-                  labelId="demo-simple-select-label"
-                  id="demo-simple-select"
-                  value={10}
+                  name="fab_site"
+                  value={getFormData?.fab_site}
                   size="small"
+                  onChange={handleChange}
+                  displayEmpty
                 >
-                  <MenuItem value={10}>1.</MenuItem>
-                  <MenuItem value={20}>2.</MenuItem>
-                  <MenuItem value={30}>3.</MenuItem>
+                  <MenuItem value="">Select</MenuItem>
+                  <MenuItem value="Site 1">Site 1</MenuItem>
+                  <MenuItem value="Site 2">Site 2</MenuItem>
+                  <MenuItem value="Site 3">Site 3</MenuItem>
+                </Select>
+              </FormGroup>
+            </Grid>
+
+            <Grid size={3}>
+              <FormGroup>
+                <Typography mb={1}>Priority</Typography>
+                <Select
+                  name="priority"
+                  value={getFormData?.priority}
+                  size="small"
+                  onChange={handleChange}
+                >
+                  <MenuItem value="Normal">Normal</MenuItem>
+                  <MenuItem value="Urgent">Urgent</MenuItem>
                 </Select>
               </FormGroup>
             </Grid>
@@ -330,25 +396,31 @@ function EditPlan() {
               sx={{
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "end",
-                columnGap: 2,
+                justifyContent: "flex-end",
+                columnGap: "15px",
               }}
             >
               <Button
-                variant="contained"
-                size="large"
+                variant="outlined"
+                color="error"
                 sx={{
-                  backgroundColor: "#e0e0e0",
-                  color: "#000",
-                  "&:hover": {
-                    backgroundColor: "#bdbdbd",
-                  },
+                  borderRadius: "8px",
+                  minWidth: "100px",
                 }}
+                onClick={handleCancel}
               >
                 Cancel
               </Button>
 
-              <Button variant="contained" size="large">
+              <Button
+                variant="contained"
+                color="success"
+                sx={{
+                  borderRadius: "8px",
+                  minWidth: "100px",
+                }}
+                onClick={handleSubmit}
+              >
                 Save
               </Button>
             </Grid>

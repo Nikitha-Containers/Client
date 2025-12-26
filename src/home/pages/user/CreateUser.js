@@ -447,8 +447,7 @@ function CreateUser() {
       showSnackbar("Ip Address is required", "error");
       return false;
     }
-
-    if (!formValues?.email.trim() === "") {
+    if (formValues?.email?.trim() === "") {
       showSnackbar("Email is required", "error");
       return false;
     }

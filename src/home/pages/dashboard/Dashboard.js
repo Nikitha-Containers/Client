@@ -121,7 +121,7 @@ const Dashboard = () => {
       {
         id: 5,
         accessorKey: "date",
-        header: "Qty",
+        header: "Quantity",
         size: 30,
       },
       {

@@ -131,7 +131,7 @@ const Sidebar = ({ isCollapsed }) => {
           >
             <AssignmentAddIcon className="menu-icon" />
             <ListItemText
-              primary="Planning"
+              primary="Sync With SO"
               sx={{
                 overflow: "hidden",
                 maxWidth: isCollapsed ? 0 : 150,
