@@ -18,6 +18,8 @@ import DesigningDashboard from "./pages/dashboard/desigining/DesigningDashboard"
 import PrintingManager from "./pages/dashboard/printing/PrintingManager";
 import EditPrint from "./pages/dashboard/printing/EditPrint";
 import EditDesign from "./pages/dashboard/desigining/EditDesign";
+import Stores_dashboard from "./pages/dashboard/stores/Stores_dashboard";
+import Uploadsheet from "./pages/dashboard/stores/Uploadsheet";
 
 function Mainlayouts() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -84,6 +86,28 @@ function Mainlayouts() {
                 element={
                   <PrivateRoute>
                     <Planning />
+                  </PrivateRoute>
+                }
+              />
+            ) : null}
+
+            {getAccess === "Stores" && menuPages?.includes("Dashboard") ? (
+              <Route
+                path="/Stores_dashboard"
+                element={
+                  <PrivateRoute>
+                    <Stores_dashboard />
+                  </PrivateRoute>
+                }
+              />
+            ) : null}
+
+            {getAccess === "Stores" && menuPages?.includes("Sheet Taken") ? (
+              <Route
+                path="/uploadsheet"
+                element={
+                  <PrivateRoute>
+                    <Uploadsheet />
                   </PrivateRoute>
                 }
               />

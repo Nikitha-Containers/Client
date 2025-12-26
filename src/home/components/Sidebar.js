@@ -52,14 +52,12 @@ const Sidebar = ({ isCollapsed }) => {
 
   const menuPages = getMenus?.toString()?.split(",");
 
-  console.log("menuPages", menuPages);
 
   useEffect(() => {
     setAccess(sessionStorage.getItem("access"));
     setMenus(sessionStorage.getItem("sidemenus"));
   }, []);
 
-  console.log("location", location.pathname);
 
   return (
     <Box sx={{ backgroundColor: "#f5f7f9", height: "91.5vh" }}>
@@ -92,6 +90,54 @@ const Sidebar = ({ isCollapsed }) => {
       </Box>
 
       <List className="side-list">
+        {/* Stores menu start here  */}
+        {getAccess === "Stores" && menuPages?.includes("Dashboard") ? (
+          <ListItem
+            button
+            component={Link}
+            to="/Stores_dashboard"
+            className={`list-element ${
+              location.pathname === "/Stores_dashboard" ? "pageactive" : ""
+            }`}
+          >
+            <DashboardIcon className="menu-icon" />
+            <ListItemText
+              primary="Dashboard"
+              sx={{
+                overflow: "hidden",
+                maxWidth: isCollapsed ? 0 : 150,
+                opacity: isCollapsed ? 0 : 1,
+                transition: "max-width 0.3s ease, opacity 0.3s ease",
+                whiteSpace: "nowrap",
+              }}
+            />
+          </ListItem>
+        ) : null}
+
+        {getAccess === "Stores" && menuPages?.includes("Sheet Taken") ? (
+          <ListItem
+            button
+            component={Link}
+            to="/uploadsheet"
+            className={`list-element ${
+              location.pathname === "/uploadsheet" ? "pageactive" : ""
+            }`}
+          >
+            <DashboardIcon className="menu-icon" />
+            <ListItemText
+              primary="Dashboard"
+              sx={{
+                overflow: "hidden",
+                maxWidth: isCollapsed ? 0 : 150,
+                opacity: isCollapsed ? 0 : 1,
+                transition: "max-width 0.3s ease, opacity 0.3s ease",
+                whiteSpace: "nowrap",
+              }}
+            />
+          </ListItem>
+        ) : null}
+        {/* Stores menu end here  */}
+
         {/* Planning menu pages start here  */}
 
         {getAccess === "Planning" && menuPages?.includes("Dashboard") ? (

@@ -29,7 +29,6 @@ function Login() {
   const [getLoginDetails, setLoginDetails] = useState("");
   const [getAuthPage, setAuthPage] = useState(false);
 
-  console.log("getLoginDetails", getLoginDetails);
 
   // Custom function start here
 
@@ -56,7 +55,6 @@ function Login() {
       }
 
       if (res?.data?.message === "Login successful") {
-        console.log("USer Login");
 
         if (res.data.adminID) {
           sessionStorage.setItem("adminID", res.data.adminID);

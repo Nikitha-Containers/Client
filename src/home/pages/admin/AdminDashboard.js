@@ -3,8 +3,6 @@ import { useState, useEffect } from "react";
 function AdminDashboard() {
   const [getDetails, setDetails] = useState({});
 
-  console.log("getDetails", getDetails);
-
   useEffect(() => {
     setDetails("Heyy");
   }, []);

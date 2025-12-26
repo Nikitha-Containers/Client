@@ -29,7 +29,6 @@ const CoatingDashboard = () => {
 
   const { designs } = useDesign();
 
-  console.log("designs from API:", designs);
 
   const formatDate = (value) => {
     if (!value) return "";

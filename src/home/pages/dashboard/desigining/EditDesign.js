@@ -225,8 +225,6 @@ function EditDesign() {
   const location = useLocation();
   const { salesOrder, design } = location.state || {};
 
-  console.log("Edit Design SO:", salesOrder);
-  console.log("Edit Design Design", design);
 
   const [formData, setFormData] = useState({
     saleorder_no: salesOrder?.saleorder_no || "",

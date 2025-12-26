@@ -481,7 +481,6 @@ function CreateUser() {
     Fabrication: ["Dashboard", "Quality Control"],
   };
 
-  console.log("formValues", formValues);
 
   // Save handler
   const handleSave = async () => {

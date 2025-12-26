@@ -210,7 +210,6 @@ function EditCoating() {
   const location = useLocation();
   const { design } = location.state || {};
 
-  console.log("EDIT COATINGG", design);
 
   const [components, setComponents] = useState({});
   const [open, setOpen] = useState(false);
