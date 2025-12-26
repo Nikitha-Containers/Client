@@ -8,7 +8,7 @@ import "../../../pages/pagestyle.scss";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { SalesOrder } from "../../../../API/Salesorder";
-import "../../../pages/pagestyle.scss";
+
 
 function Planning() {
   const { salesOrders, sync, lastSync } = SalesOrder();
