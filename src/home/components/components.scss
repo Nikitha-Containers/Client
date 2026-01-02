@@ -2,6 +2,11 @@
 @import "./variables";
 @import url("https://geisthub.vercel.app/font/variable.css");
 
+.css-1pzfmz2-MuiInputBase-input-MuiOutlinedInput-input.Mui-disabled {
+  opacity: 1;
+  -webkit-text-fill-color: #000000 !important;
+}
+
 .avatar-con {
   display: flex;
   align-items: center;

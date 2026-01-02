@@ -20,6 +20,7 @@ import EditPrint from "./pages/dashboard/printing/EditPrint";
 import EditDesign from "./pages/dashboard/desigining/EditDesign";
 import Stores_dashboard from "./pages/dashboard/stores/Stores_dashboard";
 import Uploadsheet from "./pages/dashboard/stores/Uploadsheet";
+import Toast from "./components/Toast";
 
 function Mainlayouts() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -45,6 +46,7 @@ function Mainlayouts() {
 
   return (
     <Box>
+      <Toast />
       {!isLoginPage && notfound && (
         <TopBar onToggleSidebar={handleToggleSidebar} />
       )}
@@ -93,7 +95,7 @@ function Mainlayouts() {
 
             {getAccess === "Stores" && menuPages?.includes("Dashboard") ? (
               <Route
-                path="/Stores_dashboard"
+                path="/"
                 element={
                   <PrivateRoute>
                     <Stores_dashboard />

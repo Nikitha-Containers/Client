@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
 import {
@@ -10,14 +10,21 @@ import {
   Select,
   Checkbox,
   Modal,
+  Dialog,
+  DialogTitle,
+  IconButton,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
-import Button from "@mui/joy/Button";
-import SvgIcon from "@mui/joy/SvgIcon";
-import { styled } from "@mui/joy";
+import Button from "@mui/material/Button";
+import SvgIcon from "@mui/material/SvgIcon";
+import { styled } from "@mui/material/styles";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
-import "../../../pages/pagestyle.scss";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import "../../../pages/pagestyle.scss";
 import server from "../../../../server/server";
+import { toast } from "react-toastify";
+import CloseIcon from "@mui/icons-material/Close";
 
 const label = { inputProps: { "aria-label": "Checkbox demo" } };
 
@@ -28,17 +35,17 @@ const getArtWorkClass = (art) => {
   return "art-badge";
 };
 
-const VisuallyHiddenInput = styled("input")`
-  clip: rect(0 0 0 0);
-  clip-path: inset(50%);
-  height: 1px;
-  overflow: hidden;
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  white-space: nowrap;
-  width: 1px;
-`;
+const VisuallyHiddenInput = styled("input")({
+  clip: "rect(0 0 0 0)",
+  clipPath: "inset(50%)",
+  height: 1,
+  overflow: "hidden",
+  position: "absolute",
+  bottom: 0,
+  left: 0,
+  whiteSpace: "nowrap",
+  width: 1,
+});
 
 // Component Row Start Here
 const ComponentRow = ({
@@ -48,11 +55,21 @@ const ComponentRow = ({
   onFileUpload,
   onViewFile,
   totalQty,
+  isSubmitted,
+  resetSubmitState,
 }) => {
   const originalSheets =
     component.ups && totalQty
       ? Math.ceil(Number(totalQty) / Number(component.ups))
       : "";
+
+  const lengthRef = useRef(null);
+
+  const isFieldError = (value) =>
+    component.selected && isSubmitted && (value === "" || value === null);
+  const isFileError =
+    component.selected && isSubmitted && !component.file && !component.fileObj;
+
   return (
     <>
       <Grid size={12} sx={{ borderBottom: "1px solid #dcdddd" }} />
@@ -60,8 +77,16 @@ const ComponentRow = ({
       <Grid size={1}>
         <div className="Box-table-checkbox">
           <Checkbox
-            checked={component.selected}
-            onChange={(e) => onDataChange(name, "selected", e.target.checked)}
+            checked={component?.selected}
+            onChange={(e) => {
+              onDataChange(name, "selected", e.target.checked);
+              resetSubmitState();
+              if (e.target.checked) {
+                setTimeout(() => {
+                  lengthRef.current?.focus();
+                }, 300);
+              }
+            }}
             {...label}
           />
         </div>
@@ -74,13 +99,14 @@ const ComponentRow = ({
       <Grid size={1}>
         <div className="Box-table-content">
           <TextField
-            id="outlined-size-small"
-            name=""
+            inputRef={lengthRef}
             size="small"
-            type="text"
-            value={component.length}
+            type="number"
+            value={component?.length}
             onChange={(e) => onDataChange(name, "length", e.target.value)}
             disabled={!component.selected}
+            error={isFieldError(component?.length)}
+            helperText={isFieldError(component?.length) ? "Required" : ""}
           />
         </div>
       </Grid>
@@ -88,13 +114,13 @@ const ComponentRow = ({
       <Grid size={1}>
         <div className="Box-table-content">
           <TextField
-            id="outlined-size-small"
-            name=""
             size="small"
-            type="text"
-            value={component.breadth}
+            type="number"
+            value={component?.breadth}
             onChange={(e) => onDataChange(name, "breadth", e.target.value)}
             disabled={!component.selected}
+            error={isFieldError(component?.breadth)}
+            helperText={isFieldError(component?.breadth) ? "Required" : ""}
           />
         </div>
       </Grid>
@@ -102,13 +128,13 @@ const ComponentRow = ({
       <Grid size={1}>
         <div className="Box-table-content">
           <TextField
-            id="outlined-size-small"
-            name=""
             size="small"
-            type="text"
+            type="number"
             value={component.thickness}
             onChange={(e) => onDataChange(name, "thickness", e.target.value)}
             disabled={!component.selected}
+            error={isFieldError(component.thickness)}
+            helperText={isFieldError(component.thickness) ? "Required" : ""}
           />
         </div>
       </Grid>
@@ -116,13 +142,13 @@ const ComponentRow = ({
       <Grid size={1.5}>
         <div className="Box-table-content">
           <TextField
-            id="outlined-size-small"
-            name=""
             size="small"
-            type="text"
+            type="number"
             value={component.ups}
             onChange={(e) => onDataChange(name, "ups", e.target.value)}
             disabled={!component.selected}
+            error={isFieldError(component.ups)}
+            helperText={isFieldError(component.ups) ? "Required" : ""}
           />
         </div>
       </Grid>
@@ -131,11 +157,13 @@ const ComponentRow = ({
         <div className="Box-table-content">
           <TextField
             size="small"
-            type="text"
+            type="number"
             label={originalSheets}
             value={component.sheets}
             onChange={(e) => onDataChange(name, "sheets", e.target.value)}
             disabled={!component.selected}
+            error={isFieldError(component.sheets)}
+            helperText={isFieldError(component.sheets) ? "Required" : ""}
             InputLabelProps={{ shrink: true }}
             sx={{
               "& .MuiInputLabel-root": {
@@ -156,6 +184,7 @@ const ComponentRow = ({
           componentName={name}
           file={component.fileObj || component.file}
           disabled={!component.selected}
+          error={isFileError}
         />
       </Grid>
     </>
@@ -171,6 +200,7 @@ const FileUpload = ({
   componentName,
   file,
   disabled,
+  error,
 }) => (
   <Box
     className="Box-table-upload"
@@ -179,9 +209,9 @@ const FileUpload = ({
     <Button
       component="label"
       variant="outlined"
-      color="neutral"
+      color={error ? "error" : "inherit"}
       disabled={disabled}
-      startDecorator={
+      startIcon={
         <SvgIcon>
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -199,7 +229,7 @@ const FileUpload = ({
         </SvgIcon>
       }
     >
-      {file ? "Change File" : "Upload a file"}
+      {file ? "Change" : "Upload"}
       <VisuallyHiddenInput
         type="file"
         onChange={(e) => onFileUpload(componentName, e.target.files[0])}
@@ -207,13 +237,18 @@ const FileUpload = ({
     </Button>
 
     {file && (
-      <Link
+      <button
         className="gray-md-btn"
         onClick={() => onViewFile(componentName)}
         style={{ cursor: "pointer" }}
       >
         <VisibilityIcon /> View
-      </Link>
+      </button>
+    )}
+    {error && (
+      <Typography sx={{ color: "#d32f2f", fontSize: "12px" }}>
+        File required *
+      </Typography>
     )}
   </Box>
 );
@@ -225,8 +260,7 @@ function EditDesign() {
   const location = useLocation();
   const { salesOrder, design } = location.state || {};
 
-
-  const [formData, setFormData] = useState({
+  const initialComp = {
     saleorder_no: salesOrder?.saleorder_no || "",
     posting_date: salesOrder?.posting_date
       ? new Date(salesOrder?.posting_date).toISOString().split("T")[0]
@@ -238,7 +272,11 @@ function EditDesign() {
       design?.item_description || salesOrder?.item_description || "",
     customer_name: design?.customer_name || salesOrder?.customer_name || "",
     due_date: design?.due_date || salesOrder?.due_date || "",
-  });
+    sales_person_code:
+      design?.sales_person_code || salesOrder?.sales_person_code || "",
+  };
+
+  const [formData, setFormData] = useState(initialComp);
 
   const createComponent = () => ({
     selected: false,
@@ -262,9 +300,16 @@ function EditDesign() {
     [salesOrder?.thickness]
   );
 
+  const [openPending, setOpenPending] = useState(false);
+  const [pendingData, setPendingData] = useState({
+    completedWork: "",
+    pendingWork: 0,
+    reason: "",
+  });
   const [open, setOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState("");
   const [components, setComponents] = useState(initialComponentsState);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   useEffect(() => {
     if (!design?.components) return;
@@ -351,9 +396,28 @@ function EditDesign() {
     setOpen(true);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (type) => {
+    setIsSubmitted(true);
     const fullComponents = {};
+
+    const design_status = type === "PENDING" ? 1 : 2;
+
     const formDataToSend = new FormData();
+    for (const [name, data] of Object.entries(components)) {
+      if (data.selected) {
+        if (
+          !data.length ||
+          !data.breadth ||
+          !data.thickness ||
+          !data.ups ||
+          !data.sheets ||
+          (!data.file && !data.fileObj)
+        ) {
+          toast.error(`Please complete all fields and upload file for ${name}`);
+          return;
+        }
+      }
+    }
 
     Object.entries(components).forEach(([name, data]) => {
       if (data.selected) {
@@ -375,13 +439,14 @@ function EditDesign() {
     });
 
     if (Object.keys(fullComponents).length === 0) {
-      alert("Please select at least one component");
+      toast.info("Please select a component");
       return;
     }
 
     formDataToSend.append("saleorder_no", formData?.saleorder_no);
     formDataToSend.append("posting_date", formData?.posting_date);
     formDataToSend.append("item_quantity", formData?.item_quantity);
+    formDataToSend.append("sales_person_code", formData?.sales_person_code);
     formDataToSend.append("machine", formData?.machine);
     formDataToSend.append("components", JSON.stringify(fullComponents));
     formDataToSend.append(
@@ -400,69 +465,45 @@ function EditDesign() {
       "due_date",
       formData?.due_date || salesOrder?.due_date || ""
     );
+    formDataToSend.append("design_status", design_status);
+
+    if (type === "PENDING") {
+      const design_pending_details = {
+        pending_reason: pendingData.reason,
+      };
+
+      formDataToSend.append(
+        "design_pending_details",
+        JSON.stringify(design_pending_details)
+      );
+    }
 
     try {
-      const response = await server.post("/design/add", formDataToSend, {
+      await server.post("/design/add", formDataToSend, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      const result = response.data;
-      if (result.success) {
-        alert(result.message);
-        navigate("/Designing_dashboard");
+      if (type === "PENDING") {
+        toast.info("Design moved to Pending");
       } else {
-        throw new Error(result.error || "Failed to update design");
+        toast.success("Design saved successfully");
       }
+
+      navigate("/Designing_dashboard");
     } catch (error) {
-      console.error("Error updating data:", error);
       const errorMessage = error.response?.data?.error || error.message;
-      alert(`Error: ${errorMessage}`);
+      toast.error(errorMessage);
     }
+  };
+
+  const resetSubmitState = () => {
+    setIsSubmitted(false);
   };
 
   const handleCancel = () => {
-    if (design) {
-      setFormData({
-        saleorder_no: design?.saleorder_no || salesOrder?.saleorder_no || "",
-        posting_date: design?.posting_date
-          ? new Date(design.posting_date).toISOString().split("T")[0]
-          : salesOrder?.posting_date
-          ? new Date(salesOrder.posting_date).toISOString().split("T")[0]
-          : "",
-        item_quantity: design?.item_quantity || salesOrder?.item_quantity || "",
-        machine: design?.machine || "",
-        art_work: design?.art_work || salesOrder?.art_work || "NA",
-        item_description:
-          design?.item_description || salesOrder?.item_description || "",
-        customer_name: design?.customer_name || salesOrder?.customer_name || "",
-        due_date: design?.due_date || salesOrder?.due_date || "",
-      });
-
-      if (design.components) {
-        const resetComponents = { ...initialComponentsState };
-        Object.entries(design.components).forEach(([name, comp]) => {
-          if (resetComponents[name]) {
-            resetComponents[name] = {
-              ...resetComponents[name],
-              selected: comp?.selected ?? true,
-              length: comp?.length || "",
-              breadth: comp?.breadth || "",
-              thickness: comp?.thickness || salesOrder?.thickness || "",
-              ups: comp?.ups || "",
-              sheets: comp?.sheets || "",
-              file: comp?.file || null,
-              fileObj: null,
-            };
-          }
-        });
-        setComponents(resetComponents);
-      }
-    }
-
-    if (open) {
-      handleClose();
-    }
+    navigate("/Designing_dashboard");
   };
+
   const modalStyle = {
     position: "absolute",
     top: "50%",
@@ -474,7 +515,7 @@ function EditDesign() {
   };
 
   return (
-    <Box className="Dashboard-con" >
+    <Box className="Dashboard-con">
       <Box className="breadcrump-con">
         <Box className="main-title">
           <div className="main-inner-txts">
@@ -493,7 +534,7 @@ function EditDesign() {
       <Box className="page-layout" sx={{ marginTop: 1 }}>
         <Box sx={{ flexGrow: 1 }}>
           <Grid container spacing={2.5}>
-            <Grid size={4}>
+            <Grid size={2}>
               <FormGroup>
                 <Typography mb={1}>Customer Name</Typography>
                 <TextField
@@ -542,41 +583,57 @@ function EditDesign() {
             </Grid>
 
             <Grid size={2}>
-              <FormGroup fullWidth>
-                <Typography mb={1}>Machine</Typography>
-                <Select
-                  labelId="demo-simple-select-label"
-                  id="demo-simple-select"
-                  value={formData.machine}
-                  size="small"
-                  displayEmpty
-                  renderValue={
-                    formData.machine !== "" ? undefined : () => "Select"
-                  }
-                  onChange={(e) => handleFormChange("machine", e.target.value)}
-                >
-                  <MenuItem value="">Select</MenuItem>
-                  <MenuItem value="Machine 1">Machine 1</MenuItem>
-                  <MenuItem value="Machine 2">Machine 2</MenuItem>
-                  <MenuItem value="Machine 3">Machine 3</MenuItem>
-                </Select>
-              </FormGroup>
-            </Grid>
-
-            <Grid size={2}>
               <FormGroup>
                 <Typography mb={1}>Total Qty</Typography>
                 <TextField
                   id="outlined-size-small"
                   name=""
                   size="small"
-                  type="text"
-                  value={formData.item_quantity}
+                  type="number"
+                  value={formData?.item_quantity}
                   onChange={(e) =>
                     handleFormChange("item_quantity", e.target.value)
                   }
                   disabled
                 />
+              </FormGroup>
+            </Grid>
+            <Grid size={2}>
+              <FormGroup>
+                <Typography mb={1}>Sales Person</Typography>
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  type="text"
+                  value={formData?.sales_person_code}
+                  onChange={(e) =>
+                    handleFormChange("sales_person_code", e.target.value)
+                  }
+                  disabled
+                />
+              </FormGroup>
+            </Grid>
+            <Grid size={2}>
+              <FormGroup fullWidth>
+                <Typography mb={1}>Machine</Typography>
+
+                <Select
+                  value={formData?.machine}
+                  size="small"
+                  displayEmpty
+                  renderValue={
+                    formData.machine !== "" ? undefined : () => "Select"
+                  }
+                  onChange={(e) => {
+                    handleFormChange("machine", e.target.value);
+                  }}
+                >
+                  <MenuItem value="">Select</MenuItem>
+                  <MenuItem value="Machine 1">Machine 1</MenuItem>
+                  <MenuItem value="Machine 2">Machine 2</MenuItem>
+                  <MenuItem value="Machine 3">Machine 3</MenuItem>
+                </Select>
               </FormGroup>
             </Grid>
           </Grid>
@@ -654,7 +711,9 @@ function EditDesign() {
                 onDataChange={handleComponentChange}
                 onFileUpload={handleFileUpload}
                 onViewFile={handleViewFile}
-                totalQty={formData.item_quantity}
+                totalQty={formData?.item_quantity}
+                isSubmitted={isSubmitted}
+                resetSubmitState={resetSubmitState}
               />
             ))}
           </Grid>
@@ -670,18 +729,26 @@ function EditDesign() {
             }}
           >
             <Button
-              variant="outlined"
-              color="danger"
+              variant="contained"
+              color="error"
               onClick={handleCancel}
               sx={{ minWidth: 100 }}
             >
               Cancel
             </Button>
             <Button
-              variant="solid"
-              color="success"
-              onClick={handleSubmit}
+              variant="contained"
+              color="primary"
+              onClick={() => setOpenPending(true)}
               sx={{ minWidth: 100 }}
+            >
+              Pending
+            </Button>
+
+            <Button
+              variant="contained"
+              color="success"
+              onClick={() => handleSubmit("FINAL")}
             >
               Submit
             </Button>
@@ -704,6 +771,141 @@ function EditDesign() {
           </Box>
         </Modal>
       </Box>
+
+      {/* Pending Dialouge */}
+      <Dialog
+        open={openPending}
+        onClose={() => setOpenPending(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: "16px" } }}
+      >
+        <DialogTitle
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+          }}
+        >
+          <Typography variant="h6" fontWeight="bold" color="#0a85cb">
+            Pending
+          </Typography>
+
+          <IconButton
+            onClick={() => setOpenPending(false)}
+            sx={{ color: "#3b3b3b" }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+
+        <DialogContent dividers>
+          <Grid container spacing={2}>
+            {/* <Grid size={5}>
+              <Typography>No of Completed Works</Typography>
+            </Grid>
+            <Grid size={7}>
+              <Select
+                fullWidth
+                size="small"
+                value={pendingData?.completedWork}
+                onChange={(e) =>
+                  setPendingData({
+                    ...pendingData,
+                    completedWork: e.target.value,
+                  })
+                }
+                displayEmpty
+              >
+                <MenuItem value="">Select</MenuItem>
+                <MenuItem value="Coating - TDM">Coating - TDM</MenuItem>
+                <MenuItem value="Printing - TDM">Printing - TDM</MenuItem>
+              </Select>
+            </Grid> */}
+
+            {/* Pending Works */}
+
+            {/* <Grid size={5}>
+              <Typography>No of Pending Works</Typography>
+            </Grid>
+            <Grid size={7}>
+              <TextField
+                fullWidth
+                size="small"
+                type="number"
+                value={pendingData?.pendingWork}
+                onChange={(e) =>
+                  setPendingData({
+                    ...pendingData,
+                    pendingWork: e.target.value,
+                  })
+                }
+              />
+            </Grid> */}
+
+            {/* Reason */}
+
+            <Grid size={5}>
+              <Typography>Reason for Pending</Typography>
+            </Grid>
+            <Grid size={7}>
+              <Select
+                fullWidth
+                size="small"
+                value={pendingData?.reason}
+                onChange={(e) =>
+                  setPendingData({
+                    ...pendingData,
+                    reason: e.target.value,
+                  })
+                }
+                displayEmpty
+              >
+                <MenuItem value="">Select</MenuItem>
+                <MenuItem value="Maintenance">Sheets Not Available</MenuItem>
+                <MenuItem value="Machine Breakdown">
+                  Sheets Not Available
+                </MenuItem>
+                <MenuItem value="Power Failure">Sheets Not Available</MenuItem>
+                <MenuItem value="Man Power Issue">
+                  Sheets Not Available
+                </MenuItem>
+              </Select>
+            </Grid>
+          </Grid>
+        </DialogContent>
+
+        <DialogActions
+          sx={{
+            justifyContent: "flex-end",
+            p: 2,
+            gap: 2,
+          }}
+        >
+          <Button
+            variant="contained"
+            color="error"
+            onClick={() => setOpenPending(false)}
+            sx={{ minWidth: 100 }}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            variant="contained"
+            color="success"
+            onClick={() => {
+              if (!pendingData?.reason) {
+                toast.error("Please Select Pending Reason");
+                return;
+              }
+              setOpenPending(false);
+              handleSubmit("PENDING");
+            }}
+          >
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

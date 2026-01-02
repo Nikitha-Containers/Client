@@ -189,6 +189,31 @@ const Sidebar = ({ isCollapsed }) => {
           </ListItem>
         ) : null}
 
+        {getAccess === "Planning" && menuPages?.includes("Sheet Store") ? (
+          <ListItem
+            button
+            component={Link}
+            to="/Stores_dashboard"
+            className={`list-element ${
+              location.pathname === "/" || location.pathname === "/"
+                ? "pageactive"
+                : ""
+            }`}
+          >
+            <DashboardIcon className="menu-icon" />
+            <ListItemText
+              primary="Sheet Store"
+              sx={{
+                overflow: "hidden",
+                maxWidth: isCollapsed ? 0 : 200,
+                opacity: isCollapsed ? 0 : 1,
+                transition: "max-width 0.3s ease, opacity 0.3s ease",
+                whiteSpace: "nowrap",
+              }}
+            />
+          </ListItem>
+        ) : null}
+
         {/* Planning menu pages end here  */}
 
         {/* Designing menu pages start here  */}

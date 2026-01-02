@@ -123,9 +123,13 @@ function EditPlan() {
     size: extractSize(rowData.item_description),
     item_quantity: rowData.item_quantity || "",
     machine: "",
-    shift: "",
     fab_site: "",
     priority: "Normal",
+    shift: "",
+    shift_from: "",
+    shift_to: "",
+    shift_from_dt: "",
+    shift_to_dt: "",
   };
 
   const [getFormData, setFormData] = useState(initialComp);
@@ -150,6 +154,51 @@ function EditPlan() {
   // Handle Cancel
   const handleCancel = () => {
     navigate("/planning");
+  };
+
+  // Shift Time
+
+  const shiftTime = {
+    General: { from: "09:00", to: "18:00", crossDay: false },
+    "Shift 1": { from: "06:00", to: "14:00", crossDay: false },
+    "Shift 2": { from: "14:00", to: "22:00", crossDay: false },
+    "Shift 3": { from: "22:00", to: "06:00", crossDay: true },
+  };
+
+  const handleShiftChange = (e) => {
+    const shift = e.target.value;
+    const cfg = shiftTime[shift];
+
+    if (!cfg || !getFormData.posting_date) {
+      setFormData((prev) => ({
+        ...prev,
+        shift,
+        shift_from: "",
+        shift_to: "",
+        shift_from_dt: "",
+        shift_to_dt: "",
+      }));
+      return;
+    }
+
+    const baseDate = getFormData.posting_date;
+    let fromDate = baseDate;
+    let toDate = baseDate;
+
+    if (cfg.crossDay) {
+      const nextDay = new Date(baseDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+      toDate = nextDay.toISOString().split("T")[0];
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      shift,
+      shift_from: cfg.from,
+      shift_to: cfg.to,
+      shift_from_dt: `${fromDate}T${cfg.from}:00`,
+      shift_to_dt: `${toDate}T${cfg.to}:00`,
+    }));
   };
 
   const modalStyle = {
@@ -293,15 +342,30 @@ function EditPlan() {
 
             <Grid size={3}>
               <FormGroup>
-                <Typography mb={1}>Shift</Typography>
+                <Typography mb={1}>
+                  Shift
+                  {getFormData.shift_from && getFormData.shift_to && (
+                    <span
+                      style={{
+                        color: "#777",
+                        fontSize: "16px",
+                        marginLeft: "10px",
+                      }}
+                    >
+                      ({getFormData.shift_from} to {getFormData.shift_to})
+                    </span>
+                  )}
+                </Typography>
+
                 <Select
                   name="shift"
-                  value={getFormData?.shift}
+                  value={getFormData.shift}
                   size="small"
-                  onChange={handleChange}
+                  onChange={handleShiftChange}
                   displayEmpty
                 >
                   <MenuItem value="">Select</MenuItem>
+                  <MenuItem value="General">General</MenuItem>
                   <MenuItem value="Shift 1">Shift 1</MenuItem>
                   <MenuItem value="Shift 2">Shift 2</MenuItem>
                   <MenuItem value="Shift 3">Shift 3</MenuItem>

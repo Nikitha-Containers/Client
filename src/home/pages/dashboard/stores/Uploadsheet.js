@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Box from "@mui/material/Box";
 import "../../../pages/pagestyle.scss";
 import * as XLSX from "xlsx";
@@ -10,9 +10,9 @@ import NoteAddIcon from "@mui/icons-material/NoteAdd";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import FileOpenIcon from "@mui/icons-material/FileOpen";
 import sampleFile from "./sample.xlsx";
-
 import { Grid, FormGroup, Typography, Button, Tooltip } from "@mui/material";
 import DownloadIcon from "@mui/icons-material/Download";
+import server from "../../../../server/server";
 
 const VisuallyHiddenInput = styled("input")({
   clip: "rect(0 0 0 0)",
@@ -27,16 +27,31 @@ const VisuallyHiddenInput = styled("input")({
 });
 
 function Uploadsheet() {
+  const [uploadedData, setUploadedData] = useState([]);
   const [excelData, setExcelData] = useState([]);
+  const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    fetchStoreData();
+  }, []);
+
+  const fetchStoreData = async () => {
+    try {
+      const res = await server.get("/store/data");
+      setExcelData(res.data.data);
+    } catch (error) {
+      alert("Error loading data");
+    }
+  };
 
   const REQUIRED_COLUMNS = {
-    "DC.No": "dcNo",
-    "Dc Date": "dcDate",
+    "Doc No": "doc_no",
+    "Doc Date": "doc_date",
     Size: "size",
     Location: "location",
     Quantity: "quantity",
     Price: "price",
-    "Total Value": "totalValue",
+    "Total Value": "total_value",
   };
 
   const validateAndTransformExcelData = (data) => {
@@ -74,7 +89,7 @@ function Uploadsheet() {
         const normalizedKey = REQUIRED_COLUMNS[excelKey];
 
         transformedRow[normalizedKey] =
-          excelKey === "Dc Date" ? excelDateToJSDate(value) : value;
+          excelKey === "Doc Date" ? excelDateToJSDate(value) : value;
       }
 
       return transformedRow;
@@ -89,19 +104,18 @@ function Uploadsheet() {
     reader.onload = (e) => {
       try {
         const bufferArray = e.target.result;
-
         const workbook = XLSX.read(bufferArray, { type: "array" });
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const rawData = XLSX.utils.sheet_to_json(sheet);
 
         const validatedData = validateAndTransformExcelData(rawData);
 
-        console.log("Validated Excel Data:", validatedData);
-        setExcelData(validatedData);
+        setUploadedData(validatedData);
+
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
       } catch (error) {
-        console.error("Excel Validation Error:", error.message);
         alert(error.message);
       }
     };
@@ -109,9 +123,18 @@ function Uploadsheet() {
     reader.readAsArrayBuffer(file);
   };
 
-  const excelDateToJSDate = (serial) => {
-    const excelEpoch = new Date(1899, 11, 30);
-    return new Date(excelEpoch.getTime() + serial * 86400000);
+  const excelDateToJSDate = (value) => {
+    let date;
+
+    if (typeof value === "number") {
+      date = new Date((value - 25569) * 86400 * 1000);
+    } else {
+      date = new Date(value);
+    }
+
+    if (isNaN(date.getTime())) return null;
+
+    return date;
   };
 
   const downloadSample = () => {
@@ -124,24 +147,119 @@ function Uploadsheet() {
     document.body.removeChild(link);
   };
 
+  // Export Excel Sheet
+  const exportToExcel = () => {
+    if (!excelData.length) {
+      alert("No data to export");
+      return;
+    }
+
+    const tableColumns = columns.map((col) => ({
+      header: col.header,
+      key: col.accessorKey,
+    }));
+
+    const tableData = excelData.map((row) => {
+      const obj = {};
+      tableColumns.forEach((col) => {
+        let value = row[col.key];
+
+        if (col.key === "doc_date" && value) {
+          value = new Date(value)
+            .toLocaleDateString("en-GB")
+            .replaceAll("/", "-");
+        }
+
+        obj[col.header] = value ?? "";
+      });
+      return obj;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(tableData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Table Data");
+
+    const today = new Date().toLocaleDateString("en-GB").replaceAll("/", "-");
+
+    XLSX.writeFile(workbook, `Store-Data-${today}.xlsx`);
+  };
+
+  // Handle Save Upload Files To DB
+  const handleSaveDB = async () => {
+    if (!uploadedData.length) {
+      alert("Please upload excel first");
+      return;
+    }
+
+    try {
+      const res = await server.post("/store/save", {
+        rows: uploadedData,
+      });
+
+      alert(res.data.message);
+
+      fetchStoreData();
+      setUploadedData([]);
+    } catch (error) {
+      alert(error.response?.data?.message || "Error");
+    }
+  };
+
+  const formatDate = (value) => {
+    if (!value) return "";
+    const dateString = value?.$date || value;
+    const [y, m, d] = new Date(dateString)
+      .toISOString()
+      .split("T")[0]
+      .split("-");
+
+    return `${d}/${m}/${y}`;
+  };
+
   const columns = useMemo(
     () => [
       {
         id: 1,
-        accessorKey: "saleorder_no",
-        header: "SO No",
+        accessorKey: "doc_no",
+        header: "Doc No",
         size: 30,
       },
       {
         id: 2,
-        accessorKey: "posting_date",
-        header: "SO Date",
+        accessorKey: "doc_date",
+        header: "Doc Date",
+        size: 30,
+        Cell: ({ cell }) => formatDate(cell.getValue()),
+      },
+
+      {
+        id: 3,
+        accessorKey: "size",
+        header: "Size",
         size: 30,
       },
       {
-        id: 3,
-        accessorKey: "customer_name",
-        header: "Customer Name",
+        id: 4,
+        accessorKey: "location",
+        header: "Location",
+        size: 30,
+      },
+      {
+        id: 5,
+        accessorKey: "quantity",
+        header: "Quantity",
+        size: 30,
+      },
+      {
+        id: 6,
+        accessorKey: "price",
+        header: "Price",
+        size: 30,
+      },
+      {
+        id: 7,
+        accessorKey: "total_value",
+        header: "Total Value",
         size: 30,
       },
     ],
@@ -187,6 +305,7 @@ function Uploadsheet() {
                 >
                   Upload files
                   <VisuallyHiddenInput
+                    ref={fileInputRef}
                     type="file"
                     accept=".xls,.xlsx"
                     onChange={(e) => handleExcelUpload(e.target.files[0])}
@@ -196,7 +315,7 @@ function Uploadsheet() {
             </Grid>
 
             <Grid size={3}>
-              <Button variant="contained" size="medium">
+              <Button variant="contained" size="medium" onClick={handleSaveDB}>
                 Save
               </Button>
             </Grid>
@@ -206,7 +325,7 @@ function Uploadsheet() {
         <Box sx={{ mt: 2 }}>
           <MaterialReactTable
             columns={columns}
-            data={[]}
+            data={excelData || []}
             positionActionsColumn="last"
             initialState={{
               showGlobalFilter: true,
@@ -242,7 +361,7 @@ function Uploadsheet() {
                 <Tooltip title="Export Excel">
                   <Button
                     class="gray-md-btn"
-                    onClick={downloadSample}
+                    onClick={exportToExcel}
                     startIcon={<NoteAddIcon />}
                   >
                     Export Excel

@@ -471,7 +471,7 @@ function CreateUser() {
   };
 
   const pages = {
-    Planning: ["Dashboard", "Sync with SO"],
+    Planning: ["Dashboard", "Sync with SO", "Sheet Store"],
     Designing: ["Dashboard", "Sheet Store"],
     Stores: ["Dashboard", "Sheet Taken"],
     "Printing Manager": ["Dashboard", "Sheet Store"],
