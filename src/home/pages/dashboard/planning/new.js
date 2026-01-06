@@ -144,7 +144,7 @@ function EditPlan() {
             ))}
 
             <Grid item xs={3}>
-              <FormGroup fullWidth>
+              <FormGroup>
                 <Typography mb={1}>Fab Site</Typography>
                 <Select
                   labelId="demo-simple-select-label"

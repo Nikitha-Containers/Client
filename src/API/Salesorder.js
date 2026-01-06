@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { setSO, setSOError } from "../slices/SO_Slice";
+import { setSO, setSOError, setSOLoading } from "../slices/SO_Slice";
 import server from "../server/server";
 
 export const SalesOrder = () => {
   const dispatch = useDispatch();
-  const { getSO, error } = useSelector((state) => state.SO_Info);
+  const { getSO, error, loading } = useSelector((state) => state.SO_Info);
 
   const [lastSync, setLastSync] = useState(null);
 
   const fetchSO = async () => {
     try {
+      dispatch(setSOLoading());
       const response = await server.get("/salesorder");
       const data = response?.data?.data;
       dispatch(setSO(data));
@@ -45,6 +46,7 @@ export const SalesOrder = () => {
 
   return {
     salesOrders: getSO,
+    loading,
     error,
     refetch: fetchSO,
     sync: sapSync,

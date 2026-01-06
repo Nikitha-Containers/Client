@@ -273,7 +273,7 @@ function Uploadsheet() {
           <div className="main-inner-txts">
             <Link
               style={{ color: "#0a85cb", textDecoration: "none" }}
-              to={"/Stores_dashboard"}
+              to={"/store_dashboard"}
             >
               Stores
             </Link>

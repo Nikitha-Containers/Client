@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { SalesOrder } from "../../../../API/Salesorder";
 import { useDesign } from "../../../../API/Design_API";
 import "../../../pages/pagestyle.scss";
+import StatusChip from "../../../components/StatusChip";
 
 const Item = styled(Paper)(({ theme }) => ({
   backgroundColor: "#fff",
@@ -29,29 +30,30 @@ const Item = styled(Paper)(({ theme }) => ({
 const DesigningDashboard = () => {
   const { salesOrders } = SalesOrder();
   const { designs } = useDesign();
-
   const navigate = useNavigate();
-
   const [getStatus, setStatus] = useState("all");
 
-  const filterStatus = useMemo(() => {
-    if (!getStatus) return [];
+  const designMap = useMemo(() => {
+    const map = {};
+    designs?.forEach((d) => {
+      map[String(d.saleorder_no).trim()] = d;
+    });
+    return map;
+  }, [designs]);
 
-    if (getStatus === "all") {
-      return salesOrders || [];
-    }
+  const filterStatus = useMemo(() => {
+    if (getStatus === "all") return salesOrders || [];
 
     return (salesOrders || []).filter((so) => {
-      const design = designs?.find((d) => d.saleorder_no === so.saleorder_no);
+      const design = designMap[String(so.saleorder_no).trim()];
 
       if (!design) return false;
-
       if (getStatus === "pending") return design.design_status === 1;
       if (getStatus === "completed") return design.design_status === 2;
 
       return false;
     });
-  }, [getStatus, salesOrders, designs]);
+  }, [getStatus, salesOrders, designMap]);
 
   const completedCount = useMemo(() => {
     return designs?.filter((d) => d?.design_status === 2).length || 0;
@@ -64,9 +66,30 @@ const DesigningDashboard = () => {
   const allCount = salesOrders?.length || 0;
 
   const formatDate = (value) => {
-    if (!value) return "";
-    const d = new Date(value?.$date || value);
-    return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+    if (!value) return "-";
+
+    const date = new Date(value?.$date || value);
+    if (isNaN(date)) return "-";
+
+    const [y, m, d] = date.toISOString().split("T")[0].split("-");
+    return `${d}/${m}/${y}`;
+  };
+
+  // Table Title
+  const tableTitle = {
+    all: "All Process",
+    pending: "Pending Process",
+    completed: "Completed Process",
+  };
+
+  // Chip For Status
+  const getStatusText = (row) => {
+    const design = designMap[String(row.saleorder_no).trim()];
+
+    if (!design) return "NEW";
+    if (design?.design_status === 1) return "PENDING";
+    if (design?.design_status === 2) return "COMPLETED";
+    return "NEW";
   };
 
   const columns = useMemo(
@@ -75,7 +98,7 @@ const DesigningDashboard = () => {
         id: 1,
         accessorKey: "saleorder_no",
         header: "SO No",
-        size:0,
+        size: 30,
       },
       {
         id: 2,
@@ -116,23 +139,7 @@ const DesigningDashboard = () => {
         id: 8,
         header: "Status",
         size: 20,
-        Cell: ({ row }) => {
-          const status = getStatusText(row.original);
-          return (
-            <Box
-              sx={{
-                ...getStatusStyle(status),
-                padding: "4px 10px",
-                borderRadius: "12px",
-                fontSize: "12px",
-                fontWeight: 600,
-                textAlign: "center",
-              }}
-            >
-              {status}
-            </Box>
-          );
-        },
+        Cell: ({ row }) => <StatusChip status={getStatusText(row.original)} />,
       },
 
       {
@@ -159,39 +166,8 @@ const DesigningDashboard = () => {
         ),
       },
     ],
-    []
+    [designMap]
   );
-
-  const getStatusText = (row) => {
-    const design = designs?.find((d) => d.saleorder_no === row.saleorder_no);
-
-    if (!design) return "NEW";
-    if (design.design_status === 1) return "PENDING";
-    if (design.design_status === 2) return "COMPLETED";
-    return "-";
-  };
-
-  const getStatusStyle = (status) => {
-    switch (status) {
-      case "NEW":
-        return {
-          color: "#1976d2",
-          background: "#e3f2fd",
-        };
-      case "PENDING":
-        return {
-          color: "#d32f2f",
-          background: "#fdecea",
-        };
-      case "COMPLETED":
-        return {
-          color: "#2e7d32",
-          background: "#edf7ed",
-        };
-      default:
-        return {};
-    }
-  };
 
   return (
     <Box className="Dashboard-con">
@@ -206,28 +182,29 @@ const DesigningDashboard = () => {
           <Grid container spacing={2}>
             <Grid size={4}>
               <Item
-                className="box-con"
+                className={`box-con ${getStatus === "all" ? "active" : ""}`}
                 sx={{
                   backgroundColor: "#725A7B",
                   color: "#fff",
-                  position: "relative",
+                  "--box-bg": "#725A7B",
                 }}
                 onClick={() => setStatus("all")}
               >
                 <Box className="inner-card">
                   <img src={Todaywork} className="dash-icon" />
-                  <Box className="dash-txt">All</Box>
-                  <Box>{allCount}</Box>
+                  <Box className="dash-txt">All Process</Box>
+                  <Box className="dash-count">{allCount}</Box>
                 </Box>
               </Item>
             </Grid>
 
             <Grid size={4}>
               <Item
-                className="box-con"
+                className={`box-con ${getStatus === "pending" ? "active" : ""}`}
                 sx={{
                   backgroundColor: "#F67280",
                   color: "#fff",
+                  "--box-bg": "#F67280",
                 }}
                 onClick={() => setStatus("pending")}
               >
@@ -241,10 +218,13 @@ const DesigningDashboard = () => {
 
             <Grid size={4}>
               <Item
-                className="box-con"
+                className={`box-con ${
+                  getStatus === "completed" ? "active" : ""
+                }`}
                 sx={{
                   backgroundColor: "#FEB298",
                   color: "#fff",
+                  "--box-bg": "#FEB298",
                 }}
                 onClick={() => setStatus("completed")}
               >
@@ -258,7 +238,7 @@ const DesigningDashboard = () => {
           </Grid>
         </Box>
 
-        <Box className="Dashboard-table" sx={{ mt: 1 }}>
+        <Box className="Dashboard-table" sx={{ mt: 4 }}>
           <MaterialReactTable
             columns={columns}
             data={filterStatus}
@@ -276,9 +256,9 @@ const DesigningDashboard = () => {
             muiTableBodyRowProps={({ row }) => ({
               onClick: () => {
                 const salesOrderNo = row?.original?.saleorder_no;
-                const relatedDesign = designs?.find(
-                  (design) => design?.saleorder_no === salesOrderNo
-                );
+
+                const relatedDesign =
+                  designMap[String(salesOrderNo).trim()] || null;
 
                 navigate(`/edit_design`, {
                   state: {
@@ -311,7 +291,7 @@ const DesigningDashboard = () => {
                   padding: "0px 0px 0px 0px",
                 }}
               >
-                <div className="table-title">Processing Team</div>
+                <div className="table-title">{tableTitle[getStatus]}</div>
               </Box>
             )}
           />

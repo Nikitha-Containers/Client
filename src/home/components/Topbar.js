@@ -1,18 +1,16 @@
-import { AppBar, Toolbar, IconButton, Box } from "@mui/material";
+import { AppBar, Toolbar, IconButton, Box, Button } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import Logo from "../../assets/logo.png";
 import "../components/components.scss";
 import { Link, useNavigate } from "react-router-dom";
 import LogoutIcon from "@mui/icons-material/Logout";
+import { clearSession } from "../pages/login/authSession";
 
 const Topbar = ({ onToggleSidebar }) => {
   const navigate = useNavigate();
-
   const handleLogout = () => {
-    // sessionStorage.removeItem("isLoggedIn");
-    // sessionStorage.removeItem("loginMenu");
-    sessionStorage.clear();
-    navigate("/login");
+    clearSession();
+    navigate("/login", { replace: true });
   };
 
   return (
@@ -36,14 +34,12 @@ const Topbar = ({ onToggleSidebar }) => {
           <img src={Logo} alt="Logo" className="logo-img" />
         </Box>
 
-        <Link
+        <button
           className="logout-btn"
-          type="button"
-          style={{ textDecoration: "none" }}
           onClick={handleLogout}
         >
           Logout <LogoutIcon />
-        </Link>
+        </button>
       </Toolbar>
     </AppBar>
   );

@@ -1,18 +1,12 @@
-import React, { useState, useEffect } from "react";
-import { List, ListItem, ListItemText, Box } from "@mui/material";
+import { List, ListItem, ListItemText, Box, ListItemButton } from "@mui/material";
 import { useLocation } from "react-router-dom";
 import { styled } from "@mui/material/styles";
 import Badge from "@mui/material/Badge";
 import Avatar from "@mui/material/Avatar";
 import Stack from "@mui/material/Stack";
-import DashboardIcon from "@mui/icons-material/Addchart";
-import AssignmentAddIcon from "@mui/icons-material/AssignmentAdd";
-import DesignServicesIcon from "@mui/icons-material/DesignServices";
-import FormatPaintIcon from "@mui/icons-material/FormatPaint";
-import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
-import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import { Link } from "react-router-dom";
 import "../components//components.scss";
+import { SIDEBAR_MENU } from "./sidebarMenu";
 
 const StyledBadge = styled(Badge)(({ theme }) => ({
   "& .MuiBadge-badge": {
@@ -47,20 +41,12 @@ const StyledBadge = styled(Badge)(({ theme }) => ({
 
 const Sidebar = ({ isCollapsed }) => {
   const location = useLocation();
-  const [getAccess, setAccess] = useState("");
-  const [getMenus, setMenus] = useState([]);
 
-  const menuPages = getMenus?.toString()?.split(",");
-
-
-  useEffect(() => {
-    setAccess(sessionStorage.getItem("access"));
-    setMenus(sessionStorage.getItem("sidemenus"));
-  }, []);
-
+  const getAccess = sessionStorage.getItem("access");
+  const menuPages = sessionStorage.getItem("sidemenus")?.split(",") || [];
 
   return (
-    <Box sx={{ backgroundColor: "#f5f7f9", height: "91.5vh" }}>
+    <Box sx={{ backgroundColor: "#f5f7f9", height: "calc(100vh - 64px)" }}>
       <Box className="avatar-con">
         <Stack direction="row" spacing={2}>
           <StyledBadge
@@ -68,9 +54,7 @@ const Sidebar = ({ isCollapsed }) => {
             anchorOrigin={{ vertical: "top", horizontal: "right" }}
             variant="dot"
           >
-            <Avatar sx={{ bgcolor: "#3B3B3B" }} className="avatar-img">
-              J
-            </Avatar>
+            <Avatar sx={{ bgcolor: "#3B3B3B" }} className="avatar-img"></Avatar>
           </StyledBadge>
         </Stack>
 
@@ -90,347 +74,35 @@ const Sidebar = ({ isCollapsed }) => {
       </Box>
 
       <List className="side-list">
-        {/* Stores menu start here  */}
-        {getAccess === "Stores" && menuPages?.includes("Dashboard") ? (
-          <ListItem
-            button
-            component={Link}
-            to="/Stores_dashboard"
-            className={`list-element ${
-              location.pathname === "/Stores_dashboard" ? "pageactive" : ""
-            }`}
-          >
-            <DashboardIcon className="menu-icon" />
-            <ListItemText
-              primary="Dashboard"
-              sx={{
-                overflow: "hidden",
-                maxWidth: isCollapsed ? 0 : 150,
-                opacity: isCollapsed ? 0 : 1,
-                transition: "max-width 0.3s ease, opacity 0.3s ease",
-                whiteSpace: "nowrap",
-              }}
-            />
-          </ListItem>
-        ) : null}
+        {SIDEBAR_MENU[getAccess]
+          ?.filter((menu) => menuPages.includes(menu.key))
+          ?.map((menu) => {
+            const Icon = menu.icon;
+            const isActive = location.pathname === menu.path;
 
-        {getAccess === "Stores" && menuPages?.includes("Sheet Taken") ? (
-          <ListItem
-            button
-            component={Link}
-            to="/uploadsheet"
-            className={`list-element ${
-              location.pathname === "/uploadsheet" ? "pageactive" : ""
-            }`}
-          >
-            <DashboardIcon className="menu-icon" />
-            <ListItemText
-              primary="Dashboard"
-              sx={{
-                overflow: "hidden",
-                maxWidth: isCollapsed ? 0 : 150,
-                opacity: isCollapsed ? 0 : 1,
-                transition: "max-width 0.3s ease, opacity 0.3s ease",
-                whiteSpace: "nowrap",
-              }}
-            />
-          </ListItem>
-        ) : null}
-        {/* Stores menu end here  */}
+            return (
+              <ListItem key={menu.path} disablePadding>
+                <ListItemButton
+                  component={Link}
+                  to={menu.path}
+                  className={`list-element ${isActive ? "pageactive" : ""}`}
+                >
+                  <Icon className="menu-icon" />
 
-        {/* Planning menu pages start here  */}
-
-        {getAccess === "Planning" && menuPages?.includes("Dashboard") ? (
-          <ListItem
-            button
-            component={Link}
-            to="/Planning_dashboard"
-            className={`list-element ${
-              location.pathname === "/Planning_dashboard" ? "pageactive" : ""
-            }`}
-          >
-            <DashboardIcon className="menu-icon" />
-            <ListItemText
-              primary="Dashboard"
-              sx={{
-                overflow: "hidden",
-                maxWidth: isCollapsed ? 0 : 150,
-                opacity: isCollapsed ? 0 : 1,
-                transition: "max-width 0.3s ease, opacity 0.3s ease",
-                whiteSpace: "nowrap",
-              }}
-            />
-          </ListItem>
-        ) : null}
-
-        {getAccess === "Planning" && menuPages?.includes("Sync with SO") ? (
-          <ListItem
-            button
-            component={Link}
-            to="/planning"
-            className={`list-element ${
-              location.pathname === "/planning" ||
-              location.pathname === "/editplan"
-                ? "pageactive"
-                : ""
-            }`}
-          >
-            <AssignmentAddIcon className="menu-icon" />
-            <ListItemText
-              primary="Sync With SO"
-              sx={{
-                overflow: "hidden",
-                maxWidth: isCollapsed ? 0 : 150,
-                opacity: isCollapsed ? 0 : 1,
-                transition: "max-width 0.3s ease, opacity 0.3s ease",
-                whiteSpace: "nowrap",
-              }}
-            />
-          </ListItem>
-        ) : null}
-
-        {getAccess === "Planning" && menuPages?.includes("Sheet Store") ? (
-          <ListItem
-            button
-            component={Link}
-            to="/Stores_dashboard"
-            className={`list-element ${
-              location.pathname === "/" || location.pathname === "/"
-                ? "pageactive"
-                : ""
-            }`}
-          >
-            <DashboardIcon className="menu-icon" />
-            <ListItemText
-              primary="Sheet Store"
-              sx={{
-                overflow: "hidden",
-                maxWidth: isCollapsed ? 0 : 200,
-                opacity: isCollapsed ? 0 : 1,
-                transition: "max-width 0.3s ease, opacity 0.3s ease",
-                whiteSpace: "nowrap",
-              }}
-            />
-          </ListItem>
-        ) : null}
-
-        {/* Planning menu pages end here  */}
-
-        {/* Designing menu pages start here  */}
-
-        {getAccess === "Designing" && menuPages?.includes("Dashboard") ? (
-          <ListItem
-            button
-            component={Link}
-            to="/Designing_dashboard"
-            className={`list-element ${
-              location.pathname === "/Designing_dashboard" ||
-              location.pathname === "/edit_design"
-                ? "pageactive"
-                : ""
-            }`}
-          >
-            <DashboardIcon className="menu-icon" />
-            <ListItemText
-              primary="Designing Dashboard"
-              sx={{
-                overflow: "hidden",
-                maxWidth: isCollapsed ? 0 : 200,
-                opacity: isCollapsed ? 0 : 1,
-                transition: "max-width 0.3s ease, opacity 0.3s ease",
-                whiteSpace: "nowrap",
-              }}
-            />
-          </ListItem>
-        ) : null}
-
-        {getAccess === "Designing" && menuPages?.includes("Sheet Store") ? (
-          <ListItem
-            button
-            component={Link}
-            to="/"
-            className={`list-element ${
-              location.pathname === "/" || location.pathname === "/"
-                ? "pageactive"
-                : ""
-            }`}
-          >
-            <DashboardIcon className="menu-icon" />
-            <ListItemText
-              primary="Sheet Store"
-              sx={{
-                overflow: "hidden",
-                maxWidth: isCollapsed ? 0 : 200,
-                opacity: isCollapsed ? 0 : 1,
-                transition: "max-width 0.3s ease, opacity 0.3s ease",
-                whiteSpace: "nowrap",
-              }}
-            />
-          </ListItem>
-        ) : null}
-
-        {/* Designing menu pages end here  */}
-
-        {/* Printing manager menu pages start here  */}
-
-        {getAccess === "Printing Manager" &&
-        menuPages?.includes("Dashboard") ? (
-          <ListItem
-            button
-            component={Link}
-            to="/PrintingManager_dashboard"
-            className={`list-element ${
-              location.pathname === "/PrintingManager_dashboard" ||
-              location.pathname === "/edit_print"
-                ? "pageactive"
-                : ""
-            }`}
-          >
-            <DesignServicesIcon className="menu-icon" />
-            <ListItemText
-              primary="Printing Manager"
-              sx={{
-                overflow: "hidden",
-                maxWidth: isCollapsed ? 0 : 150,
-                opacity: isCollapsed ? 0 : 1,
-                transition: "max-width 0.3s ease, opacity 0.3s ease",
-                whiteSpace: "nowrap",
-              }}
-            />
-          </ListItem>
-        ) : null}
-
-        {getAccess === "Printing Manager" &&
-        menuPages?.includes("Sheet Store") ? (
-          <ListItem
-            button
-            component={Link}
-            to="/"
-            className={`list-element ${
-              location.pathname === "/" || location.pathname === "/"
-                ? "pageactive"
-                : ""
-            }`}
-          >
-            <DesignServicesIcon className="menu-icon" />
-            <ListItemText
-              primary="Sheet Stores"
-              sx={{
-                overflow: "hidden",
-                maxWidth: isCollapsed ? 0 : 150,
-                opacity: isCollapsed ? 0 : 1,
-                transition: "max-width 0.3s ease, opacity 0.3s ease",
-                whiteSpace: "nowrap",
-              }}
-            />
-          </ListItem>
-        ) : null}
-
-        {/* Printing manager menu pages end here  */}
-
-        {/* Coating menu pages start here  */}
-
-        {getAccess === "Coating" && menuPages?.includes("Dashboard") ? (
-          <ListItem
-            button
-            component={Link}
-            to="/Coating_dashboard"
-            className={`list-element ${
-              location.pathname === "/Coating_dashboard" ||
-              location.pathname === "/edit_coating"
-                ? "pageactive"
-                : ""
-            }`}
-          >
-            <FormatPaintIcon className="menu-icon" />
-            <ListItemText
-              primary="Coating Dashboard"
-              sx={{
-                overflow: "hidden",
-                maxWidth: isCollapsed ? 0 : 150,
-                opacity: isCollapsed ? 0 : 1,
-                transition: "max-width 0.3s ease, opacity 0.3s ease",
-                whiteSpace: "nowrap",
-              }}
-            />
-          </ListItem>
-        ) : null}
-
-        {getAccess === "Coating" && menuPages?.includes("Sheet Store") ? (
-          <ListItem
-            button
-            component={Link}
-            to="/"
-            className={`list-element ${
-              location.pathname === "/" || location.pathname === "/"
-                ? "pageactive"
-                : ""
-            }`}
-          >
-            <FormatPaintIcon className="menu-icon" />
-            <ListItemText
-              primary="Sheet Store"
-              sx={{
-                overflow: "hidden",
-                maxWidth: isCollapsed ? 0 : 150,
-                opacity: isCollapsed ? 0 : 1,
-                transition: "max-width 0.3s ease, opacity 0.3s ease",
-                whiteSpace: "nowrap",
-              }}
-            />
-          </ListItem>
-        ) : null}
-
-        {/* Coating menu pages start here  */}
-
-        {/* Admin sidemenu pages start here  */}
-
-        {getAccess === "Admin" && menuPages?.includes("All") ? (
-          <ListItem
-            button
-            component={Link}
-            to="/admin_dashboard"
-            className={`list-element ${
-              location.pathname === "/admin_dashboard" ? "pageactive" : ""
-            }`}
-          >
-            <AdminPanelSettingsIcon className="menu-icon" />
-            <ListItemText
-              primary="Admin Dashboard"
-              sx={{
-                overflow: "hidden",
-                maxWidth: isCollapsed ? 0 : 150,
-                opacity: isCollapsed ? 0 : 1,
-                transition: "max-width 0.3s ease, opacity 0.3s ease",
-                whiteSpace: "nowrap",
-              }}
-            />
-          </ListItem>
-        ) : null}
-
-        {getAccess === "Admin" && menuPages?.includes("All") ? (
-          <ListItem
-            button
-            component={Link}
-            to="/create_user"
-            className={`list-element ${
-              location.pathname === "/create_user" ? "pageactive" : ""
-            }`}
-          >
-            <PersonAddIcon className="menu-icon" />
-            <ListItemText
-              primary="Create User"
-              sx={{
-                overflow: "hidden",
-                maxWidth: isCollapsed ? 0 : 150,
-                opacity: isCollapsed ? 0 : 1,
-                transition: "max-width 0.3s ease, opacity 0.3s ease",
-                whiteSpace: "nowrap",
-              }}
-            />
-          </ListItem>
-        ) : null}
-        {/* Admin sidemenu pages start here  */}
+                  <ListItemText
+                    primary={menu.label}
+                    sx={{
+                      overflow: "hidden",
+                      maxWidth: isCollapsed ? 0 : 180,
+                      opacity: isCollapsed ? 0 : 1,
+                      transition: "all 0.3s ease",
+                      whiteSpace: "nowrap",
+                    }}
+                  />
+                </ListItemButton>
+              </ListItem>
+            );
+          })}
       </List>
     </Box>
   );

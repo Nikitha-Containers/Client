@@ -2,7 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
   getDesign: [],
-  loading: false,
+  loading: true,
   error: null,
 };
 

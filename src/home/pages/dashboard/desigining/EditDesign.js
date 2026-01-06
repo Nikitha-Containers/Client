@@ -74,6 +74,7 @@ const ComponentRow = ({
     <>
       <Grid size={12} sx={{ borderBottom: "1px solid #dcdddd" }} />
 
+      {/* Checkbox */}
       <Grid size={1}>
         <div className="Box-table-checkbox">
           <Checkbox
@@ -92,10 +93,12 @@ const ComponentRow = ({
         </div>
       </Grid>
 
+      {/* Component Name */}
       <Grid size={2}>
         <div className="Box-table-text">{name}</div>
       </Grid>
 
+      {/* Length */}
       <Grid size={1}>
         <div className="Box-table-content">
           <TextField
@@ -111,6 +114,7 @@ const ComponentRow = ({
         </div>
       </Grid>
 
+      {/* Breadth */}
       <Grid size={1}>
         <div className="Box-table-content">
           <TextField
@@ -125,6 +129,7 @@ const ComponentRow = ({
         </div>
       </Grid>
 
+      {/* Thickness */}
       <Grid size={1}>
         <div className="Box-table-content">
           <TextField
@@ -139,6 +144,7 @@ const ComponentRow = ({
         </div>
       </Grid>
 
+      {/* Ups */}
       <Grid size={1.5}>
         <div className="Box-table-content">
           <TextField
@@ -153,13 +159,14 @@ const ComponentRow = ({
         </div>
       </Grid>
 
+      {/* No. of Sheets */}
       <Grid size={1.5}>
         <div className="Box-table-content">
           <TextField
             size="small"
             type="number"
             label={originalSheets}
-            value={component.sheets}
+            value={component?.sheets}
             onChange={(e) => onDataChange(name, "sheets", e.target.value)}
             disabled={!component.selected}
             error={isFieldError(component.sheets)}
@@ -177,6 +184,7 @@ const ComponentRow = ({
         </div>
       </Grid>
 
+      {/* Source File */}
       <Grid size={3}>
         <FileUpload
           onFileUpload={onFileUpload}
@@ -274,6 +282,8 @@ function EditDesign() {
     due_date: design?.due_date || salesOrder?.due_date || "",
     sales_person_code:
       design?.sales_person_code || salesOrder?.sales_person_code || "",
+    design_pending_details:
+      design?.design_pending_details?.pending_reason || "",
   };
 
   const [formData, setFormData] = useState(initialComp);
@@ -333,7 +343,22 @@ function EditDesign() {
     });
 
     setComponents(updatedComponents);
+  }, [design, salesOrder, initialComponentsState]);
+
+  useEffect(() => {
+    if (design?.design_pending_details?.pending_reason) {
+      setPendingData((prev) => ({
+        ...prev,
+        reason: design.design_pending_details.pending_reason,
+      }));
+    }
   }, [design]);
+
+  useEffect(() => {
+    return () => {
+      if (currentImage) URL.revokeObjectURL(currentImage);
+    };
+  }, [currentImage]);
 
   const handleOpen = () => setOpen(true);
 
@@ -467,16 +492,15 @@ function EditDesign() {
     );
     formDataToSend.append("design_status", design_status);
 
-    if (type === "PENDING") {
-      const design_pending_details = {
-        pending_reason: pendingData.reason,
-      };
-
-      formDataToSend.append(
-        "design_pending_details",
-        JSON.stringify(design_pending_details)
-      );
-    }
+    formDataToSend.append(
+      "design_pending_details",
+      JSON.stringify({
+        pending_reason:
+          type === "PENDING"
+            ? pendingData.reason
+            : design?.design_pending_details?.pending_reason || "",
+      })
+    );
 
     try {
       await server.post("/design/add", formDataToSend, {
@@ -489,7 +513,7 @@ function EditDesign() {
         toast.success("Design saved successfully");
       }
 
-      navigate("/Designing_dashboard");
+      navigate("/designing_dashboard");
     } catch (error) {
       const errorMessage = error.response?.data?.error || error.message;
       toast.error(errorMessage);
@@ -501,7 +525,7 @@ function EditDesign() {
   };
 
   const handleCancel = () => {
-    navigate("/Designing_dashboard");
+    navigate("/designing_dashboard");
   };
 
   const modalStyle = {
@@ -521,7 +545,7 @@ function EditDesign() {
           <div className="main-inner-txts">
             <Link
               style={{ color: "#0a85cb", textDecoration: "none" }}
-              to={"/Designing_dashboard"}
+              to={"/designing_dashboard"}
             >
               Designing Dashboard
             </Link>
@@ -538,8 +562,6 @@ function EditDesign() {
               <FormGroup>
                 <Typography mb={1}>Customer Name</Typography>
                 <TextField
-                  id="outlined-size-small"
-                  name=""
                   size="small"
                   value={formData?.customer_name}
                   onChange={(e) =>
@@ -549,14 +571,13 @@ function EditDesign() {
                 />
               </FormGroup>
             </Grid>
+
             <Grid size={2}>
               <FormGroup>
                 <Typography mb={1}>SO Number</Typography>
                 <TextField
-                  id="outlined-size-small"
-                  name=""
                   size="small"
-                  value={formData.saleorder_no}
+                  value={formData?.saleorder_no}
                   onChange={(e) =>
                     handleFormChange("saleorder_no", e.target.value)
                   }
@@ -569,11 +590,9 @@ function EditDesign() {
               <FormGroup>
                 <Typography mb={1}>SO Date</Typography>
                 <TextField
-                  id="outlined-size-small"
-                  name=""
                   size="small"
                   type="date"
-                  value={formData.posting_date}
+                  value={formData?.posting_date}
                   onChange={(e) =>
                     handleFormChange("posting_date", e.target.value)
                   }
@@ -586,8 +605,6 @@ function EditDesign() {
               <FormGroup>
                 <Typography mb={1}>Total Qty</Typography>
                 <TextField
-                  id="outlined-size-small"
-                  name=""
                   size="small"
                   type="number"
                   value={formData?.item_quantity}
@@ -598,6 +615,7 @@ function EditDesign() {
                 />
               </FormGroup>
             </Grid>
+
             <Grid size={2}>
               <FormGroup>
                 <Typography mb={1}>Sales Person</Typography>
@@ -615,7 +633,7 @@ function EditDesign() {
               </FormGroup>
             </Grid>
             <Grid size={2}>
-              <FormGroup fullWidth>
+              <FormGroup>
                 <Typography mb={1}>Machine</Typography>
 
                 <Select
@@ -736,6 +754,7 @@ function EditDesign() {
             >
               Cancel
             </Button>
+
             <Button
               variant="contained"
               color="primary"
@@ -852,21 +871,18 @@ function EditDesign() {
                 fullWidth
                 size="small"
                 value={pendingData?.reason}
+                displayEmpty
+                renderValue={
+                  pendingData.reason !== "" ? undefined : () => "Select"
+                }
                 onChange={(e) =>
                   setPendingData({
                     ...pendingData,
                     reason: e.target.value,
                   })
                 }
-                displayEmpty
               >
-                <MenuItem value="">Select</MenuItem>
-                <MenuItem value="Maintenance">Sheets Not Available</MenuItem>
-                <MenuItem value="Machine Breakdown">
-                  Sheets Not Available
-                </MenuItem>
-                <MenuItem value="Power Failure">Sheets Not Available</MenuItem>
-                <MenuItem value="Man Power Issue">
+                <MenuItem value="Sheets Not Available">
                   Sheets Not Available
                 </MenuItem>
               </Select>

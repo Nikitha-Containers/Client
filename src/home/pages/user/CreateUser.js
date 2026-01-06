@@ -144,7 +144,10 @@ const UserDialog = React.memo(
                 name="password"
                 value={formValues.password || ""}
                 onChange={handleChange}
-                helperText="Leave blank to keep current password"
+                helperText={
+                  isEdit ? "Leave blank to keep current password" : ""
+                }
+                required={!isEdit}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
@@ -470,16 +473,15 @@ function CreateUser() {
     return true;
   };
 
-  const pages = {
-    Planning: ["Dashboard", "Sync with SO", "Sheet Store"],
-    Designing: ["Dashboard", "Sheet Store"],
+  const pageConfig = {
+    Planning: ["Dashboard", "Sync With SO", "Sheet Taken"],
+    Designing: ["Dashboard", "Sheet Taken", "Sync With SO"],
     Stores: ["Dashboard", "Sheet Taken"],
-    "Printing Manager": ["Dashboard", "Sheet Store"],
-    Coating: ["Dashboard", "Sheet Store"],
-    Printing: ["Dashboard", "Sheet Store"],
+    "Printing Manager": ["Dashboard", "Sheet Taken"],
+    Coating: ["Dashboard", "Sheet Taken"],
+    Printing: ["Dashboard", "Sheet Taken"],
     Fabrication: ["Dashboard", "Quality Control"],
   };
-
 
   // Save handler
   const handleSave = async () => {
@@ -793,7 +795,7 @@ function CreateUser() {
 
       {/* User Dialog */}
       <UserDialog
-        pages={pages}
+        pages={pageConfig}
         theme={theme}
         isEdit={isEdit}
         getPages={getPages}

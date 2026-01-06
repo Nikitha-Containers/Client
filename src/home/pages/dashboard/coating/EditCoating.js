@@ -345,7 +345,7 @@ function EditCoating() {
             </Grid>
 
             <Grid size={2}>
-              <FormGroup fullWidth>
+              <FormGroup >
                 <Typography mb={1}>Fab Site</Typography>
                 <Select
                   labelId="demo-simple-select-label"

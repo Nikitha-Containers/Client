@@ -13,6 +13,7 @@ import {
 import { styled } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
 import server from "../../../server/server";
+import { setSession } from "./authSession";
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(4),
@@ -111,24 +112,10 @@ export default function GoogleAuth() {
 
       if (res.data.success) {
         showSnackbar("OTP Verified Successfully", "success");
-
-        if (res?.data?.token) {
-          sessionStorage.setItem("token", res?.data?.token);
-        }
-
-        if (res?.data?.access) {
-          sessionStorage.setItem("access", res?.data?.access);
-        }
-
-        if (res?.data?.sidemenus) {
-          sessionStorage.setItem("sidemenus", res?.data?.sidemenus);
-        }
-
-        sessionStorage.setItem("isLoggedIn", "true");
-
+        setSession(res?.data);
         setTimeout(() => {
-          navigate("/admin_dashboard");
-        }, 1000);
+          navigate("/");
+        }, 500);
       } else {
         showSnackbar(
           res.data.message || "Invalid OTP. Please try again.",

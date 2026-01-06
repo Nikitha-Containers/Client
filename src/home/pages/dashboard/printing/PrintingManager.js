@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { styled } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
@@ -12,6 +12,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useDesign } from "../../../../API/Design_API";
 import { useNavigate } from "react-router-dom";
+import StatusChip from "../../../components/StatusChip";
 
 const Item = styled(Paper)(({ theme }) => ({
   backgroundColor: "#fff",
@@ -29,15 +30,67 @@ const PrintingManager = () => {
 
   const { designs } = useDesign();
 
+  const [getStatus, setStatus] = useState("all");
+
+  // Filter Design For Dashboard
+  const filterDesigns = useMemo(() => {
+    if (getStatus === "all") {
+      return (designs || []).filter((d) => d.design_status === 2);
+    }
+
+    if (getStatus === "pending") {
+      return (designs || []).filter(
+        (d) => d.design_status === 2 && d.printingmanager_status === 1
+      );
+    }
+
+    if (getStatus === "completed") {
+      return (designs || []).filter(
+        (d) => d.design_status === 2 && d.printingmanager_status === 2
+      );
+    }
+    return [];
+  }, [getStatus, designs]);
+
+  // Count for Cards
+  const allCount = useMemo(() => {
+    return (designs || []).filter((d) => d.design_status === 2).length;
+  }, [designs]);
+
+  const pendingCount = useMemo(() => {
+    return (designs || []).filter(
+      (d) => d.design_status === 2 && d.printingmanager_status === 1
+    ).length;
+  }, [designs]);
+
+  const completedCount = useMemo(() => {
+    return (designs || []).filter(
+      (d) => d.design_status === 2 && d.printingmanager_status === 2
+    ).length;
+  }, [designs]);
+
+  // Table Title
+  const tableTitle = {
+    all: "All Process",
+    pending: "Pending Process",
+    completed: "Completed Process",
+  };
+
+  const getStatusText = (row) => {
+    if (row.printingmanager_status === 2) return "COMPLETED";
+    if (row.printingmanager_status === 1) return "PENDING";
+    if (row.design_status === 2) return "NEW";
+
+    return "NEW";
+  };
 
   const formatDate = (value) => {
-    if (!value) return "";
-    const dateString = value?.$date || value;
-    const [y, m, d] = new Date(dateString)
-      .toISOString()
-      .split("T")[0]
-      .split("-");
+    if (!value) return "-";
 
+    const date = new Date(value?.$date || value);
+    if (isNaN(date)) return "-";
+
+    const [y, m, d] = date.toISOString().split("T")[0].split("-");
     return `${d}/${m}/${y}`;
   };
 
@@ -72,7 +125,7 @@ const PrintingManager = () => {
       },
       {
         id: 5,
-        accessorKey: "quantity",
+        accessorKey: "item_quantity",
         header: "Quantity",
         size: 30,
       },
@@ -96,6 +149,12 @@ const PrintingManager = () => {
       },
       {
         id: 8,
+        header: "Status",
+        size: 20,
+        Cell: ({ row }) => <StatusChip status={getStatusText(row.original)} />,
+      },
+      {
+        id: 9,
         accessorKey: "actions",
         header: "Actions",
         size: 30,
@@ -118,7 +177,7 @@ const PrintingManager = () => {
         ),
       },
     ],
-    []
+    [navigate]
   );
 
   return (
@@ -135,14 +194,16 @@ const PrintingManager = () => {
             <Grid size={4}>
               <Item
                 className="box-con"
-                sx={{ backgroundColor: "#FEB298", color: "#fff" }}
+                sx={{ backgroundColor: "#725A7B", color: "#fff" }}
+                onClick={() => setStatus("all")}
               >
                 <Box className="inner-card">
                   <Box>
-                    <img src={Completed} alt="image" className="dash-icon" />
+                    <img src={Todaywork} alt="image" className="dash-icon" />
                   </Box>
 
-                  <Box className="dash-txt">Completed Process</Box>
+                  <Box className="dash-txt">All</Box>
+                  <Box className="dash-count">{allCount}</Box>
                 </Box>
               </Item>
             </Grid>
@@ -151,6 +212,7 @@ const PrintingManager = () => {
               <Item
                 className="box-con"
                 sx={{ backgroundColor: "#F67280", color: "#fff" }}
+                onClick={() => setStatus("pending")}
               >
                 <Box className="inner-card">
                   <Box>
@@ -158,6 +220,7 @@ const PrintingManager = () => {
                   </Box>
 
                   <Box className="dash-txt">Pending Process</Box>
+                  <Box className="dash-count">{pendingCount}</Box>
                 </Box>
               </Item>
             </Grid>
@@ -165,14 +228,16 @@ const PrintingManager = () => {
             <Grid size={4}>
               <Item
                 className="box-con"
-                sx={{ backgroundColor: "#725A7B", color: "#fff" }}
+                sx={{ backgroundColor: "#FEB298", color: "#fff" }}
+                onClick={() => setStatus("completed")}
               >
                 <Box className="inner-card">
                   <Box>
-                    <img src={Todaywork} alt="image" className="dash-icon" />
+                    <img src={Completed} alt="image" className="dash-icon" />
                   </Box>
 
-                  <Box className="dash-txt">Today's Process</Box>
+                  <Box className="dash-txt">Completed Process</Box>
+                  <Box className="dash-count">{completedCount}</Box>
                 </Box>
               </Item>
             </Grid>
@@ -182,7 +247,7 @@ const PrintingManager = () => {
         <Box className="Dashboard-table" sx={{ mt: 1 }}>
           <MaterialReactTable
             columns={columns}
-            data={designs || []}
+            data={filterDesigns}
             positionActionsColumn="last"
             initialState={{
               showGlobalFilter: true,
@@ -222,7 +287,7 @@ const PrintingManager = () => {
                   padding: "0px 0px 0px 0px",
                 }}
               >
-                <div class="table-title">Today's Plan</div>
+                <div className="table-title">{tableTitle[getStatus]}</div>
               </Box>
             )}
           />

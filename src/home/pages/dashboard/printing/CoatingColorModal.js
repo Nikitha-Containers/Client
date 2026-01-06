@@ -32,7 +32,7 @@ export const CoatingTypeModal = ({ open, onClose, onSubmit, value }) => {
   const getCoatingType = {
     sizing: ["Vinyl Sizing"],
     coatingColor: ["Bombay White", "Mixing White", "Untoned White"],
-    insideColor: ["Gold Lacquer", "Clear Lacquer", ],
+    insideColor: ["Gold Lacquer", "Clear Lacquer"],
     varnish: ["Glossy Finish", "Matte Finish"],
   };
 
@@ -98,10 +98,10 @@ export const CoatingTypeModal = ({ open, onClose, onSubmit, value }) => {
       </DialogTitle>
 
       <DialogContent dividers>
-        <Stack spacing={1}>
+        <Stack spacing={2}>
           {/* Sizing */}
-          <Box pl={5}>
-            <Stack direction="row" spacing={6}>
+          <Box pl={1}>
+            <Stack direction="row" spacing={3}>
               {getCoatingType?.sizing?.map((item) => (
                 <FormControlLabel
                   key={item}
@@ -140,6 +140,26 @@ export const CoatingTypeModal = ({ open, onClose, onSubmit, value }) => {
                   ))}
                 </Select>
               </FormControl>
+
+              {/* Coating Count */}
+              {getCoatingValues?.coatingColor && (
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <Typography variant="body2">Count :</Typography>
+                  <TextField
+                    type="number"
+                    size="small"
+                    sx={{ width: 80 }}
+                    value={getCoatingValues.coatingCount}
+                    error={getCoatingValues.coatingCount <= 0}
+                    onChange={(e) =>
+                      setCoatingValues((prev) => ({
+                        ...prev,
+                        coatingCount: Number(e.target.value),
+                      }))
+                    }
+                  />
+                </Stack>
+              )}
             </Stack>
           </Box>
 
@@ -148,7 +168,7 @@ export const CoatingTypeModal = ({ open, onClose, onSubmit, value }) => {
             Inside food-grade lacquer :
           </Typography>
 
-          <Box pl={5}>
+          <Box pl={1}>
             <Stack direction="row" spacing={3}>
               {getCoatingType?.insideColor?.map((item) => (
                 <FormControlLabel
@@ -171,7 +191,7 @@ export const CoatingTypeModal = ({ open, onClose, onSubmit, value }) => {
           {/* Varnish */}
           <Typography variant="subtitle2">Varnish :</Typography>
 
-          <Box pl={5}>
+          <Box pl={1}>
             <Stack direction="row" spacing={3}>
               {getCoatingType?.varnish?.map((item) => (
                 <FormControlLabel
@@ -190,33 +210,6 @@ export const CoatingTypeModal = ({ open, onClose, onSubmit, value }) => {
               ))}
             </Stack>
           </Box>
-
-          {/* Coating Count */}
-          {getCoatingValues?.coatingColor && (
-            <Box display="flex" alignItems="center" gap={2} pt={2}>
-              <Typography variant="body2">Coating Count :</Typography>
-
-              <TextField
-                type="number"
-                size="small"
-                sx={{ width: 80 }}
-                value={getCoatingValues.coatingCount}
-                error={getCoatingValues.coatingCount <= 0}
-                onChange={(e) =>
-                  setCoatingValues((prev) => ({
-                    ...prev,
-                    coatingCount: Number(e.target.value),
-                  }))
-                }
-              />
-
-              {getCoatingValues.coatingCount <= 0 && (
-                <Typography color="error" fontSize={13}>
-                  Please enter valid value
-                </Typography>
-              )}
-            </Box>
-          )}
         </Stack>
       </DialogContent>
 

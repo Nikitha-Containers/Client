@@ -7,6 +7,7 @@ import { Box, Button, Paper, TextField, Typography } from "@mui/material";
 import server from "../../../server/server";
 import "../../pages/pagestyle.scss";
 import GoogleAuth from "./GoogleAuth";
+import { setSession } from "./authSession";
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(4),
@@ -29,7 +30,6 @@ function Login() {
   const [getLoginDetails, setLoginDetails] = useState("");
   const [getAuthPage, setAuthPage] = useState(false);
 
-
   // Custom function start here
 
   const handleLogin = async () => {
@@ -43,55 +43,17 @@ function Login() {
         password: getLoginVal?.password,
       });
 
-      setLoginDetails(res?.data?.message);
-
-      if (
-        res?.data?.message === "Password correct, proceed to OTP verification"
-      ) {
+      // OTP Required For Admin
+      if (res?.data?.success && res.data.requiredOTP) {
         sessionStorage.setItem("adminID", res.data.adminID);
-        setTimeout(() => {
-          setAuthPage(true);
-        }, 300);
+        setAuthPage(true);
+        return;
       }
 
-      if (res?.data?.message === "Login successful") {
-
-        if (res.data.adminID) {
-          sessionStorage.setItem("adminID", res.data.adminID);
-        }
-
-        if (res?.data?.token) {
-          sessionStorage.setItem("token", res?.data?.token);
-        }
-
-        if (res?.data?.access) {
-          sessionStorage.setItem("access", res?.data?.access);
-        }
-
-        if (res?.data?.sidemenus) {
-          sessionStorage.setItem("sidemenus", res?.data?.sidemenus);
-          sessionStorage.setItem("isLoggedIn", "true");
-        }
-
-        if (
-          res?.data?.adminID &&
-          res?.data?.token &&
-          res?.data?.access &&
-          res?.data?.sidemenus
-        ) {
-          if (
-            res?.data?.sidemenus?.toString()?.split(",")?.includes("Dashboard")
-          ) {
-            let pageLink = `/${res?.data?.access
-              ?.toString()
-              ?.replace(" ", "")}_dashboard`;
-            if (pageLink !== "") {
-              navigate(pageLink);
-            }
-          } else {
-            navigate("/Default_dashboard");
-          }
-        }
+      // Normal Login
+      if (res.data.success && !res.data.requiredOTP) {
+        setSession(res?.data);
+        navigate("/");
       }
     } catch (error) {
       setLoginDetails(error.response?.data?.message || "Login failed");
@@ -126,17 +88,7 @@ function Login() {
 
             <Stack sx={{ width: "100%", marginBottom: 2 }} spacing={2}>
               {getLoginDetails && (
-                <Alert
-                  severity={
-                    getLoginDetails ===
-                      "Password correct, proceed to OTP verification" ||
-                    "Login successful"
-                      ? "success"
-                      : "error"
-                  }
-                >
-                  {getLoginDetails}
-                </Alert>
+                <Alert severity="error">{getLoginDetails}</Alert>
               )}
             </Stack>
 

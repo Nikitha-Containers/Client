@@ -148,6 +148,15 @@ body {
       font-size: 23px;
       font-family: $font-sub;
     }
+    .dash-count {
+      font-size: 24px;
+      font-weight: 600;
+      font-family: "Geist Variable", sans-serif;
+      margin-left: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
   }
 }
 
@@ -286,4 +295,28 @@ img.ups-image {
 
 .art-green {
   background-color: #28a745; // NEW
+}
+
+// Arrow For Active Table
+.box-con {
+  position: relative;
+  cursor: pointer;
+
+  &::before {
+    content: "";
+    width: 24px;
+    height: 24px;
+    background-color: var(--box-bg);
+    position: absolute;
+    bottom: 0px;
+    left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+    opacity: 0;
+    transition: all 0.35s ease;
+  }
+
+  &.active::before {
+    bottom: -12px;
+    opacity: 1;
+  }
 }

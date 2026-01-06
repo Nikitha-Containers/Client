@@ -1,14 +1,40 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
-import { Grid, FormGroup, Typography, TextField, Modal } from "@mui/material";
-import { Button } from "@mui/joy";
+import {
+  Grid,
+  FormGroup,
+  Typography,
+  TextField,
+  Modal,
+  Button,
+  Dialog,
+  DialogTitle,
+  IconButton,
+  DialogContent,
+  Select,
+  MenuItem,
+  DialogActions,
+} from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import "../../../pages/pagestyle.scss";
 import server from "../../../../server/server";
+import { toast } from "react-toastify";
 
-import { CoatingTypeModal, PrintingColorModal } from "./CoatingColorModal";
+// Lazy Loading
+const CoatingTypeModal = lazy(() =>
+  import("./CoatingColorModal").then((m) => ({
+    default: m.CoatingTypeModal,
+  }))
+);
+
+const PrintingColorModal = lazy(() =>
+  import("./CoatingColorModal").then((m) => ({
+    default: m.PrintingColorModal,
+  }))
+);
 
 const getArtWorkClass = (art) => {
   if (!art || art === "NA") return "art-badge art-blue";
@@ -26,7 +52,14 @@ const ComponentRow = ({
   onOpenColor,
   selectedCoating,
   selectedColor,
+  totalQty,
+  onChangeField,
+  isFieldModified,
 }) => {
+  const originalSheets =
+    component.ups && totalQty
+      ? Math.ceil(Number(totalQty) / Number(component.ups))
+      : "";
   return (
     <>
       <Grid size={12} sx={{ borderBottom: "1px solid #dcdddd" }} />
@@ -41,9 +74,14 @@ const ComponentRow = ({
         <div className="Box-table-content">
           <TextField
             size="small"
-            type="text"
-            value={component.length}
-            disabled
+            type="number"
+            value={component?.length}
+            onChange={(e) => onChangeField(name, "length", e.target.value)}
+            sx={
+              isFieldModified(name, "length")
+                ? { backgroundColor: "#fff9c4" }
+                : {}
+            }
           />
         </div>
       </Grid>
@@ -53,9 +91,14 @@ const ComponentRow = ({
         <div className="Box-table-content">
           <TextField
             size="small"
-            type="text"
-            value={component.breadth}
-            disabled
+            type="number"
+            value={component?.breadth}
+            onChange={(e) => onChangeField(name, "breadth", e.target.value)}
+            sx={
+              isFieldModified(name, "breadth")
+                ? { backgroundColor: "#fff9c4" }
+                : {}
+            }
           />
         </div>
       </Grid>
@@ -65,9 +108,14 @@ const ComponentRow = ({
         <div className="Box-table-content">
           <TextField
             size="small"
-            type="text"
-            value={component.thickness}
-            disabled
+            type="number"
+            value={component?.thickness}
+            onChange={(e) => onChangeField(name, "thickness", e.target.value)}
+            sx={
+              isFieldModified(name, "thickness")
+                ? { backgroundColor: "#fff9c4" }
+                : {}
+            }
           />
         </div>
       </Grid>
@@ -75,7 +123,15 @@ const ComponentRow = ({
       {/* Ups */}
       <Grid size={1.5}>
         <div className="Box-table-content">
-          <TextField size="small" type="text" value={component.ups} disabled />
+          <TextField
+            size="small"
+            type="number"
+            value={component.ups}
+            onChange={(e) => onChangeField(name, "ups", e.target.value)}
+            sx={
+              isFieldModified(name, "ups") ? { backgroundColor: "#fff9c4" } : {}
+            }
+          />
         </div>
       </Grid>
 
@@ -84,9 +140,22 @@ const ComponentRow = ({
         <div className="Box-table-content">
           <TextField
             size="small"
-            type="text"
-            value={component.sheets}
-            disabled
+            type="number"
+            label={originalSheets}
+            value={component?.sheets}
+            onChange={(e) => onChangeField(name, "sheets", e.target.value)}
+            InputLabelProps={{ shrink: true }}
+            sx={{
+              "& .MuiInputLabel-root": {
+                color: "green",
+              },
+              "& .MuiInputLabel-root.Mui-focused": {
+                color: "green",
+              },
+              ...(isFieldModified(name, "sheets") && {
+                backgroundColor: "#fff9c4",
+              }),
+            }}
           />
         </div>
       </Grid>
@@ -140,8 +209,24 @@ const ComponentRow = ({
 function EditPrint() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { design } = location.state || {};
+  const { design } = location?.state || {};
+
+  const [formData, setFormData] = useState({
+    customer_name: design?.customer_name || "",
+    saleorder_no: design?.saleorder_no || "",
+    posting_date: design?.posting_date
+      ? new Date(design?.posting_date).toISOString().split("T")[0]
+      : "",
+    item_quantity: design?.item_quantity || "",
+    sales_person_code: design?.sales_person_code || "",
+    machine: design?.machine,
+    art_work: design?.art_work || "NA",
+  });
+
   const [components, setComponents] = useState({});
+  const [initialComponents, setInitialComponents] = useState({});
+
+  // Preview Modal
   const [open, setOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState("");
 
@@ -149,12 +234,19 @@ function EditPrint() {
   const [selectedComponent, setSelectedComponent] = useState("");
   const [selectedCoating, setSelectedCoating] = useState({});
   const [selectedColor, setSelectedColor] = useState({});
-
   const [coatingModal, setCoatingModal] = useState(false);
   const [colorModal, setColorModal] = useState(false);
 
+  //Pending Dialog
+  const [openPending, setOpenPending] = useState(false);
+  const [pendingData, setPendingData] = useState({
+    completedWork: "",
+    pendingWork: 0,
+    reason: "",
+  });
+
   const initialComponentsState = useMemo(() => {
-    const compNames = [
+    const names = [
       "Lid",
       "Body",
       "Bottom",
@@ -162,31 +254,36 @@ function EditPrint() {
       "Lid & Body & Bottom",
       "Body & Bottom",
     ];
-    const obj = {};
-    compNames.forEach((name) => {
-      obj[name] = {
-        length: "",
-        breadth: "",
-        thickness: "",
-        ups: "",
-        sheets: "",
-        file: null,
-      };
-    });
-    return obj;
+
+    return Object.fromEntries(
+      names.map((n) => [
+        n,
+        {
+          length: "",
+          breadth: "",
+          thickness: "",
+          ups: "",
+          sheets: "",
+          file: null,
+        },
+      ])
+    );
   }, []);
 
   useEffect(() => {
     if (!design?.components) return;
+
     const updatedComponents = { ...initialComponentsState };
-    Object.entries(design.components).forEach(([name, comp]) => {
+
+    Object.entries(design?.components).forEach(([name, comp]) => {
       if (updatedComponents[name]) updatedComponents[name] = { ...comp };
     });
+
     setComponents(updatedComponents);
+    setInitialComponents(updatedComponents);
   }, [design, initialComponentsState]);
 
   // Initial State For Coating Type & Printing Values
-
   useEffect(() => {
     if (!design?.components) return;
 
@@ -244,6 +341,23 @@ function EditPrint() {
     setCurrentImage("");
   };
 
+  const handleComponentChange = (componentName, field, value) => {
+    setComponents((prev) => ({
+      ...prev,
+      [componentName]: {
+        ...prev[componentName],
+        [field]: value,
+      },
+    }));
+  };
+
+  const handleFormChange = (field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
   // Handle Coating & Color
   const handleCoatingModal = (name) => {
     setSelectedComponent(name);
@@ -274,90 +388,77 @@ function EditPrint() {
     setColorModal(false);
   };
 
-  // Hansle Submit
-  const handleSubmit = async () => {
+  const handleSubmit = async (type) => {
+    const printingmanager_status = type === "PENDING" ? 1 : 2;
+
+    const componentsPayload = {};
     const missingComponents = [];
 
-    Object.entries(design?.components || {}).forEach(
-      ([componentName, componentData]) => {
-        if (!componentData.selected) return;
+    Object.entries(components).forEach(([name, data]) => {
+      const original = design?.components?.[name];
+      if (!original?.selected) return;
 
-        const coating = selectedCoating[componentName];
-        const printing = selectedColor[componentName];
+      const coating = selectedCoating[name];
+      const printing = selectedColor[name];
 
-        if (!coating || !printing) {
-          missingComponents.push(componentName);
-        }
+      if (!coating || !printing) {
+        missingComponents.push(name);
+        return;
       }
-    );
 
-    if (missingComponents.length > 0) {
-      alert(
-        `Please choose Printing Colors & Coating Type for: ${missingComponents.join(
-          ", "
-        )}`
+      componentsPayload[name] = {
+        selected: true,
+        length: data.length,
+        breadth: data.breadth,
+        thickness: data.thickness,
+        ups: data.ups,
+        sheets: data.sheets,
+        coating: {
+          sizing: coating.sizing?.join(", ") || "",
+          insideColor: coating.insideColor?.join(", ") || "",
+          varnish: coating.varnish?.join(", ") || "",
+          coatingColor: coating.coatingColor || "",
+          coatingCount: Number(coating.coatingCount) || 1,
+        },
+        printingColor: {
+          normalColor: printing.normalColor?.join(", ") || "",
+          splColor: printing.splColor?.join(", ") || "",
+        },
+      };
+    });
+
+    if (missingComponents.length) {
+      toast.error(
+        `Select coating & printing color for: ${missingComponents.join(", ")}`
       );
       return;
     }
 
-    const componentsPayload = {};
-
-    Object.entries(design?.components || {}).forEach(
-      ([componentName, componentData]) => {
-        const coating = selectedCoating[componentName];
-        const printing = selectedColor[componentName];
-
-        componentsPayload[componentName] = { selected: true };
-
-        if (coating) {
-          componentsPayload[componentName].coating = {
-            sizing: Array.isArray(coating?.sizing)
-              ? coating?.sizing.join(", ")
-              : "",
-            insideColor: Array.isArray(coating?.insideColor)
-              ? coating?.insideColor.join(", ")
-              : "",
-            varnish: Array.isArray(coating?.varnish)
-              ? coating?.varnish.join(", ")
-              : "",
-            coatingColor: coating?.coatingColor || "",
-            coatingCount: Number(coating?.coatingCount) || 1,
-          };
-        }
-
-        if (printing) {
-          componentsPayload[componentName].printingColor = {
-            normalColor: Array.isArray(printing?.normalColor)
-              ? printing?.normalColor.join(", ")
-              : "",
-            splColor: Array.isArray(printing?.splColor)
-              ? printing?.splColor.join(", ")
-              : "",
-          };
-        }
-      }
-    );
-
     const payload = {
       saleorder_no: design.saleorder_no,
       components: componentsPayload,
+      printingmanager_status,
+      printingmanager_pending_details:
+        type === "PENDING"
+          ? { reason: pendingData.reason }
+          : design?.printingmanager_pending_details || {},
     };
-    // Insert  Coating Type And Printing Color Data API
+
     try {
-      const response = await server.put(
-        `design/${design.saleorder_no}`,
-        payload
-      );
-      const result = response.data;
-      if (result.success) {
-        alert(result.message);
-        navigate("/printing_manager");
-      }
-    } catch (error) {
-      console.error("Error updating data:", error);
-      const errorMessage = error.response?.data?.error || error.message;
-      alert(`Error: ${errorMessage}`);
+      const res = await server.post("/design/add", payload);
+      toast.success(res.data.message || "Saved successfully");
+      navigate("/printingmanager_dashboard");
+    } catch (err) {
+      toast.error(err.response?.data?.error || err.message);
     }
+  };
+
+  const handleCancel = () => {
+    navigate("/printingmanager_dashboard");
+  };
+
+  const isFieldModified = (name, field) => {
+    return initialComponents?.[name]?.[field] !== components?.[name]?.[field];
   };
 
   const modalStyle = {
@@ -377,7 +478,7 @@ function EditPrint() {
           <div className="main-inner-txts">
             <Link
               style={{ color: "#0a85cb", textDecoration: "none" }}
-              to={"/printing_manager"}
+              to={"/printingmanager_dashboard"}
             >
               Printing Manager
             </Link>
@@ -390,23 +491,29 @@ function EditPrint() {
       <Box className="page-layout" sx={{ marginTop: 1 }}>
         <Box sx={{ flexGrow: 1 }}>
           <Grid container spacing={2.5}>
-            <Grid size={4}>
+            <Grid size={2}>
               <FormGroup>
                 <Typography mb={1}>Customer Name</Typography>
                 <TextField
                   size="small"
-                  value={design?.customer_name || ""}
+                  value={formData?.customer_name}
+                  onChange={(e) =>
+                    handleFormChange("customer_name", e.target.value)
+                  }
                   disabled
                 />
               </FormGroup>
             </Grid>
-            
+
             <Grid size={2}>
               <FormGroup>
                 <Typography mb={1}>SO Number</Typography>
                 <TextField
                   size="small"
-                  value={design?.saleorder_no || ""}
+                  value={formData?.saleorder_no}
+                  onChange={(e) =>
+                    handleFormChange("saleorder_no", e.target.value)
+                  }
                   disabled
                 />
               </FormGroup>
@@ -418,24 +525,10 @@ function EditPrint() {
                 <TextField
                   size="small"
                   type="date"
-                  value={
-                    design?.posting_date
-                      ? new Date(design.posting_date)
-                          .toISOString()
-                          .split("T")[0]
-                      : ""
+                  value={formData?.posting_date}
+                  onChange={(e) =>
+                    handleFormChange("posting_date", e.target.value)
                   }
-                  disabled
-                />
-              </FormGroup>
-            </Grid>
-
-            <Grid size={2}>
-              <FormGroup>
-                <Typography mb={1}>Machine</Typography>
-                <TextField
-                  size="small"
-                  value={design?.machine || ""}
                   disabled
                 />
               </FormGroup>
@@ -446,9 +539,50 @@ function EditPrint() {
                 <Typography mb={1}>Total Qty</Typography>
                 <TextField
                   size="small"
-                  value={design?.item_quantity || ""}
+                  value={formData?.item_quantity}
+                  onChange={(e) =>
+                    handleFormChange("item_quantity", e.target.value)
+                  }
                   disabled
                 />
+              </FormGroup>
+            </Grid>
+
+            <Grid size={2}>
+              <FormGroup>
+                <Typography mb={1}>Sales Person</Typography>
+                <TextField
+                  size="small"
+                  type="text"
+                  value={formData?.sales_person_code}
+                  onChange={(e) =>
+                    handleFormChange("sales_person_code", e.target.value)
+                  }
+                  disabled
+                />
+              </FormGroup>
+            </Grid>
+
+            <Grid size={2}>
+              <FormGroup>
+                <Typography mb={1}>Machine</Typography>
+
+                <Select
+                  value={formData?.machine}
+                  size="small"
+                  displayEmpty
+                  renderValue={
+                    formData.machine !== "" ? undefined : () => "Select"
+                  }
+                  onChange={(e) => {
+                    handleFormChange("machine", e.target.value);
+                  }}
+                >
+                  <MenuItem value="">Select</MenuItem>
+                  <MenuItem value="Machine 1">Machine 1</MenuItem>
+                  <MenuItem value="Machine 2">Machine 2</MenuItem>
+                  <MenuItem value="Machine 3">Machine 3</MenuItem>
+                </Select>
               </FormGroup>
             </Grid>
           </Grid>
@@ -473,8 +607,8 @@ function EditPrint() {
               >
                 <div>
                   Today's Work - ({new Date().toLocaleDateString()}){" "}
-                  <span className={getArtWorkClass(design?.art_work)}>
-                    {design?.art_work || "NA"}
+                  <span className={getArtWorkClass(formData?.art_work)}>
+                    {formData?.art_work || "NA"}
                   </span>
                 </div>
                 <button className="gray-md-btn">
@@ -529,6 +663,9 @@ function EditPrint() {
                   onOpenColor={handleColorModal}
                   selectedCoating={selectedCoating}
                   selectedColor={selectedColor}
+                  onChangeField={handleComponentChange}
+                  totalQty={design?.item_quantity}
+                  isFieldModified={isFieldModified}
                 />
               ))}
           </Grid>
@@ -545,9 +682,27 @@ function EditPrint() {
             }}
           >
             <Button
-              variant="solid"
+              variant="contained"
+              color="error"
+              onClick={handleCancel}
+              sx={{ minWidth: 100 }}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => setOpenPending(true)}
+              sx={{ minWidth: 100 }}
+            >
+              Pending
+            </Button>
+
+            <Button
+              variant="contained"
               color="success"
-              onClick={handleSubmit}
+              onClick={() => handleSubmit("FINAL")}
               sx={{ minWidth: 100 }}
             >
               Submit
@@ -571,23 +726,160 @@ function EditPrint() {
           </Box>
         </Modal>
 
-        {/* Coating Type Modal */}
-        <CoatingTypeModal
-          open={coatingModal}
-          onClose={handleCloseCoating}
-          selectedComponent={selectedComponent}
-          onSubmit={handleSaveCoating}
-          value={selectedCoating[selectedComponent]}
-        />
+        {/* Pending Dialouge */}
+        <Dialog
+          open={openPending}
+          onClose={() => setOpenPending(false)}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{ sx: { borderRadius: "16px" } }}
+        >
+          <DialogTitle
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+            }}
+          >
+            <Typography variant="h6" fontWeight="bold" color="#0a85cb">
+              Pending
+            </Typography>
 
-        {/* Printing Color Modal */}
-        <PrintingColorModal
-          open={colorModal}
-          onClose={handleCloseColor}
-          selectedComponent={selectedComponent}
-          onSubmit={handleSaveColor}
-          value={selectedColor[selectedComponent]}
-        />
+            <IconButton
+              onClick={() => setOpenPending(false)}
+              sx={{ color: "#3b3b3b" }}
+            >
+              <CloseIcon />
+            </IconButton>
+          </DialogTitle>
+
+          <DialogContent dividers>
+            <Grid container spacing={2}>
+              {/* <Grid size={5}>
+                      <Typography>No of Completed Works</Typography>
+                    </Grid>
+                    <Grid size={7}>
+                      <Select
+                        fullWidth
+                        size="small"
+                        value={pendingData?.completedWork}
+                        onChange={(e) =>
+                          setPendingData({
+                            ...pendingData,
+                            completedWork: e.target.value,
+                          })
+                        }
+                        displayEmpty
+                      >
+                        <MenuItem value="">Select</MenuItem>
+                        <MenuItem value="Coating - TDM">Coating - TDM</MenuItem>
+                        <MenuItem value="Printing - TDM">Printing - TDM</MenuItem>
+                      </Select>
+                    </Grid> */}
+
+              {/* Pending Works */}
+
+              {/* <Grid size={5}>
+                      <Typography>No of Pending Works</Typography>
+                    </Grid>
+                    <Grid size={7}>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        type="number"
+                        value={pendingData?.pendingWork}
+                        onChange={(e) =>
+                          setPendingData({
+                            ...pendingData,
+                            pendingWork: e.target.value,
+                          })
+                        }
+                      />
+                    </Grid> */}
+
+              {/* Reason */}
+
+              <Grid size={5}>
+                <Typography>Reason for Pending</Typography>
+              </Grid>
+              <Grid size={7}>
+                <Select
+                  fullWidth
+                  size="small"
+                  value={pendingData?.reason}
+                  displayEmpty
+                  renderValue={
+                    pendingData.reason !== "" ? undefined : () => "Select"
+                  }
+                  onChange={(e) =>
+                    setPendingData({
+                      ...pendingData,
+                      reason: e.target.value,
+                    })
+                  }
+                >
+                  <MenuItem value="Sheets Not Available">
+                    Sheets Not Available
+                  </MenuItem>
+                </Select>
+              </Grid>
+            </Grid>
+          </DialogContent>
+
+          <DialogActions
+            sx={{
+              justifyContent: "flex-end",
+              p: 2,
+              gap: 2,
+            }}
+          >
+            <Button
+              variant="contained"
+              color="error"
+              onClick={() => setOpenPending(false)}
+              sx={{ minWidth: 100 }}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              variant="contained"
+              color="success"
+              onClick={() => {
+                if (!pendingData?.reason) {
+                  toast.error("Please Select Pending Reason");
+                  return;
+                }
+                setOpenPending(false);
+                handleSubmit("PENDING");
+              }}
+            >
+              Save
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Coating Type & Printing Color Modal */}
+        <Suspense fallback={null}>
+          {coatingModal && (
+            <CoatingTypeModal
+              open={coatingModal}
+              onClose={handleCloseCoating}
+              selectedComponent={selectedComponent}
+              onSubmit={handleSaveCoating}
+              value={selectedCoating[selectedComponent]}
+            />
+          )}
+
+          {colorModal && (
+            <PrintingColorModal
+              open={colorModal}
+              onClose={handleCloseColor}
+              selectedComponent={selectedComponent}
+              onSubmit={handleSaveColor}
+              value={selectedColor[selectedComponent]}
+            />
+          )}
+        </Suspense>
       </Box>
     </Box>
   );
