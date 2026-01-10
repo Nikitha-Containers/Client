@@ -637,17 +637,16 @@ function EditDesign() {
                 <Typography mb={1}>Machine</Typography>
 
                 <Select
-                  value={formData?.machine}
+                  value={formData?.machine ?? ""}
                   size="small"
                   displayEmpty
-                  renderValue={
-                    formData.machine !== "" ? undefined : () => "Select"
-                  }
                   onChange={(e) => {
                     handleFormChange("machine", e.target.value);
                   }}
                 >
-                  <MenuItem value="">Select</MenuItem>
+                  <MenuItem value="" disabled>
+                    Select
+                  </MenuItem>
                   <MenuItem value="Machine 1">Machine 1</MenuItem>
                   <MenuItem value="Machine 2">Machine 2</MenuItem>
                   <MenuItem value="Machine 3">Machine 3</MenuItem>
@@ -870,11 +869,8 @@ function EditDesign() {
               <Select
                 fullWidth
                 size="small"
-                value={pendingData?.reason}
+                value={pendingData?.reason ?? ""}
                 displayEmpty
-                renderValue={
-                  pendingData.reason !== "" ? undefined : () => "Select"
-                }
                 onChange={(e) =>
                   setPendingData({
                     ...pendingData,
@@ -882,6 +878,9 @@ function EditDesign() {
                   })
                 }
               >
+                <MenuItem value="" disabled>
+                  Select
+                </MenuItem>
                 <MenuItem value="Sheets Not Available">
                   Sheets Not Available
                 </MenuItem>

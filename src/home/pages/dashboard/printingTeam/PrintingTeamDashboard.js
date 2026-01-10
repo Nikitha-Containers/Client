@@ -25,28 +25,28 @@ const Item = styled(Paper)(({ theme }) => ({
   }),
 }));
 
-const CoatingDashboard = () => {
+const PrintingTeamDashboard = () => {
   const navigate = useNavigate();
 
   const { designs } = useDesign();
 
   const [getStatus, setStatus] = useState("all");
 
-  // Filter Coating For Dashboard
+  // Filter Printing Team For Dashboard
   const filterDesigns = useMemo(() => {
     if (getStatus === "all") {
-      return (designs || []).filter((d) => d.planning_status === 2);
+      return (designs || []).filter((d) => d.coating_status === 2);
     }
 
     if (getStatus === "pending") {
       return (designs || []).filter(
-        (d) => d.planning_status === 2 && d.coating_status === 1
+        (d) => d.coating_status === 2 && d.printingteam_status === 1
       );
     }
 
     if (getStatus === "completed") {
       return (designs || []).filter(
-        (d) => d.planning_status === 2 && d.coating_status === 2
+        (d) => d.coating_status === 2 && d.printingteam_status === 2
       );
     }
     return [];
@@ -54,18 +54,18 @@ const CoatingDashboard = () => {
 
   // Count for Cards
   const allCount = useMemo(() => {
-    return (designs || []).filter((d) => d.planning_status === 2).length;
+    return (designs || []).filter((d) => d.coating_status === 2).length;
   }, [designs]);
 
   const pendingCount = useMemo(() => {
     return (designs || []).filter(
-      (d) => d.planning_status === 2 && d.coating_status === 1
+      (d) => d.coating_status === 2 && d.printingteam_status === 1
     ).length;
   }, [designs]);
 
   const completedCount = useMemo(() => {
     return (designs || []).filter(
-      (d) => d.planning_status === 2 && d.coating_status === 2
+      (d) => d.coating_status === 2 && d.printingteam_status === 2
     ).length;
   }, [designs]);
 
@@ -77,9 +77,9 @@ const CoatingDashboard = () => {
   };
 
   const getStatusText = (row) => {
-    if (row.coating_status === 2) return "COMPLETED";
-    if (row.coating_status === 1) return "PENDING";
-    if (row.planning_status === 2) return "NEW";
+    if (row.printingteam_status === 2) return "COMPLETED";
+    if (row.printingteam_status === 1) return "PENDING";
+    if (row.coating_status === 2) return "NEW";
 
     return "NEW";
   };
@@ -177,14 +177,14 @@ const CoatingDashboard = () => {
         ),
       },
     ],
-    []
+    [navigate]
   );
 
   return (
     <Box className="Dashboard-con">
       <Box className="breadcrump-con">
         <Box className="main-title">
-          <div>Coating Dashboard</div>
+          <div>Printing Team Dashboard</div>
         </Box>
       </Box>
 
@@ -275,7 +275,7 @@ const CoatingDashboard = () => {
             }}
             muiTableBodyRowProps={({ row }) => ({
               onClick: () => {
-                navigate(`/edit_coating`, { state: { design: row.original } });
+                navigate(`/edit_printingteam`, { state: { design: row.original } });
               },
               sx: {
                 cursor: "pointer",
@@ -311,4 +311,4 @@ const CoatingDashboard = () => {
   );
 };
 
-export default CoatingDashboard;
+export default PrintingTeamDashboard;

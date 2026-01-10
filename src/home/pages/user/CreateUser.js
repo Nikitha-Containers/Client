@@ -181,7 +181,7 @@ const UserDialog = React.memo(
                 <MenuItem value={"Designing"}>Designing</MenuItem>
                 <MenuItem value={"Printing Manager"}>Printing Manager</MenuItem>
                 <MenuItem value={"Coating"}>Coating</MenuItem>
-                <MenuItem value={"Printing"}>Printing</MenuItem>
+                <MenuItem value={"Printing Team"}>Printing</MenuItem>
                 <MenuItem value={"Fabrication"}>Fabrication</MenuItem>
               </Select>
             </Grid>
@@ -479,7 +479,7 @@ function CreateUser() {
     Stores: ["Dashboard", "Sheet Taken"],
     "Printing Manager": ["Dashboard", "Sheet Taken"],
     Coating: ["Dashboard", "Sheet Taken"],
-    Printing: ["Dashboard", "Sheet Taken"],
+   " Printing Team": ["Dashboard", "Sheet Taken"],
     Fabrication: ["Dashboard", "Quality Control"],
   };
 

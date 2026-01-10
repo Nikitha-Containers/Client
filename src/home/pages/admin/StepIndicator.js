@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Grid from "@mui/material/Grid";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import {
@@ -8,6 +8,10 @@ import {
   Select,
   MenuItem,
   Box,
+  Step,
+  StepLabel,
+  Stepper,
+  styled,
   Button,
   Modal,
   Dialog,
@@ -17,46 +21,111 @@ import {
   DialogActions,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import Check from "@mui/icons-material/Check";
+import StepConnector, {
+  stepConnectorClasses,
+} from "@mui/material/StepConnector";
 import "../Dashboard.scss";
 import { Link, useNavigate } from "react-router-dom";
 import upsImage from "../../../../assets/Pagesimage/ups-image.jpg";
 import { useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import server from "../../../../server/server";
-import { useDesign } from "../../../../API/Design_API";
 
-import ErrorIcon from "@mui/icons-material/Error";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import InfoIcon from "@mui/icons-material/Info";
-import DoneIcon from "@mui/icons-material/Done";
+const stepsStatus = [
+  { label: "Design Team", status: "completed" },
+  { label: "Coating Team", status: "completed" },
+  { label: "Printing Team", status: "active" },
+  { label: "Varnish Team", status: "pending" },
+  { label: "Fabrication Team", status: "pending" },
+];
 
-const getNextFreeDate = (conflicts) => {
-  if (!conflicts.length) return "";
+const lastCompletedOrActiveIndex = [...stepsStatus]
+  .reverse()
+  .findIndex((step) => step.status === "active" || step.status === "completed");
 
-  const lastEnd = conflicts.reduce((max, c) => {
-    const end = new Date(c.planning_work_details.end_date);
-    return end > max ? end : max;
-  }, new Date(conflicts[0].planning_work_details.end_date));
+const activeStep =
+  lastCompletedOrActiveIndex >= 0
+    ? stepsStatus.length - 1 - lastCompletedOrActiveIndex
+    : 0;
 
-  lastEnd.setDate(lastEnd.getDate() + 1);
-  return lastEnd.toISOString().split("T")[0];
-};
+const CustomConnector = styled(StepConnector)(({ theme }) => ({
+  [`&.${stepConnectorClasses.alternativeLabel}`]: {
+    top: 30,
+  },
+  [`&.${stepConnectorClasses.active} .${stepConnectorClasses.line}`]: {
+    backgroundColor: "#2196f3",
+  },
+  [`&.${stepConnectorClasses.completed} .${stepConnectorClasses.line}`]: {
+    backgroundColor: "#2196f3",
+  },
+  [`& .${stepConnectorClasses.line}`]: {
+    height: 5,
+    border: 0,
+    backgroundColor: "#d5d6d6",
+    borderRadius: 1,
+  },
+}));
+
+const StepIconRoot = styled("div")(({ ownerState }) => {
+  const { active, completed } = ownerState;
+
+  return {
+    backgroundColor: completed ? "#2196f3" : active ? "#f44336" : "#fff",
+    zIndex: 1,
+    color: "#fff",
+    width: 56,
+    height: 56,
+    display: "flex",
+    borderRadius: "50%",
+    justifyContent: "center",
+    alignItems: "center",
+    fontWeight: 600,
+    fontSize: "1.1rem",
+    border: active
+      ? "3px solid #f44336"
+      : completed
+      ? "3px solid #2196f3"
+      : "3px solid #d5d6d6",
+  };
+});
+
+function CustomStepIcon(props) {
+  const { active, completed, icon } = props;
+  const iconColor = active ? "#fff" : completed ? "#fff" : "#d5d6d6";
+
+  return (
+    <StepIconRoot ownerState={{ completed, active }}>
+      {completed ? (
+        <Check sx={{ color: "#fff" }} />
+      ) : (
+        <span style={{ color: iconColor }}>{icon}</span>
+      )}
+    </StepIconRoot>
+  );
+}
 
 function EditPlan() {
-  const { designs } = useDesign();
-
   const [getFormData, setFormData] = useState({});
   const [open, setOpen] = useState(false);
-  const [openPending, setOpenPending] = useState(false);
-  const [pendingData, setPendingData] = useState({ pending_reason: "" });
 
   const navigate = useNavigate();
   const location = useLocation();
   const design = location.state?.design;
+  console.log("macj=hine", design.machine);
+
+  const handleOpen = () => setOpen(true);
+  const handleClose = () => setOpen(false);
+
+  //Pending Dialog
+  const [openPending, setOpenPending] = useState(false);
+  const [pendingData, setPendingData] = useState({
+    pending_reason: "",
+  });
 
   useEffect(() => {
     if (!design) {
-      navigate("/planning_dashboard");
+      navigate("/planning");
     }
   }, [design, navigate]);
 
@@ -93,105 +162,8 @@ function EditPlan() {
     }
   }, [design]);
 
-  // Get free machines
+  if (!design) return null;
 
-  const ALL_MACHINES = ["Machine 1", "Machine 2", "Machine 3"];
-
-  const getFreeMachines = (startDate, endDate, designs, skipSO) => {
-    return ALL_MACHINES.filter((machine) => {
-      const conflicts = designs.filter((d) => {
-        if (d.saleorder_no === skipSO) return false;
-        if (d.machine !== machine) return false;
-
-        const work = d.planning_work_details;
-        if (!work?.start_date || !work?.end_date) return false;
-
-        return (
-          new Date(startDate) <= new Date(work.end_date) &&
-          new Date(endDate) >= new Date(work.start_date)
-        );
-      });
-
-      return conflicts.length === 0;
-    });
-  };
-
-  const freeMachines = useMemo(() => {
-    if (!getFormData.start_date || !getFormData.end_date) return [];
-
-    return getFreeMachines(
-      getFormData.start_date,
-      getFormData.end_date,
-      designs,
-      design.saleorder_no
-    );
-  }, [
-    getFormData.start_date,
-    getFormData.end_date,
-    designs,
-    design.saleorder_no,
-  ]);
-
-  // Date Overlap
-  const isDateOverlap = (start1, end1, start2, end2) => {
-    return (
-      new Date(start1) <= new Date(end2) && new Date(end1) >= new Date(start2)
-    );
-  };
-
-  // Check Machine Availability
-
-  const MachineAvailable = useMemo(() => {
-    if (
-      !getFormData.machine ||
-      !getFormData.start_date ||
-      !getFormData.end_date ||
-      !designs?.length
-    ) {
-      return { available: true, conflicts: [], nextFreeDate: "" };
-    }
-
-    const conflicts = designs.filter((d) => {
-      if (d.saleorder_no === design.saleorder_no) return false;
-      if (d.machine !== getFormData.machine) return false;
-
-      const work = d.planning_work_details;
-      if (!work?.start_date || !work?.end_date) return false;
-
-      return isDateOverlap(
-        getFormData.start_date,
-        getFormData.end_date,
-        work.start_date,
-        work.end_date
-      );
-    });
-
-    if (conflicts.length === 0) {
-      return { available: true };
-    }
-
-    const nextFreeDate = getNextFreeDate(conflicts);
-
-    return {
-      available: false,
-      conflicts: conflicts.map((c) => ({
-        customer_name: c.customer_name,
-        saleorder_no: c.saleorder_no,
-        start_date: c.planning_work_details.start_date,
-        end_date: c.planning_work_details.end_date,
-      })),
-      nextFreeDate,
-    };
-  }, [
-    getFormData.machine,
-    getFormData.start_date,
-    getFormData.end_date,
-    designs,
-    design.saleorder_no,
-  ]);
-
-  const handleOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -248,30 +220,11 @@ function EditPlan() {
   };
 
   const shiftTime = {
-    General: { from: "09:00", to: "18:00", hours: 9, crossDay: false },
-    "Shift 1": { from: "06:00", to: "14:00", hours: 8, crossDay: false },
-    "Shift 2": { from: "14:00", to: "22:00", hours: 8, crossDay: false },
-    "Shift 3": { from: "22:00", to: "06:00", hours: 8, crossDay: true },
+    General: { from: "09:00", to: "18:00", crossDay: false },
+    "Shift 1": { from: "06:00", to: "14:00", crossDay: false },
+    "Shift 2": { from: "14:00", to: "22:00", crossDay: false },
+    "Shift 3": { from: "22:00", to: "06:00", crossDay: true },
   };
-  const machineMaster = {
-    "Machine 1": { sheetsPerHour: 500 },
-    "Machine 2": { sheetsPerHour: 300 },
-    "Machine 3": { sheetsPerHour: 200 },
-  };
-
-  const printableSheets = useMemo(() => {
-    const machine = getFormData.machine;
-    const shift = getFormData.shift;
-
-    if (!machine || !shift) return 0;
-
-    const machineCfg = machineMaster[machine];
-    const shiftCfg = shiftTime[shift];
-
-    if (!machineCfg || !shiftCfg) return 0;
-
-    return machineCfg.sheetsPerHour * shiftCfg.hours;
-  }, [getFormData.machine, getFormData.shift]);
 
   const handleShiftChange = (e) => {
     const shift = e.target.value;
@@ -324,7 +277,7 @@ function EditPlan() {
           <div className="main-inner-txts">
             <Link
               style={{ color: "#0a85cb", textDecoration: "none" }}
-              to={"/planning_dashboard"}
+              to={"/planning"}
             >
               Planning
             </Link>
@@ -412,22 +365,7 @@ function EditPlan() {
             </Grid>
             <Grid size={3}>
               <FormGroup>
-                <Typography mb={1}>
-                  Machine
-                  {printableSheets > 0 && (
-                    <span
-                      style={{
-                        marginLeft: 8,
-                        color: "#2e7d32",
-                        fontWeight: 600,
-                        fontSize: "16px",
-                      }}
-                    >
-                      ({printableSheets} / Shift)
-                    </span>
-                  )}
-                </Typography>
-
+                <Typography mb={1}>Machine</Typography>
                 <Select
                   name="machine"
                   value={getFormData?.machine ?? ""}
@@ -435,9 +373,7 @@ function EditPlan() {
                   onChange={handleChange}
                   displayEmpty
                 >
-                  <MenuItem value="" disabled>
-                    Select
-                  </MenuItem>
+                  <MenuItem value="">Select</MenuItem>
                   <MenuItem value="Machine 1">Machine 1</MenuItem>
                   <MenuItem value="Machine 2">Machine 2</MenuItem>
                   <MenuItem value="Machine 3">Machine 3</MenuItem>
@@ -451,7 +387,7 @@ function EditPlan() {
                   {getFormData.shift_from && getFormData.shift_to && (
                     <span
                       style={{
-                        color: "#0288d1",
+                        color: "#777",
                         fontSize: "16px",
                         marginLeft: "10px",
                       }}
@@ -460,6 +396,7 @@ function EditPlan() {
                     </span>
                   )}
                 </Typography>
+
                 <Select
                   name="shift"
                   value={getFormData?.shift ?? ""}
@@ -467,9 +404,7 @@ function EditPlan() {
                   onChange={handleShiftChange}
                   displayEmpty
                 >
-                  <MenuItem value="" disabled>
-                    Select
-                  </MenuItem>
+                  <MenuItem value="">Select</MenuItem>
                   <MenuItem value="General">General</MenuItem>
                   <MenuItem value="Shift 1">Shift 1</MenuItem>
                   <MenuItem value="Shift 2">Shift 2</MenuItem>
@@ -487,9 +422,7 @@ function EditPlan() {
                   onChange={handleChange}
                   displayEmpty
                 >
-                  <MenuItem value="" disabled>
-                    Select
-                  </MenuItem>
+                  <MenuItem value="">Select</MenuItem>
                   <MenuItem value="Site 1">Site 1</MenuItem>
                   <MenuItem value="Site 2">Site 2</MenuItem>
                   <MenuItem value="Site 3">Site 3</MenuItem>
@@ -522,100 +455,93 @@ function EditPlan() {
                 />
               </FormGroup>
             </Grid>
-            {!MachineAvailable.available && (
-              <Box mt={2}>
-                {/*  Busy machine message */}
-                {MachineAvailable.conflicts.map((c, i) => (
-                  <Typography key={i} color="error" fontSize={14}>
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <ErrorIcon fontSize="small" />
-                      <span>
-                        {getFormData.machine} already running for{" "}
-                        <b>{c.customer_name}</b> (SO: {c.saleorder_no})
-                      </span>
-                    </Box>
-                    <Box ml={4}>
-                      {c.start_date} → {c.end_date}
-                    </Box>
-                  </Typography>
-                ))}
-
-                {/* Next free date */}
-                <Typography color="success" fontSize={14} mt={1}>
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <CheckCircleIcon fontSize="small" />
-                    <span>
-                      Next available date:{" "}
-                      <b>{MachineAvailable.nextFreeDate}</b>
-                    </span>
-                  </Box>
-                </Typography>
-
-                {/*  Free machines */}
-                {freeMachines.length > 0 && (
-                  <Box mt={1}>
-                    <Box display="flex" alignItems="center" gap={1} mb={0.5}>
-                      <InfoIcon color="info" fontSize="small" />
-                      <Typography color="info.main" fontSize={14}>
-                        Available Machine:
-                      </Typography>
-                    </Box>
-
-                    {freeMachines.map((m) => (
-                      <Box
-                        key={m}
-                        display="flex"
-                        alignItems="center"
-                        gap={1}
-                        ml={3}
-                      >
-                        <DoneIcon color="success" fontSize="small" />
-                        <Typography fontSize={15}>{m}</Typography>
-                      </Box>
-                    ))}
-                  </Box>
-                )}
-              </Box>
-            )}
           </Grid>
-          {/* Action Buttons */}
+        </Box>
 
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "flex-end",
-              p: 2,
-              mt: 2,
-              gap: 2,
-            }}
+        {/* ✅ Stepper Section */}
+        <Box sx={{ width: "100%", mt: 8 }}>
+          <Stepper
+            alternativeLabel
+            activeStep={activeStep}
+            connector={<CustomConnector />}
           >
-            <Button
-              variant="contained"
-              color="error"
-              onClick={handleCancel}
-              sx={{ minWidth: 100 }}
-            >
-              Cancel
-            </Button>
+            {stepsStatus.map((step) => {
+              const isCompleted = step.status === "completed";
+              const isActive = step.status === "active";
 
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={() => setOpenPending(true)}
-              sx={{ minWidth: 100 }}
-            >
-              Pending
-            </Button>
+              return (
+                <Step key={step.label} completed={isCompleted}>
+                  <StepLabel StepIconComponent={CustomStepIcon}>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontWeight: 600,
+                        fontFamily: "system-ui",
+                        color: isCompleted
+                          ? "#2196f3"
+                          : isActive
+                          ? "#f44336"
+                          : "#858485",
+                      }}
+                    >
+                      {step.label}
+                    </Typography>
+                  </StepLabel>
+                </Step>
+              );
+            })}
+          </Stepper>
+        </Box>
 
-            <Button
-              variant="contained"
-              color="success"
-              onClick={() => handleSubmit("FINAL")}
-              sx={{ minWidth: 100 }}
+        <Box sx={{ flexGrow: 1, mt: 8 }}>
+          <Grid container spacing={2.5} sx={{ alignItems: "end" }}>
+            <Grid size={8}>
+              <FormGroup>
+                <Typography mb={1}>Printing Layout</Typography>
+              </FormGroup>
+
+              <div className="ups-img-con" onClick={handleOpen}>
+                <img src={upsImage} className="ups-image" alt="ups-image" />
+              </div>
+            </Grid>
+
+            <Grid
+              size={4}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-end",
+                columnGap: "15px",
+              }}
             >
-              Submit
-            </Button>
-          </Box>
+              <Button
+                variant="contained"
+                color="error"
+                onClick={handleCancel}
+                sx={{ minWidth: 100 }}
+              >
+                Cancel
+              </Button>
+
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => setOpenPending(true)}
+                sx={{ minWidth: 100 }}
+              >
+                Pending
+              </Button>
+
+              <Button
+                variant="contained"
+                color="success"
+                onClick={() => handleSubmit("FINAL")}
+                sx={{ minWidth: 100 }}
+              >
+                Submit
+              </Button>
+            </Grid>
+          </Grid>
         </Box>
       </Box>
 

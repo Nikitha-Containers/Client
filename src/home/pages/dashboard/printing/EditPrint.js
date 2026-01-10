@@ -221,6 +221,7 @@ function EditPrint() {
     sales_person_code: design?.sales_person_code || "",
     machine: design?.machine,
     art_work: design?.art_work || "NA",
+    printingmanager_pending_details: design?.pending_reason || "",
   });
 
   const [components, setComponents] = useState({});
@@ -242,7 +243,7 @@ function EditPrint() {
   const [pendingData, setPendingData] = useState({
     completedWork: "",
     pendingWork: 0,
-    reason: "",
+    pending_reason: "",
   });
 
   const initialComponentsState = useMemo(() => {
@@ -316,6 +317,15 @@ function EditPrint() {
 
     setSelectedCoating(coatingInit);
     setSelectedColor(colorInit);
+  }, [design]);
+
+  useEffect(() => {
+    if (design?.printingmanager_pending_details?.pending_reason) {
+      setPendingData((prev) => ({
+        ...prev,
+        pending_reason: design.printingmanager_pending_details.pending_reason,
+      }));
+    }
   }, [design]);
 
   // Handle View
@@ -435,21 +445,27 @@ function EditPrint() {
     }
 
     const payload = {
-      saleorder_no: design.saleorder_no,
+      ...formData,
       components: componentsPayload,
       printingmanager_status,
       printingmanager_pending_details:
         type === "PENDING"
-          ? { reason: pendingData.reason }
+          ? { pending_reason: pendingData.pending_reason }
           : design?.printingmanager_pending_details || {},
     };
 
     try {
-      const res = await server.post("/design/add", payload);
-      toast.success(res.data.message || "Saved successfully");
+      await server.post("/design/add", payload);
+
+      if (type === "PENDING") {
+        toast.info("Design moved to Pending");
+      } else {
+        toast.success("Design saved successfully");
+      }
       navigate("/printingmanager_dashboard");
-    } catch (err) {
-      toast.error(err.response?.data?.error || err.message);
+    } catch (error) {
+      const errorMessage = error.response?.data?.error || error.message;
+      toast.error(errorMessage);
     }
   };
 
@@ -568,17 +584,16 @@ function EditPrint() {
                 <Typography mb={1}>Machine</Typography>
 
                 <Select
-                  value={formData?.machine}
+                  value={formData?.machine ?? ""}
                   size="small"
                   displayEmpty
-                  renderValue={
-                    formData.machine !== "" ? undefined : () => "Select"
-                  }
                   onChange={(e) => {
                     handleFormChange("machine", e.target.value);
                   }}
                 >
-                  <MenuItem value="">Select</MenuItem>
+                  <MenuItem value="" disabled>
+                    Select
+                  </MenuItem>
                   <MenuItem value="Machine 1">Machine 1</MenuItem>
                   <MenuItem value="Machine 2">Machine 2</MenuItem>
                   <MenuItem value="Machine 3">Machine 3</MenuItem>
@@ -805,20 +820,20 @@ function EditPrint() {
                 <Select
                   fullWidth
                   size="small"
-                  value={pendingData?.reason}
+                  value={pendingData?.pending_reason ?? ""}
                   displayEmpty
-                  renderValue={
-                    pendingData.reason !== "" ? undefined : () => "Select"
-                  }
                   onChange={(e) =>
                     setPendingData({
                       ...pendingData,
-                      reason: e.target.value,
+                      pending_reason: e.target.value,
                     })
                   }
                 >
-                  <MenuItem value="Sheets Not Available">
-                    Sheets Not Available
+                  <MenuItem value="" disabled>
+                    Select
+                  </MenuItem>
+                  <MenuItem value="Print Color Not Availbale">
+                    Print Color Not Availbale
                   </MenuItem>
                 </Select>
               </Grid>
@@ -845,7 +860,7 @@ function EditPrint() {
               variant="contained"
               color="success"
               onClick={() => {
-                if (!pendingData?.reason) {
+                if (!pendingData?.pending_reason) {
                   toast.error("Please Select Pending Reason");
                   return;
                 }

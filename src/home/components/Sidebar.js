@@ -1,4 +1,10 @@
-import { List, ListItem, ListItemText, Box, ListItemButton } from "@mui/material";
+import {
+  List,
+  ListItem,
+  ListItemText,
+  Box,
+  ListItemButton,
+} from "@mui/material";
 import { useLocation } from "react-router-dom";
 import { styled } from "@mui/material/styles";
 import Badge from "@mui/material/Badge";
@@ -78,7 +84,11 @@ const Sidebar = ({ isCollapsed }) => {
           ?.filter((menu) => menuPages.includes(menu.key))
           ?.map((menu) => {
             const Icon = menu.icon;
-            const isActive = location.pathname === menu.path;
+            const isActive = menu.matchRoutes
+              ? menu.matchRoutes.some((route) =>
+                  location.pathname.startsWith(route)
+                )
+              : location.pathname === menu.path;
 
             return (
               <ListItem key={menu.path} disablePadding>

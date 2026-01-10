@@ -1,7 +1,6 @@
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import CoatingDashboard from "./pages/dashboard/coating/CoatingDashboard";
 import EditCoating from "./pages/dashboard/coating/EditCoating";
-import Dashboard from "./pages/dashboard/Dashboard";
 import DesigningDashboard from "./pages/dashboard/desigining/DesigningDashboard";
 import EditDesign from "./pages/dashboard/desigining/EditDesign";
 import EditPlan from "./pages/dashboard/planning/EditPlan";
@@ -11,24 +10,11 @@ import PrintingManager from "./pages/dashboard/printing/PrintingManager";
 import Stores_dashboard from "./pages/dashboard/stores/Stores_dashboard";
 import Uploadsheet from "./pages/dashboard/stores/Uploadsheet";
 import CreateUser from "./pages/user/CreateUser";
+import SyncWithSo from "./pages/dashboard/planning/SyncWithSO";
+import PrintingTeamDashboard from "./pages/dashboard/printingTeam/PrintingTeamDashboard";
+import EditPrintingTeam from "./pages/dashboard/printingTeam/EditPrintingTeam";
 
 export const ROUTE_CONFIG = {
-  Admin: [
-    { path: "/admin_dashboard", component: AdminDashboard, key: "All" },
-    { path: "/create_user", component: CreateUser, key: "All" },
-  ],
-  Planning: [
-    { path: "/planning_dashboard", component: Dashboard, key: "Dashboard" },
-    { path: "/planning", component: Planning, key: "Sync With SO" },
-    { path: "/edit_plan", component: EditPlan, key: "Sync With SO" },
-    { path: "/upload_sheet", component: Uploadsheet, key: "Sheet Taken" },
-  ],
-
-  Stores: [
-    { path: "/store_dashboard", component: Stores_dashboard, key: "Dashboard" },
-    { path: "/upload_sheet", component: Uploadsheet, key: "Sheet Taken" },
-  ],
-
   Designing: [
     {
       path: "/designing_dashboard",
@@ -36,7 +22,7 @@ export const ROUTE_CONFIG = {
       key: "Dashboard",
     },
     { path: "/edit_design", component: EditDesign, key: "Dashboard" },
-    { path: "/planning", component: Planning, key: "Sync With SO" },
+    { path: "/sync_with_so", component: SyncWithSo, key: "Sync With SO" },
     { path: "/upload_sheet", component: Uploadsheet, key: "Sheet Taken" },
   ],
 
@@ -50,6 +36,13 @@ export const ROUTE_CONFIG = {
     { path: "/upload_sheet", component: Uploadsheet, key: "Sheet Taken" },
   ],
 
+  Planning: [
+    { path: "/planning_dashboard", component: Planning, key: "Dashboard" },
+    { path: "/edit_plan", component: EditPlan, key: "Dashboard" },
+    { path: "/sync_with_so", component: SyncWithSo, key: "Sync With SO" },
+    { path: "/upload_sheet", component: Uploadsheet, key: "Sheet Taken" },
+  ],
+
   Coating: [
     {
       path: "/coating_dashboard",
@@ -57,5 +50,25 @@ export const ROUTE_CONFIG = {
       key: "Dashboard",
     },
     { path: "/edit_coating", component: EditCoating, key: "Dashboard" },
+    { path: "/upload_sheet", component: Uploadsheet, key: "Sheet Taken" },
+  ],
+
+  "Printing Team": [
+    {
+      path: "/printingteam_dashboard",
+      component: PrintingTeamDashboard,
+      key: "Dashboard",
+    },
+    { path: "/edit_printingteam", component: EditPrintingTeam, key: "Dashboard" },
+    { path: "/upload_sheet", component: Uploadsheet, key: "Sheet Taken" },
+  ],
+
+  Stores: [
+    { path: "/store_dashboard", component: Stores_dashboard, key: "Dashboard" },
+    { path: "/upload_sheet", component: Uploadsheet, key: "Sheet Taken" },
+  ],
+  Admin: [
+    { path: "/admin_dashboard", component: AdminDashboard, key: "All" },
+    { path: "/create_user", component: CreateUser, key: "All" },
   ],
 };

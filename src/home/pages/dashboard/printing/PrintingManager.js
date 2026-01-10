@@ -193,8 +193,12 @@ const PrintingManager = () => {
           <Grid container spacing={2}>
             <Grid size={4}>
               <Item
-                className="box-con"
-                sx={{ backgroundColor: "#725A7B", color: "#fff" }}
+                className={`box-con ${getStatus === "all" ? "active" : ""}`}
+                sx={{
+                  backgroundColor: "#725A7B",
+                  color: "#fff",
+                  "--box-bg": "#725A7B",
+                }}
                 onClick={() => setStatus("all")}
               >
                 <Box className="inner-card">
@@ -210,8 +214,12 @@ const PrintingManager = () => {
 
             <Grid size={4}>
               <Item
-                className="box-con"
-                sx={{ backgroundColor: "#F67280", color: "#fff" }}
+                className={`box-con ${getStatus === "pending" ? "active" : ""}`}
+                sx={{
+                  backgroundColor: "#F67280",
+                  color: "#fff",
+                  "--box-bg": "#F67280",
+                }}
                 onClick={() => setStatus("pending")}
               >
                 <Box className="inner-card">
@@ -227,8 +235,14 @@ const PrintingManager = () => {
 
             <Grid size={4}>
               <Item
-                className="box-con"
-                sx={{ backgroundColor: "#FEB298", color: "#fff" }}
+                className={`box-con ${
+                  getStatus === "completed" ? "active" : ""
+                }`}
+                sx={{
+                  backgroundColor: "#FEB298",
+                  color: "#fff",
+                  "--box-bg": "#FEB298",
+                }}
                 onClick={() => setStatus("completed")}
               >
                 <Box className="inner-card">
@@ -244,7 +258,7 @@ const PrintingManager = () => {
           </Grid>
         </Box>
 
-        <Box className="Dashboard-table" sx={{ mt: 1 }}>
+        <Box className="Dashboard-table" sx={{ mt: 4 }}>
           <MaterialReactTable
             columns={columns}
             data={filterDesigns}
