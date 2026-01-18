@@ -42,7 +42,7 @@ const getArtWorkClass = (art) => {
 };
 
 const ComponentRow = ({ component, name, onViewFile, totalQty, soNumber }) => {
-  const storeValues = `COATING_${soNumber}_${name}`;
+  const storageKey = `COATING_${soNumber}_${name}`;
 
   const initTimer = () => ({
     status: "IDLE",
@@ -61,27 +61,27 @@ const ComponentRow = ({ component, name, onViewFile, totalQty, soNumber }) => {
 
   // Load from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem(storeValues);
+    const saved = localStorage.getItem(storageKey);
     if (saved) {
       const parsed = JSON.parse(saved);
       setTimers(parsed.timers || {});
       setStatusMap(parsed.statusMap || {});
     }
     isLoaded.current = true;
-  }, [storeValues]);
+  }, [storageKey]);
 
   // Save to localStorage
   useEffect(() => {
     if (!isLoaded.current) return;
 
     localStorage.setItem(
-      storeValues,
+      storageKey,
       JSON.stringify({
         timers,
         statusMap,
       })
     );
-  }, [timers, statusMap, storeValues]);
+  }, [timers, statusMap, storageKey]);
 
   // Live timer update
   useEffect(() => {
@@ -483,7 +483,7 @@ const ComponentRow = ({ component, name, onViewFile, totalQty, soNumber }) => {
 function EditCoating() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { design } = location.state || {};
+  const { design } = location?.state || {};
 
   const [open, setOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState("");
@@ -502,8 +502,8 @@ function EditCoating() {
     fab_site: design?.planning_work_details?.fab_site || "",
     sales_person_code: design?.sales_person_code || "",
     machine: design?.machine,
+    coating_operator_name: design?.coating_operator_name,
     art_work: design?.art_work || "NA",
-    printingmanager_pending_details: design?.pending_reason || "",
   });
 
   //Pending Dialog
@@ -535,12 +535,71 @@ function EditCoating() {
     return obj;
   }, []);
 
+  const buildLocalStorageFromDB = (componentName, componentData) => {
+    if (!componentData?.coating_process) return;
+
+    const timers = {};
+    const statusMap = {};
+
+    const toArr = (v) => (Array.isArray(v) ? v : v ? [v] : []);
+
+    // SAME ORDER AS UI
+    const coatingList = [
+      ...toArr(componentData?.coating?.sizing),
+      ...toArr(componentData?.coating?.insideColor),
+      ...toArr(componentData?.coating?.varnish),
+      ...(componentData?.coating?.coatingColor &&
+      componentData?.coating?.coatingCount
+        ? Array.from(
+            { length: componentData.coating.coatingCount },
+            (_, i) => `${componentData.coating.coatingColor} - ${i + 1}`
+          )
+        : []),
+    ];
+
+    coatingList.forEach((processName, index) => {
+      const p = componentData.coating_process[processName];
+      if (!p) return;
+
+      const start = new Date(p.start_time).getTime();
+      const end = new Date(p.end_time).getTime();
+
+      timers[index] = {
+        status: "STOPPED",
+        startTime: start,
+        endTime: end,
+        currentTime: start,
+        coRunning: false,
+        coStart: null,
+        coTotalMs: (p.co_time || 0) * 1000,
+      };
+
+      statusMap[index] = p.status === 1 ? "Yes" : "No";
+    });
+
+    const key = `COATING_${design.saleorder_no}_${componentName}`;
+
+    localStorage.setItem(
+      key,
+      JSON.stringify({
+        timers,
+        statusMap,
+      })
+    );
+  };
+
   useEffect(() => {
     if (!design?.components) return;
+
     const updatedComponents = { ...initialComponentsState };
+
     Object.entries(design.components).forEach(([name, comp]) => {
-      if (updatedComponents[name]) updatedComponents[name] = { ...comp };
+      if (updatedComponents[name]) {
+        updatedComponents[name] = { ...comp };
+        buildLocalStorageFromDB(name, comp);
+      }
     });
+
     setComponents(updatedComponents);
   }, [design, initialComponentsState]);
 
@@ -551,6 +610,15 @@ function EditCoating() {
       }
     };
   }, [currentImage]);
+
+  useEffect(() => {
+    if (design?.coating_pending_details?.pending_reason) {
+      setPendingData((prev) => ({
+        ...prev,
+        pending_reason: design?.coating_pending_details?.pending_reason,
+      }));
+    }
+  }, [design]);
 
   // Handler Functions
 
@@ -578,10 +646,117 @@ function EditCoating() {
     setCurrentImage("");
   };
 
-  const handleSubmit = async (type) => {
-    const coating_status = type === "PENDING" ? 1 : 2;
+  const isAllCoatingCompleted = () => {
+    for (const compName of Object.keys(design?.components || {})) {
+      const key = `COATING_${design.saleorder_no}_${compName}`;
+      const saved = localStorage.getItem(key);
 
-    
+      if (!saved) return false;
+
+      const { timers = {}, statusMap = {} } = JSON.parse(saved);
+
+      if (Object.keys(timers).length === 0) return false;
+
+      for (const index of Object.keys(timers)) {
+        const t = timers[index];
+
+        if (!t || t.status !== "STOPPED") return false;
+
+        if (statusMap[index] !== "Yes") return false;
+      }
+    }
+
+    return true;
+  };
+
+  const handleSubmit = async (type) => {
+    try {
+      if (!formData?.coating_operator_name) {
+        toast.info("Please Select Operator");
+        return;
+      }
+
+      if (type === "FINAL" && !isAllCoatingCompleted()) {
+        toast.warning(
+          "All coating processes must be completed before submitting. Moving to Pending."
+        );
+        return;
+      }
+
+      const coating_status = type === "PENDING" ? 1 : 2;
+      const updatedComponents = {};
+
+      Object.entries(components)
+        .filter(([compName]) => design?.components?.[compName])
+        .forEach(([compName, comp]) => {
+          const storageKey = `COATING_${design.saleorder_no}_${compName}`;
+          const saved = localStorage.getItem(storageKey);
+
+          let coating_process = {};
+
+          if (saved) {
+            const { timers = {}, statusMap = {} } = JSON.parse(saved);
+
+            const toArr = (v) => (Array.isArray(v) ? v : v ? [v] : []);
+
+            const coatingList = [
+              ...toArr(comp?.coating?.sizing),
+              ...toArr(comp?.coating?.insideColor),
+              ...toArr(comp?.coating?.varnish),
+              ...(comp?.coating?.coatingColor && comp?.coating?.coatingCount
+                ? Array.from(
+                    { length: comp.coating.coatingCount },
+                    (_, i) => `${comp.coating.coatingColor} - ${i + 1}`
+                  )
+                : []),
+            ];
+
+            coatingList.forEach((processName, index) => {
+              const t = timers[index];
+              if (!t || !t.startTime || !t.endTime) return;
+
+              coating_process[processName] = {
+                start_time: new Date(t.startTime),
+                end_time: new Date(t.endTime),
+                co_time: Math.floor((t.coTotalMs || 0) / 1000),
+                total_time: Math.floor(
+                  (t.endTime - t.startTime - (t.coTotalMs || 0)) / 1000
+                ),
+                status: statusMap[index] === "Yes" ? 1 : 0,
+              };
+            });
+          }
+
+          // ✅ FINAL STRUCTURE
+          updatedComponents[compName] = {
+            ...comp,
+            coating_process,
+          };
+        });
+
+      const payload = {
+        saleorder_no: design.saleorder_no,
+        coating_operator_name: formData.coating_operator_name,
+        coating_status,
+        coating_pending_details:
+          type === "PENDING"
+            ? { pending_reason: pendingData?.pending_reason }
+            : design?.coating_pending_details || {},
+        components: updatedComponents,
+      };
+
+      await server.post("/design/add", payload);
+
+      Object.keys(localStorage)
+        .filter((k) => k.startsWith(`COATING_${design.saleorder_no}_`))
+        .forEach((k) => localStorage.removeItem(k));
+
+      toast.success("Coating Saved Successfully");
+      navigate("/coating_dashboard");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to Save Coating");
+    }
   };
 
   const handleCancel = () => {
@@ -730,12 +905,12 @@ function EditCoating() {
                 <Typography mb={1}>Operator Name</Typography>
 
                 <Select
-                  value={formData.coating_Operator_name ?? ""}
+                  value={formData.coating_operator_name ?? ""}
                   size="small"
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      coating_Operator_name: e.target.value,
+                      coating_operator_name: e.target.value,
                     })
                   }
                   displayEmpty
@@ -857,7 +1032,13 @@ function EditCoating() {
             <Button
               variant="contained"
               color="primary"
-              onClick={() => setOpenPending(true)}
+              onClick={() => {
+                if (isAllCoatingCompleted()) {
+                  toast.info("All coating completed. Please Submit.");
+                  return;
+                }
+                setOpenPending(true);
+              }}
               sx={{ minWidth: 100 }}
             >
               Pending
@@ -866,8 +1047,7 @@ function EditCoating() {
             <Button
               variant="contained"
               color="success"
-              // onClick={() => handleSubmit("FINAL")}
-              sx={{ minWidth: 100 }}
+              onClick={() => handleSubmit("FINAL")}
             >
               Submit
             </Button>
@@ -971,7 +1151,7 @@ function EditCoating() {
                   return;
                 }
                 setOpenPending(false);
-                // handleSubmit("PENDING");
+                handleSubmit("PENDING");
               }}
             >
               Save

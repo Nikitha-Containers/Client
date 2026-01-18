@@ -221,7 +221,6 @@ function EditPrint() {
     sales_person_code: design?.sales_person_code || "",
     machine: design?.machine,
     art_work: design?.art_work || "NA",
-    printingmanager_pending_details: design?.pending_reason || "",
   });
 
   const [components, setComponents] = useState({});
@@ -323,7 +322,7 @@ function EditPrint() {
     if (design?.printingmanager_pending_details?.pending_reason) {
       setPendingData((prev) => ({
         ...prev,
-        pending_reason: design.printingmanager_pending_details.pending_reason,
+        pending_reason: design?.printingmanager_pending_details.pending_reason,
       }));
     }
   }, [design]);
