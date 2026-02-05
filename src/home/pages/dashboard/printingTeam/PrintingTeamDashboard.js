@@ -184,7 +184,7 @@ const PrintingTeamDashboard = () => {
     <Box className="Dashboard-con">
       <Box className="breadcrump-con">
         <Box className="main-title">
-          <div>Printing Team Dashboard</div>
+          <div>Printingteam Dashboard</div>
         </Box>
       </Box>
 
@@ -275,7 +275,9 @@ const PrintingTeamDashboard = () => {
             }}
             muiTableBodyRowProps={({ row }) => ({
               onClick: () => {
-                navigate(`/edit_printingteam`, { state: { design: row.original } });
+                navigate(`/edit_printingteam`, {
+                  state: { design: row.original },
+                });
               },
               sx: {
                 cursor: "pointer",

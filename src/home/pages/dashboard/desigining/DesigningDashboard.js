@@ -1,20 +1,19 @@
 import React, { useMemo, useState } from "react";
 import { styled } from "@mui/material/styles";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Grid from "@mui/material/Grid";
-import { IconButton } from "@mui/material";
-import Completed from "../../../../assets/icons/circle-check-solid.svg";
-import Pending from "../../../../assets/icons/hourglass-half-solid.svg";
-import Todaywork from "../../../../assets/icons/list-check-solid.svg";
+import { Box, Paper, Grid, IconButton } from "@mui/material";
 import { MaterialReactTable } from "material-react-table";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useNavigate } from "react-router-dom";
+
+import Completed from "../../../../assets/icons/circle-check-solid.svg";
+import Pending from "../../../../assets/icons/hourglass-half-solid.svg";
+import Todaywork from "../../../../assets/icons/list-check-solid.svg";
+
 import { SalesOrder } from "../../../../API/Salesorder";
 import { useDesign } from "../../../../API/Design_API";
-import "../../../pages/pagestyle.scss";
 import StatusChip from "../../../components/StatusChip";
+import "../../../pages/pagestyle.scss";
 
 const Item = styled(Paper)(({ theme }) => ({
   backgroundColor: "#fff",
@@ -28,10 +27,29 @@ const Item = styled(Paper)(({ theme }) => ({
 }));
 
 const DesigningDashboard = () => {
+  const navigate = useNavigate();
   const { salesOrders } = SalesOrder();
   const { designs } = useDesign();
-  const navigate = useNavigate();
+
   const [getStatus, setStatus] = useState("all");
+
+  // Helper Function
+  const formatDate = (value) => {
+    if (!value) return "-";
+
+    const date = new Date(value?.$date || value);
+    if (isNaN(date)) return "-";
+
+    const [y, m, d] = date.toISOString().split("T")[0].split("-");
+    return `${d}/${m}/${y}`;
+  };
+
+  // Table Title
+  const tableTitle = {
+    all: "All Process",
+    pending: "Pending Process",
+    completed: "Completed Process",
+  };
 
   const designMap = useMemo(() => {
     const map = {};
@@ -64,23 +82,6 @@ const DesigningDashboard = () => {
   }, [designs]);
 
   const allCount = salesOrders?.length || 0;
-
-  const formatDate = (value) => {
-    if (!value) return "-";
-
-    const date = new Date(value?.$date || value);
-    if (isNaN(date)) return "-";
-
-    const [y, m, d] = date.toISOString().split("T")[0].split("-");
-    return `${d}/${m}/${y}`;
-  };
-
-  // Table Title
-  const tableTitle = {
-    all: "All Process",
-    pending: "Pending Process",
-    completed: "Completed Process",
-  };
 
   // Chip For Status
   const getStatusText = (row) => {

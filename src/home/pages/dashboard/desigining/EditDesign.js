@@ -282,8 +282,6 @@ function EditDesign() {
     due_date: design?.due_date || salesOrder?.due_date || "",
     sales_person_code:
       design?.sales_person_code || salesOrder?.sales_person_code || "",
-    design_pending_details:
-      design?.design_pending_details?.pending_reason || "",
   };
 
   const [formData, setFormData] = useState(initialComp);

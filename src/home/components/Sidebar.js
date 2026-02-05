@@ -14,6 +14,8 @@ import { Link } from "react-router-dom";
 import "../components//components.scss";
 import { SIDEBAR_MENU } from "./sidebarMenu";
 
+import { jwtDecode } from "jwt-decode";
+
 const StyledBadge = styled(Badge)(({ theme }) => ({
   "& .MuiBadge-badge": {
     backgroundColor: "#44b700",
@@ -51,6 +53,29 @@ const Sidebar = ({ isCollapsed }) => {
   const getAccess = sessionStorage.getItem("access");
   const menuPages = sessionStorage.getItem("sidemenus")?.split(",") || [];
 
+  const sidebarMenus =
+    getAccess === "Admin"
+      ? Object.values(SIDEBAR_MENU).flat()
+      : SIDEBAR_MENU[getAccess] || [];
+
+  const token = sessionStorage.getItem("token");
+
+  let empName = "";
+  let empID = "";
+  let department = "";
+
+  if (token) {
+    try {
+      const decode = jwtDecode(token);
+
+      empName = decode.empName;
+      empID = decode.empID;
+      department = decode.department;
+    } catch (error) {
+      console.error("Invalid Token", error);
+    }
+  }
+
   return (
     <Box sx={{ backgroundColor: "#f5f7f9", height: "calc(100vh - 64px)" }}>
       <Box className="avatar-con">
@@ -74,8 +99,9 @@ const Sidebar = ({ isCollapsed }) => {
             whiteSpace: "nowrap",
           }}
         >
-          <div className="dept-name">Processing Team</div>
-          <div className="emp-name">John Wick , 371</div>
+          <div className="dept-name">{empID} </div>
+          <div className="emp-name"> {empName} </div>
+          <div className="emp-name"> {department} </div>
         </Box>
       </Box>
 
