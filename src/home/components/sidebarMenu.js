@@ -65,6 +65,12 @@ export const SIDEBAR_MENU = {
       icon: DashboardIcon,
       key: "Sheet Taken",
     },
+    {
+      label: "Machine Calendar",
+      path: "/machine_calendar",
+      icon: DashboardIcon,
+      key: "Machine Calendar",
+    },
   ],
 
   Coating: [

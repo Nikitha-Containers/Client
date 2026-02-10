@@ -274,7 +274,6 @@ function EditDesign() {
       ? new Date(salesOrder?.posting_date).toISOString().split("T")[0]
       : "",
     item_quantity: salesOrder?.item_quantity || "",
-    machine: design?.machine || "",
     art_work: design?.art_work || salesOrder?.art_work || "NA",
     item_description:
       design?.item_description || salesOrder?.item_description || "",
@@ -305,7 +304,7 @@ function EditDesign() {
       "Lid & Body & Bottom": createComponent(),
       "Body & Bottom": createComponent(),
     }),
-    [salesOrder?.thickness]
+    [salesOrder?.thickness],
   );
 
   const [openPending, setOpenPending] = useState(false);
@@ -470,23 +469,22 @@ function EditDesign() {
     formDataToSend.append("posting_date", formData?.posting_date);
     formDataToSend.append("item_quantity", formData?.item_quantity);
     formDataToSend.append("sales_person_code", formData?.sales_person_code);
-    formDataToSend.append("machine", formData?.machine);
     formDataToSend.append("components", JSON.stringify(fullComponents));
     formDataToSend.append(
       "art_work",
-      formData?.art_work || salesOrder?.art_work || "NA"
+      formData?.art_work || salesOrder?.art_work || "NA",
     );
     formDataToSend.append(
       "item_description",
-      formData?.item_description || salesOrder?.item_description || ""
+      formData?.item_description || salesOrder?.item_description || "",
     );
     formDataToSend.append(
       "customer_name",
-      formData?.customer_name || salesOrder?.customer_name || ""
+      formData?.customer_name || salesOrder?.customer_name || "",
     );
     formDataToSend.append(
       "due_date",
-      formData?.due_date || salesOrder?.due_date || ""
+      formData?.due_date || salesOrder?.due_date || "",
     );
     formDataToSend.append("design_status", design_status);
 
@@ -497,7 +495,7 @@ function EditDesign() {
           type === "PENDING"
             ? pendingData.reason
             : design?.design_pending_details?.pending_reason || "",
-      })
+      }),
     );
 
     try {
@@ -632,23 +630,18 @@ function EditDesign() {
             </Grid>
             <Grid size={2}>
               <FormGroup>
-                <Typography mb={1}>Machine</Typography>
-
-                <Select
-                  value={formData?.machine ?? ""}
+                <Typography mb={1}>SP Contact No</Typography>
+                <TextField
+                  id="outlined-size-small"
+                  name=""
                   size="small"
-                  displayEmpty
-                  onChange={(e) => {
-                    handleFormChange("machine", e.target.value);
-                  }}
-                >
-                  <MenuItem value="" disabled>
-                    Select
-                  </MenuItem>
-                  <MenuItem value="Machine 1">Machine 1</MenuItem>
-                  <MenuItem value="Machine 2">Machine 2</MenuItem>
-                  <MenuItem value="Machine 3">Machine 3</MenuItem>
-                </Select>
+                  type="text"
+                  value={formData?.sales_person_code}
+                  onChange={(e) =>
+                    handleFormChange("sales_person_code", e.target.value)
+                  }
+                  disabled
+                />
               </FormGroup>
             </Grid>
           </Grid>
@@ -676,7 +669,7 @@ function EditDesign() {
                   Today's Work - ({new Date().toLocaleDateString()}){" "}
                   <span
                     className={getArtWorkClass(
-                      formData?.art_work || salesOrder?.art_work
+                      formData?.art_work || salesOrder?.art_work,
                     )}
                   >
                     {formData?.art_work || salesOrder?.art_work || "NA"}

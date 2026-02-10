@@ -27,13 +27,13 @@ import { toast } from "react-toastify";
 const CoatingTypeModal = lazy(() =>
   import("./CoatingColorModal").then((m) => ({
     default: m.CoatingTypeModal,
-  }))
+  })),
 );
 
 const PrintingColorModal = lazy(() =>
   import("./CoatingColorModal").then((m) => ({
     default: m.PrintingColorModal,
-  }))
+  })),
 );
 
 const getArtWorkClass = (art) => {
@@ -219,7 +219,6 @@ function EditPrint() {
       : "",
     item_quantity: design?.item_quantity || "",
     sales_person_code: design?.sales_person_code || "",
-    machine: design?.machine,
     art_work: design?.art_work || "NA",
   });
 
@@ -266,7 +265,7 @@ function EditPrint() {
           sheets: "",
           file: null,
         },
-      ])
+      ]),
     );
   }, []);
 
@@ -438,7 +437,7 @@ function EditPrint() {
 
     if (missingComponents.length) {
       toast.error(
-        `Select coating & printing color for: ${missingComponents.join(", ")}`
+        `Select coating & printing color for: ${missingComponents.join(", ")}`,
       );
       return;
     }
@@ -580,23 +579,18 @@ function EditPrint() {
 
             <Grid size={2}>
               <FormGroup>
-                <Typography mb={1}>Machine</Typography>
-
-                <Select
-                  value={formData?.machine ?? ""}
+                <Typography mb={1}>SP Contact No</Typography>
+                <TextField
+                  id="outlined-size-small"
+                  name=""
                   size="small"
-                  displayEmpty
-                  onChange={(e) => {
-                    handleFormChange("machine", e.target.value);
-                  }}
-                >
-                  <MenuItem value="" disabled>
-                    Select
-                  </MenuItem>
-                  <MenuItem value="Machine 1">Machine 1</MenuItem>
-                  <MenuItem value="Machine 2">Machine 2</MenuItem>
-                  <MenuItem value="Machine 3">Machine 3</MenuItem>
-                </Select>
+                  type="text"
+                  value={formData?.sales_person_code}
+                  onChange={(e) =>
+                    handleFormChange("sales_person_code", e.target.value)
+                  }
+                  disabled
+                />
               </FormGroup>
             </Grid>
           </Grid>
@@ -665,7 +659,7 @@ function EditPrint() {
             {/* Render Component Rows */}
             {Object.entries(components)
               .filter(([key]) =>
-                Object.keys(design?.components || {}).includes(key)
+                Object.keys(design?.components || {}).includes(key),
               )
               .map(([key, component]) => (
                 <ComponentRow

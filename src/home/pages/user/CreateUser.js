@@ -37,10 +37,7 @@ import VisibilityOff from "@mui/icons-material/VisibilityOff";
 const UserDialog = React.memo(
   ({
     pages,
-    theme,
     isEdit,
-    getPages,
-    setPages,
     MenuProps,
     openDialog,
     handleSave,
@@ -257,7 +254,7 @@ const UserDialog = React.memo(
         </DialogActions>
       </Dialog>
     );
-  }
+  },
 );
 
 // Delete Confirmation Dialog
@@ -373,12 +370,12 @@ function CreateUser() {
   // Separate users by status
   const activeUsers = useMemo(
     () => users.filter((user) => user.status === 1),
-    [users]
+    [users],
   );
 
   const inactiveUsers = useMemo(
     () => users.filter((user) => user.status === 0),
-    [users]
+    [users],
   );
 
   // Helper functions
@@ -474,12 +471,12 @@ function CreateUser() {
   };
 
   const pageConfig = {
-    Planning: ["Dashboard", "Sync With SO", "Sheet Taken"],
+    Planning: ["Dashboard", "Sync With SO", "Sheet Taken", "Machine Calendar"],
     Designing: ["Dashboard", "Sheet Taken", "Sync With SO"],
     Stores: ["Dashboard", "Sheet Taken"],
     "Printing Manager": ["Dashboard", "Sheet Taken"],
     Coating: ["Dashboard", "Sheet Taken"],
-   " Printing Team": ["Dashboard", "Sheet Taken"],
+    " Printing Team": ["Dashboard", "Sheet Taken"],
     Fabrication: ["Dashboard", "Quality Control"],
   };
 
@@ -541,7 +538,7 @@ function CreateUser() {
       showSnackbar(
         `User ${
           actionType === "activate" ? "activated" : "deactivated"
-        } successfully`
+        } successfully`,
       );
       fetchUsers();
     } catch (error) {

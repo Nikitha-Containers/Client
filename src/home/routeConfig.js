@@ -13,6 +13,7 @@ import CreateUser from "./pages/user/CreateUser";
 import SyncWithSo from "./pages/dashboard/planning/SyncWithSO";
 import PrintingTeamDashboard from "./pages/dashboard/printingTeam/PrintingTeamDashboard";
 import EditPrintingTeam from "./pages/dashboard/printingTeam/EditPrintingTeam";
+import MachineCalendar from "./pages/dashboard/planning/MachineCalendar";
 
 export const ROUTE_CONFIG = {
   Designing: [
@@ -39,6 +40,11 @@ export const ROUTE_CONFIG = {
   Planning: [
     { path: "/planning_dashboard", component: Planning, key: "Dashboard" },
     { path: "/edit_plan", component: EditPlan, key: "Dashboard" },
+    {
+      path: "/machine_calendar",
+      component: MachineCalendar,
+      key: "Machine Calendar",
+    },
     { path: "/sync_with_so", component: SyncWithSo, key: "Sync With SO" },
     { path: "/upload_sheet", component: Uploadsheet, key: "Sheet Taken" },
   ],
@@ -59,7 +65,11 @@ export const ROUTE_CONFIG = {
       component: PrintingTeamDashboard,
       key: "Dashboard",
     },
-    { path: "/edit_printingteam", component: EditPrintingTeam, key: "Dashboard" },
+    {
+      path: "/edit_printingteam",
+      component: EditPrintingTeam,
+      key: "Dashboard",
+    },
     { path: "/upload_sheet", component: Uploadsheet, key: "Sheet Taken" },
   ],
 

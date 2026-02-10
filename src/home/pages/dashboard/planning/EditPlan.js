@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+
 import Grid from "@mui/material/Grid";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
+import CloseIcon from "@mui/icons-material/Close";
+
 import {
   FormGroup,
   TextField,
@@ -16,43 +20,48 @@ import {
   DialogContent,
   DialogActions,
 } from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
-import "../Dashboard.scss";
-import { Link, useNavigate } from "react-router-dom";
-import upsImage from "../../../../assets/Pagesimage/ups-image.jpg";
-import { useLocation } from "react-router-dom";
+
 import { toast } from "react-toastify";
+
+import "../Dashboard.scss";
+import upsImage from "../../../../assets/Pagesimage/ups-image.jpg";
 import server from "../../../../server/server";
 import { useDesign } from "../../../../API/Design_API";
 
-import ErrorIcon from "@mui/icons-material/Error";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import InfoIcon from "@mui/icons-material/Info";
-import DoneIcon from "@mui/icons-material/Done";
-
-const getNextFreeDate = (conflicts) => {
-  if (!conflicts.length) return "";
-
-  const lastEnd = conflicts.reduce((max, c) => {
-    const end = new Date(c.planning_work_details.end_date);
-    return end > max ? end : max;
-  }, new Date(conflicts[0].planning_work_details.end_date));
-
-  lastEnd.setDate(lastEnd.getDate() + 1);
-  return lastEnd.toISOString().split("T")[0];
-};
-
 function EditPlan() {
   const { designs } = useDesign();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const design = location.state?.design;
 
   const [getFormData, setFormData] = useState({});
   const [open, setOpen] = useState(false);
   const [openPending, setOpenPending] = useState(false);
+
   const [pendingData, setPendingData] = useState({ pending_reason: "" });
 
-  const navigate = useNavigate();
-  const location = useLocation();
-  const design = location.state?.design;
+  const [coatingPlan, setCoatingPlan] = useState({
+    machine: "",
+    shift: "",
+    start_date: "",
+    end_date: "",
+    shift_from: "",
+    shift_to: "",
+    shift_from_dt: "",
+    shift_to_dt: "",
+  });
+
+  const [printingPlan, setPrintingPlan] = useState({
+    machine: "",
+    shift: "",
+    start_date: "",
+    end_date: "",
+    shift_from: "",
+    shift_to: "",
+    shift_from_dt: "",
+    shift_to_dt: "",
+  });
 
   useEffect(() => {
     if (!design) {
@@ -71,16 +80,6 @@ function EditPlan() {
         sales_person_code: design.sales_person_code || "",
         item_description: design.item_description || "",
         item_quantity: design.item_quantity || "",
-        machine: design.machine || "",
-
-        fab_site: design.planning_work_details?.fab_site || "",
-        shift: design.planning_work_details?.shift || "",
-        shift_from: design.planning_work_details?.shift_from || "",
-        shift_to: design.planning_work_details?.shift_to || "",
-        shift_from_dt: design.planning_work_details?.shift_from_dt || "",
-        shift_to_dt: design.planning_work_details?.shift_to_dt || "",
-        start_date: design.planning_work_details?.start_date || "",
-        end_date: design.planning_work_details?.end_date || "",
       });
     }
   }, [design]);
@@ -93,110 +92,19 @@ function EditPlan() {
     }
   }, [design]);
 
-  // Get free machines
-
-  const ALL_MACHINES = ["Machine 1", "Machine 2", "Machine 3"];
-
-  const getFreeMachines = (startDate, endDate, designs, skipSO) => {
-    return ALL_MACHINES.filter((machine) => {
-      const conflicts = designs.filter((d) => {
-        if (d.saleorder_no === skipSO) return false;
-        if (d.machine !== machine) return false;
-
-        const work = d.planning_work_details;
-        if (!work?.start_date || !work?.end_date) return false;
-
-        return (
-          new Date(startDate) <= new Date(work.end_date) &&
-          new Date(endDate) >= new Date(work.start_date)
-        );
-      });
-
-      return conflicts.length === 0;
-    });
-  };
-
-  const freeMachines = useMemo(() => {
-    if (!getFormData.start_date || !getFormData.end_date) return [];
-
-    return getFreeMachines(
-      getFormData.start_date,
-      getFormData.end_date,
-      designs,
-      design.saleorder_no
-    );
-  }, [
-    getFormData.start_date,
-    getFormData.end_date,
-    designs,
-    design.saleorder_no,
-  ]);
-
-  // Date Overlap
-  const isDateOverlap = (start1, end1, start2, end2) => {
-    return (
-      new Date(start1) <= new Date(end2) && new Date(end1) >= new Date(start2)
-    );
-  };
-
-  // Check Machine Availability
-
-  const MachineAvailable = useMemo(() => {
-    if (
-      !getFormData.machine ||
-      !getFormData.start_date ||
-      !getFormData.end_date ||
-      !designs?.length
-    ) {
-      return { available: true, conflicts: [], nextFreeDate: "" };
-    }
-
-    const conflicts = designs.filter((d) => {
-      if (d.saleorder_no === design.saleorder_no) return false;
-      if (d.machine !== getFormData.machine) return false;
-
-      const work = d.planning_work_details;
-      if (!work?.start_date || !work?.end_date) return false;
-
-      return isDateOverlap(
-        getFormData.start_date,
-        getFormData.end_date,
-        work.start_date,
-        work.end_date
-      );
-    });
-
-    if (conflicts.length === 0) {
-      return { available: true };
-    }
-
-    const nextFreeDate = getNextFreeDate(conflicts);
-
-    return {
-      available: false,
-      conflicts: conflicts.map((c) => ({
-        customer_name: c.customer_name,
-        saleorder_no: c.saleorder_no,
-        start_date: c.planning_work_details.start_date,
-        end_date: c.planning_work_details.end_date,
-      })),
-      nextFreeDate,
-    };
-  }, [
-    getFormData.machine,
-    getFormData.start_date,
-    getFormData.end_date,
-    designs,
-    design.saleorder_no,
-  ]);
-
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleCancel = () => {
+    navigate("/planning_dashboard");
+  };
+
+  // Handles Submission for both Pending
   const handleSubmit = async (type) => {
     const planning_status = type === "PENDING" ? 1 : 2;
 
@@ -207,23 +115,17 @@ function EditPlan() {
       sales_person_code: getFormData.sales_person_code,
       item_description: getFormData.item_description,
       item_quantity: getFormData.item_quantity,
-      machine: getFormData.machine,
 
       planning_status,
+
       planning_pending_details:
         type === "PENDING"
           ? { pending_reason: pendingData.pending_reason }
           : design?.planning_pending_details || {},
 
       planning_work_details: {
-        shift: getFormData.shift,
-        fab_site: getFormData.fab_site,
-        start_date: getFormData.start_date,
-        end_date: getFormData.end_date,
-        shift_from: getFormData.shift_from,
-        shift_to: getFormData.shift_to,
-        shift_from_dt: getFormData.shift_from_dt,
-        shift_to_dt: getFormData.shift_to_dt,
+        coating_machine_plan: coatingPlan,
+        printing_machine_plan: printingPlan,
       },
     };
 
@@ -243,68 +145,87 @@ function EditPlan() {
     }
   };
 
-  const handleCancel = () => {
-    navigate("/planning_dashboard");
-  };
-
-  const shiftTime = {
+  // Configurations for shifts and machines
+  const SHIFT_CONFIG = {
     General: { from: "09:00", to: "18:00", hours: 9, crossDay: false },
     "Shift 1": { from: "06:00", to: "14:00", hours: 8, crossDay: false },
     "Shift 2": { from: "14:00", to: "22:00", hours: 8, crossDay: false },
     "Shift 3": { from: "22:00", to: "06:00", hours: 8, crossDay: true },
   };
-  const machineMaster = {
-    "Machine 1": { sheetsPerHour: 500 },
-    "Machine 2": { sheetsPerHour: 300 },
-    "Machine 3": { sheetsPerHour: 200 },
+
+  const MACHINE_CONFIG = {
+    coating: {
+      title: "Coating Machine",
+      machines: ["Machine 1", "Machine 2", "Machine 3"],
+      sheetsPerHour: {
+        "Machine 1": 500,
+        "Machine 2": 300,
+        "Machine 3": 200,
+      },
+    },
+    printing: {
+      title: "Printing Machine",
+      machines: ["IGK", "DC", "NIGK", "RTCPL-DC"],
+      sheetsPerHour: {
+        IGK: 1600,
+        DC: 3500,
+        NIGK: 3500,
+        "RTCPL-DC": 2500,
+      },
+    },
   };
 
-  const printableSheets = useMemo(() => {
-    const machine = getFormData.machine;
-    const shift = getFormData.shift;
+  // Calculate printable sheets based on machine and shift
 
+  const CoatingPrintableSheets = useMemo(() => {
+    const { machine, shift } = coatingPlan;
     if (!machine || !shift) return 0;
 
-    const machineCfg = machineMaster[machine];
-    const shiftCfg = shiftTime[shift];
+    return (
+      MACHINE_CONFIG.coating.sheetsPerHour[machine] * SHIFT_CONFIG[shift].hours
+    );
+  }, [coatingPlan.machine, coatingPlan.shift]);
 
-    if (!machineCfg || !shiftCfg) return 0;
+  const PrintingPrintableSheets = useMemo(() => {
+    const { machine, shift } = printingPlan;
+    if (!machine || !shift) return 0;
 
-    return machineCfg.sheetsPerHour * shiftCfg.hours;
-  }, [getFormData.machine, getFormData.shift]);
+    return (
+      MACHINE_CONFIG.printing.sheetsPerHour[machine] * SHIFT_CONFIG[shift].hours
+    );
+  }, [printingPlan.machine, printingPlan.shift]);
 
-  const handleShiftChange = (e) => {
+  // Handle shift change to auto-calculate shift timings
+
+  const handlePlanShiftChange = (setPlan) => (e) => {
     const shift = e.target.value;
-    const cfg = shiftTime[shift];
-
-    if (!cfg || !getFormData.posting_date) {
-      setFormData((prev) => ({
-        ...prev,
-        shift,
-        shift_from: "",
-        shift_to: "",
-        shift_from_dt: "",
-        shift_to_dt: "",
-      }));
-      return;
-    }
+    const cfg = SHIFT_CONFIG[shift];
+    if (!cfg || !getFormData.posting_date) return;
 
     const baseDate = getFormData.posting_date;
     let toDate = baseDate;
 
     if (cfg.crossDay) {
-      const nextDay = new Date(baseDate);
-      nextDay.setDate(nextDay.getDate() + 1);
-      toDate = nextDay.toISOString().split("T")[0];
+      const d = new Date(baseDate);
+      d.setDate(d.getDate() + 1);
+      toDate = d.toISOString().split("T")[0];
     }
 
-    setFormData((prev) => ({
+    setPlan((prev) => ({
       ...prev,
       shift,
       shift_from: cfg.from,
       shift_to: cfg.to,
       shift_from_dt: `${baseDate}T${cfg.from}:00`,
       shift_to_dt: `${toDate}T${cfg.to}:00`,
+    }));
+  };
+
+  const handlePlanDateChange = (setPlan) => (e) => {
+    const { name, value } = e.target;
+    setPlan((prev) => ({
+      ...prev,
+      [name]: value,
     }));
   };
 
@@ -337,7 +258,7 @@ function EditPlan() {
       <Box className="page-layout" sx={{ marginTop: 1 }}>
         <Box sx={{ flexGrow: 1 }}>
           <Grid container spacing={2.5}>
-            <Grid size={3}>
+            <Grid size={2}>
               <FormGroup>
                 <Typography mb={1}>SO Number</Typography>
                 <TextField
@@ -346,10 +267,11 @@ function EditPlan() {
                   type="text"
                   value={getFormData?.saleorder_no}
                   onChange={handleChange}
+                  disabled
                 />
               </FormGroup>
             </Grid>
-            <Grid size={3}>
+            <Grid size={2}>
               <FormGroup>
                 <Typography mb={1}>SO Date</Typography>
                 <TextField
@@ -358,10 +280,11 @@ function EditPlan() {
                   type="date"
                   value={getFormData?.posting_date}
                   onChange={handleChange}
+                  disabled
                 />
               </FormGroup>
             </Grid>
-            <Grid size={3}>
+            <Grid size={2}>
               <FormGroup>
                 <Typography mb={1}>Customer Name</Typography>
                 <TextField
@@ -370,10 +293,11 @@ function EditPlan() {
                   type="text"
                   value={getFormData?.customer_name}
                   onChange={handleChange}
+                  disabled
                 />
               </FormGroup>
             </Grid>
-            <Grid size={3}>
+            <Grid size={2}>
               <FormGroup>
                 <Typography mb={1}>Sales Person</Typography>
                 <TextField
@@ -382,10 +306,11 @@ function EditPlan() {
                   type="text"
                   value={getFormData?.sales_person_code}
                   onChange={handleChange}
+                  disabled
                 />
               </FormGroup>
             </Grid>
-            <Grid size={3}>
+            <Grid size={2}>
               <FormGroup>
                 <Typography mb={1}>Dimensions</Typography>
                 <TextField
@@ -394,10 +319,11 @@ function EditPlan() {
                   type="text"
                   value={getFormData?.item_description}
                   onChange={handleChange}
+                  disabled
                 />
               </FormGroup>
             </Grid>
-            <Grid size={3}>
+            <Grid size={2}>
               <FormGroup>
                 <Typography mb={1}>Quantity</Typography>
                 <TextField
@@ -407,177 +333,263 @@ function EditPlan() {
                   type="number"
                   value={getFormData?.item_quantity}
                   onChange={handleChange}
+                  disabled
                 />
               </FormGroup>
             </Grid>
-            <Grid size={3}>
-              <FormGroup>
-                <Typography mb={1}>
-                  Machine
-                  {printableSheets > 0 && (
-                    <span
-                      style={{
-                        marginLeft: 8,
-                        color: "#2e7d32",
-                        fontWeight: 600,
-                        fontSize: "16px",
-                      }}
-                    >
-                      ({printableSheets} / Shift)
-                    </span>
-                  )}
-                </Typography>
-
-                <Select
-                  name="machine"
-                  value={getFormData?.machine ?? ""}
-                  size="small"
-                  onChange={handleChange}
-                  displayEmpty
-                >
-                  <MenuItem value="" disabled>
-                    Select
-                  </MenuItem>
-                  <MenuItem value="Machine 1">Machine 1</MenuItem>
-                  <MenuItem value="Machine 2">Machine 2</MenuItem>
-                  <MenuItem value="Machine 3">Machine 3</MenuItem>
-                </Select>
-              </FormGroup>
-            </Grid>
-            <Grid size={3}>
-              <FormGroup>
-                <Typography mb={1}>
-                  Shift
-                  {getFormData.shift_from && getFormData.shift_to && (
-                    <span
-                      style={{
-                        color: "#0288d1",
-                        fontSize: "16px",
-                        marginLeft: "10px",
-                      }}
-                    >
-                      ({getFormData.shift_from} to {getFormData.shift_to})
-                    </span>
-                  )}
-                </Typography>
-                <Select
-                  name="shift"
-                  value={getFormData?.shift ?? ""}
-                  size="small"
-                  onChange={handleShiftChange}
-                  displayEmpty
-                >
-                  <MenuItem value="" disabled>
-                    Select
-                  </MenuItem>
-                  <MenuItem value="General">General</MenuItem>
-                  <MenuItem value="Shift 1">Shift 1</MenuItem>
-                  <MenuItem value="Shift 2">Shift 2</MenuItem>
-                  <MenuItem value="Shift 3">Shift 3</MenuItem>
-                </Select>
-              </FormGroup>
-            </Grid>
-            <Grid size={3}>
-              <FormGroup>
-                <Typography mb={1}>Fab Site</Typography>
-                <Select
-                  name="fab_site"
-                  value={getFormData?.fab_site ?? ""}
-                  size="small"
-                  onChange={handleChange}
-                  displayEmpty
-                >
-                  <MenuItem value="" disabled>
-                    Select
-                  </MenuItem>
-                  <MenuItem value="Site 1">Site 1</MenuItem>
-                  <MenuItem value="Site 2">Site 2</MenuItem>
-                  <MenuItem value="Site 3">Site 3</MenuItem>
-                </Select>
-              </FormGroup>
-            </Grid>
-
-            <Grid size={3}>
-              <FormGroup>
-                <Typography mb={1}>Start Date</Typography>
-                <TextField
-                  value={getFormData?.start_date}
-                  name="start_date"
-                  size="small"
-                  type="date"
-                  onChange={handleChange}
-                />
-              </FormGroup>
-            </Grid>
-
-            <Grid size={3}>
-              <FormGroup>
-                <Typography mb={1}>End Date</Typography>
-                <TextField
-                  value={getFormData?.end_date}
-                  name="end_date"
-                  size="small"
-                  type="date"
-                  onChange={handleChange}
-                />
-              </FormGroup>
-            </Grid>
-            {!MachineAvailable.available && (
-              <Box mt={2}>
-                {/*  Busy machine message */}
-                {MachineAvailable.conflicts.map((c, i) => (
-                  <Typography key={i} color="error" fontSize={14}>
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <ErrorIcon fontSize="small" />
-                      <span>
-                        {getFormData.machine} already running for{" "}
-                        <b>{c.customer_name}</b> (SO: {c.saleorder_no})
-                      </span>
-                    </Box>
-                    <Box ml={4}>
-                      {c.start_date} → {c.end_date}
-                    </Box>
-                  </Typography>
-                ))}
-
-                {/* Next free date */}
-                <Typography color="success" fontSize={14} mt={1}>
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <CheckCircleIcon fontSize="small" />
-                    <span>
-                      Next available date:{" "}
-                      <b>{MachineAvailable.nextFreeDate}</b>
-                    </span>
-                  </Box>
-                </Typography>
-
-                {/*  Free machines */}
-                {freeMachines.length > 0 && (
-                  <Box mt={1}>
-                    <Box display="flex" alignItems="center" gap={1} mb={0.5}>
-                      <InfoIcon color="info" fontSize="small" />
-                      <Typography color="info.main" fontSize={14}>
-                        Available Machine:
-                      </Typography>
-                    </Box>
-
-                    {freeMachines.map((m) => (
-                      <Box
-                        key={m}
-                        display="flex"
-                        alignItems="center"
-                        gap={1}
-                        ml={3}
-                      >
-                        <DoneIcon color="success" fontSize="small" />
-                        <Typography fontSize={15}>{m}</Typography>
-                      </Box>
-                    ))}
-                  </Box>
-                )}
-              </Box>
-            )}
           </Grid>
+          {/* Coating Machine Config*/}
+          <Box
+            sx={{
+              background: "#fff",
+              mt: 3,
+              boxShadow:
+                "rgba(0, 0, 0, 0.02) 0px 1px 3px 0px, rgba(27, 31, 35, 0.15) 0px 0px 0px 1px",
+            }}
+          >
+            <Grid container spacing={2.5}>
+              <Grid size={12}>
+                <div
+                  className="Box-table-title"
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  Coating Machine
+                </div>
+              </Grid>
+
+              <Grid size={3}>
+                <FormGroup>
+                  <Typography mb={1}>
+                    Machine
+                    {CoatingPrintableSheets > 0 && (
+                      <span
+                        style={{
+                          marginLeft: 8,
+                          color: "#2e7d32",
+                          fontWeight: 600,
+                          fontSize: "16px",
+                        }}
+                      >
+                        ({CoatingPrintableSheets} / Shift)
+                      </span>
+                    )}
+                  </Typography>
+
+                  <Select
+                    name="machine"
+                    value={coatingPlan?.machine ?? ""}
+                    size="small"
+                    onChange={(e) =>
+                      setCoatingPlan((prev) => ({
+                        ...prev,
+                        machine: e.target.value,
+                      }))
+                    }
+                    displayEmpty
+                  >
+                    <MenuItem value="" disabled>
+                      Select
+                    </MenuItem>
+                    <MenuItem value="Machine 1">Machine 1</MenuItem>
+                    <MenuItem value="Machine 2">Machine 2</MenuItem>
+                    <MenuItem value="Machine 3">Machine 3</MenuItem>
+                  </Select>
+                </FormGroup>
+              </Grid>
+
+              <Grid size={3}>
+                <FormGroup>
+                  <Typography mb={1}>
+                    Shift
+                    {coatingPlan.shift_from && coatingPlan.shift_to && (
+                      <span
+                        style={{
+                          color: "#0288d1",
+                          fontSize: "16px",
+                          marginLeft: "10px",
+                        }}
+                      >
+                        ({coatingPlan.shift_from} to {coatingPlan.shift_to})
+                      </span>
+                    )}
+                  </Typography>
+                  <Select
+                    name="shift"
+                    value={coatingPlan?.shift ?? ""}
+                    size="small"
+                    onChange={handlePlanShiftChange(setCoatingPlan)}
+                    displayEmpty
+                  >
+                    <MenuItem value="" disabled>
+                      Select
+                    </MenuItem>
+                    <MenuItem value="General">General</MenuItem>
+                    <MenuItem value="Shift 1">Shift 1</MenuItem>
+                    <MenuItem value="Shift 2">Shift 2</MenuItem>
+                    <MenuItem value="Shift 3">Shift 3</MenuItem>
+                  </Select>
+                </FormGroup>
+              </Grid>
+
+              <Grid size={3}>
+                <FormGroup>
+                  <Typography mb={1}>Start Date</Typography>
+                  <TextField
+                    value={coatingPlan?.start_date}
+                    name="start_date"
+                    size="small"
+                    type="date"
+                    onChange={handlePlanDateChange(setCoatingPlan)}
+                  />
+                </FormGroup>
+              </Grid>
+
+              <Grid size={3}>
+                <FormGroup>
+                  <Typography mb={1}>End Date</Typography>
+                  <TextField
+                    value={coatingPlan?.end_date}
+                    name="end_date"
+                    size="small"
+                    type="date"
+                    onChange={handlePlanDateChange(setCoatingPlan)}
+                  />
+                </FormGroup>
+              </Grid>
+            </Grid>
+          </Box>
+
+          {/* Printing Machine Config*/}
+          <Box
+            sx={{
+              background: "#fff",
+              mt: 3,
+              boxShadow:
+                "rgba(0, 0, 0, 0.02) 0px 1px 3px 0px, rgba(27, 31, 35, 0.15) 0px 0px 0px 1px",
+            }}
+          >
+            <Grid container spacing={2.5}>
+              <Grid size={12}>
+                <div
+                  className="Box-table-title"
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  Printing Machine
+                </div>
+              </Grid>
+
+              <Grid size={3}>
+                <FormGroup>
+                  <Typography mb={1}>
+                    Machine
+                    {PrintingPrintableSheets > 0 && (
+                      <span
+                        style={{
+                          marginLeft: 8,
+                          color: "#2e7d32",
+                          fontWeight: 600,
+                          fontSize: "16px",
+                        }}
+                      >
+                        ({PrintingPrintableSheets} / Shift)
+                      </span>
+                    )}
+                  </Typography>
+
+                  <Select
+                    name="machine"
+                    value={printingPlan?.machine ?? ""}
+                    size="small"
+                    onChange={(e) =>
+                      setPrintingPlan((prev) => ({
+                        ...prev,
+                        machine: e.target.value,
+                      }))
+                    }
+                    displayEmpty
+                  >
+                    <MenuItem value="" disabled>
+                      Select
+                    </MenuItem>
+                    {MACHINE_CONFIG.printing.machines.map((m) => (
+                      <MenuItem key={m} value={m}>
+                        {m}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormGroup>
+              </Grid>
+
+              <Grid size={3}>
+                <FormGroup>
+                  <Typography mb={1}>
+                    Shift
+                    {printingPlan?.shift_from && printingPlan?.shift_to && (
+                      <span
+                        style={{
+                          color: "#0288d1",
+                          fontSize: "16px",
+                          marginLeft: "10px",
+                        }}
+                      >
+                        ({printingPlan.shift_from} to {printingPlan.shift_to})
+                      </span>
+                    )}
+                  </Typography>
+                  <Select
+                    name="shift"
+                    value={printingPlan?.shift ?? ""}
+                    size="small"
+                    onChange={handlePlanShiftChange(setPrintingPlan)}
+                    displayEmpty
+                  >
+                    <MenuItem value="" disabled>
+                      Select
+                    </MenuItem>
+                    <MenuItem value="General">General</MenuItem>
+                    <MenuItem value="Shift 1">Shift 1</MenuItem>
+                    <MenuItem value="Shift 2">Shift 2</MenuItem>
+                    <MenuItem value="Shift 3">Shift 3</MenuItem>
+                  </Select>
+                </FormGroup>
+              </Grid>
+
+              <Grid size={3}>
+                <FormGroup>
+                  <Typography mb={1}>Start Date</Typography>
+                  <TextField
+                    value={printingPlan?.start_date}
+                    name="start_date"
+                    size="small"
+                    type="date"
+                    onChange={handlePlanDateChange(setPrintingPlan)}
+                  />
+                </FormGroup>
+              </Grid>
+
+              <Grid size={3}>
+                <FormGroup>
+                  <Typography mb={1}>End Date</Typography>
+                  <TextField
+                    value={printingPlan?.end_date}
+                    name="end_date"
+                    size="small"
+                    type="date"
+                    onChange={handlePlanDateChange(setPrintingPlan)}
+                  />
+                </FormGroup>
+              </Grid>
+            </Grid>
+          </Box>
+
           {/* Action Buttons */}
 
           <Box
@@ -721,6 +733,14 @@ function EditPlan() {
             }}
           >
             Save
+          </Button>
+
+          <Button
+            variant="contained"
+            color="info"
+            onClick={() => navigate("/machine_calendar")}
+          >
+            View Machine Calendar
           </Button>
         </DialogActions>
       </Dialog>

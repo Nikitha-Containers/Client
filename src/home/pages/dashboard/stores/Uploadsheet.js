@@ -82,7 +82,7 @@ function Uploadsheet() {
 
         if (value === undefined || value === null || value === "") {
           throw new Error(
-            `Empty value found in row ${rowIndex + 1}, column "${excelKey}"`
+            `Empty value found in row ${rowIndex + 1}, column "${excelKey}"`,
           );
         }
 
@@ -263,23 +263,14 @@ function Uploadsheet() {
         size: 30,
       },
     ],
-    []
+    [],
   );
 
   return (
     <Box className="Dashboard-con">
       <Box className="breadcrump-con">
         <Box className="main-title">
-          <div className="main-inner-txts">
-            <Link
-              style={{ color: "#0a85cb", textDecoration: "none" }}
-              to={"/store_dashboard"}
-            >
-              Stores
-            </Link>
-            <KeyboardArrowRightIcon sx={{ color: "#0a85cb" }} />
-            <div>Upload Sheets</div>
-          </div>
+          <div>Sheet Store</div>
         </Box>
       </Box>
 
