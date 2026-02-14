@@ -279,11 +279,14 @@ function EditDesign() {
       design?.item_description || salesOrder?.item_description || "",
     customer_name: design?.customer_name || salesOrder?.customer_name || "",
     due_date: design?.due_date || salesOrder?.due_date || "",
+    sales_employee: design?.sales_employee || salesOrder?.sales_employee || "",
     sales_person_code:
       design?.sales_person_code || salesOrder?.sales_person_code || "",
   };
 
   const [formData, setFormData] = useState(initialComp);
+
+  console.log("formData", salesOrder);
 
   const createComponent = () => ({
     selected: false,
@@ -468,6 +471,7 @@ function EditDesign() {
     formDataToSend.append("saleorder_no", formData?.saleorder_no);
     formDataToSend.append("posting_date", formData?.posting_date);
     formDataToSend.append("item_quantity", formData?.item_quantity);
+    formDataToSend.append("sales_employee", formData?.sales_employee);
     formDataToSend.append("sales_person_code", formData?.sales_person_code);
     formDataToSend.append("components", JSON.stringify(fullComponents));
     formDataToSend.append(
@@ -617,12 +621,11 @@ function EditDesign() {
                 <Typography mb={1}>Sales Person</Typography>
                 <TextField
                   id="outlined-size-small"
-                  name=""
                   size="small"
                   type="text"
-                  value={formData?.sales_person_code}
+                  value={formData?.sales_employee}
                   onChange={(e) =>
-                    handleFormChange("sales_person_code", e.target.value)
+                    handleFormChange("sales_employee", e.target.value)
                   }
                   disabled
                 />

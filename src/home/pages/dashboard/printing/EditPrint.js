@@ -210,6 +210,7 @@ function EditPrint() {
   const navigate = useNavigate();
   const location = useLocation();
   const { design } = location?.state || {};
+  console.log("design", design);
 
   const [formData, setFormData] = useState({
     customer_name: design?.customer_name || "",
@@ -218,6 +219,7 @@ function EditPrint() {
       ? new Date(design?.posting_date).toISOString().split("T")[0]
       : "",
     item_quantity: design?.item_quantity || "",
+    sales_employee: design?.sales_employee || "",
     sales_person_code: design?.sales_person_code || "",
     art_work: design?.art_work || "NA",
   });
@@ -568,9 +570,9 @@ function EditPrint() {
                 <TextField
                   size="small"
                   type="text"
-                  value={formData?.sales_person_code}
+                  value={formData?.sales_employee}
                   onChange={(e) =>
-                    handleFormChange("sales_person_code", e.target.value)
+                    handleFormChange("sales_employee", e.target.value)
                   }
                   disabled
                 />
