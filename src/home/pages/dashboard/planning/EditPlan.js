@@ -20,6 +20,7 @@ import {
   DialogContent,
   DialogActions,
   Checkbox,
+  Tooltip,
 } from "@mui/material";
 
 import { toast } from "react-toastify";
@@ -101,28 +102,20 @@ const generateShiftDateTime = (plan) => {
   };
 };
 
-const calculateRequiredShifts = (plan, type, quantity) => {
+const calculateRequiredDays = (plan, type, quantity) => {
   const qty = Number(quantity);
   if (qty <= 0 || !plan.machine || !plan.shift.length) return 0;
 
-  // If General selected
-  if (plan.shift.includes("General")) {
-    const hours = SHIFT_CONFIG["General"].hours;
-
-    const perDayCapacity =
-      MACHINE_CONFIG[type].sheetsPerHour[plan.machine] * hours;
-
-    return Math.ceil(qty / perDayCapacity);
-  }
-
-  const totalHoursPerDay = plan.shift.reduce((total, shiftName) => {
-    return total + SHIFT_CONFIG[shiftName].hours;
+  const totalHoursPerDay = plan.shift.reduce((sum, s) => {
+    return sum + SHIFT_CONFIG[s].hours;
   }, 0);
 
   const perDayCapacity =
     MACHINE_CONFIG[type].sheetsPerHour[plan.machine] * totalHoursPerDay;
 
-  return Math.ceil(qty / perDayCapacity);
+  const daysByQuantity = Math.ceil(qty / perDayCapacity);
+
+  return daysByQuantity || 1;
 };
 
 const generateMultiShiftBookings = (plan, requiredDays) => {
@@ -130,7 +123,6 @@ const generateMultiShiftBookings = (plan, requiredDays) => {
 
   if (!plan.start_date || !requiredDays || !plan.machine) return bookings;
 
-  // ✅ 🔹 PLACE GENERAL LOGIC HERE
   if (plan.shift.includes("General")) {
     let currentDate = new Date(plan.start_date);
 
@@ -148,10 +140,9 @@ const generateMultiShiftBookings = (plan, requiredDays) => {
       currentDate.setDate(currentDate.getDate() + 1);
     }
 
-    return bookings; // 🔴 IMPORTANT
+    return bookings;
   }
 
-  // 🔹 Your existing multi-shift logic continues below
   let currentDate = new Date(plan.start_date);
 
   for (let day = 0; day < requiredDays; day++) {
@@ -233,6 +224,7 @@ function EditPlan() {
             conflictsMap.set(existing.machine + existing.saleorder_no, {
               machine: existing.machine,
               saleorder_no: existing.saleorder_no,
+              customer_name: existing.customer_name,
               start: existing.start,
               end: existing.end,
             });
@@ -279,23 +271,20 @@ function EditPlan() {
         start: b.shift_from_dt,
         end: b.shift_to_dt,
         saleorder_no: d.saleorder_no,
+        customer_name: d.customer_name,
       }));
     });
   }, [designs, getFormData.saleorder_no]);
 
   const coatingRequiredShifts = useMemo(
     () =>
-      calculateRequiredShifts(
-        coatingPlan,
-        "coating",
-        getFormData.item_quantity,
-      ),
+      calculateRequiredDays(coatingPlan, "coating", getFormData.item_quantity),
     [coatingPlan.machine, coatingPlan.shift, getFormData.item_quantity],
   );
 
   const printingRequiredShifts = useMemo(
     () =>
-      calculateRequiredShifts(
+      calculateRequiredDays(
         printingPlan,
         "printing",
         getFormData.item_quantity,
@@ -309,7 +298,9 @@ function EditPlan() {
       getFormData.posting_date ||
       new Date().toISOString().split("T")[0];
 
-    if (!coatingPlan.shift) return [];
+    if (!coatingPlan.start_date || coatingPlan.shift.length === 0) {
+      return [];
+    }
 
     const tempPlan = {
       ...coatingPlan,
@@ -325,7 +316,9 @@ function EditPlan() {
       getFormData.posting_date ||
       new Date().toISOString().split("T")[0];
 
-    if (!printingPlan.shift) return [];
+    if (!printingPlan.start_date || printingPlan.shift.length === 0) {
+      return [];
+    }
 
     const tempPlan = {
       ...printingPlan,
@@ -345,6 +338,19 @@ function EditPlan() {
     [coatingNewBookings, machineBookings],
   );
 
+  const groupedCoatingMachines = useMemo(() => {
+    const map = {};
+
+    coatingRunningMachines.forEach((m) => {
+      if (!map[m.machine]) {
+        map[m.machine] = [];
+      }
+      map[m.machine].push(m);
+    });
+
+    return map;
+  }, [coatingRunningMachines]);
+
   const printingRunningMachines = useMemo(
     () =>
       getRunningMachines(
@@ -354,6 +360,19 @@ function EditPlan() {
       ),
     [printingNewBookings, machineBookings],
   );
+
+  const groupedPrintingMachines = useMemo(() => {
+    const map = {};
+
+    printingRunningMachines.forEach((m) => {
+      if (!map[m.machine]) {
+        map[m.machine] = [];
+      }
+      map[m.machine].push(m);
+    });
+
+    return map;
+  }, [printingRunningMachines]);
 
   const coatingAvailableMachines = useMemo(() => {
     const runningNames = coatingRunningMachines.map((m) => m.machine);
@@ -372,7 +391,6 @@ function EditPlan() {
   }, [printingRunningMachines]);
 
   // Calculate printable sheets based on machine and shift
-
   const CoatingPrintableSheets = useMemo(() => {
     const { machine, shift } = coatingPlan;
 
@@ -396,6 +414,18 @@ function EditPlan() {
 
     return MACHINE_CONFIG.printing.sheetsPerHour[machine] * totalHours;
   }, [printingPlan.machine, printingPlan.shift]);
+
+  const coatingDateError =
+    coatingPlan.start_date &&
+    coatingPlan.machine &&
+    coatingPlan.shift.length > 0 &&
+    coatingRunningMachines.length > 0;
+
+  const printingDateError =
+    printingPlan.start_date &&
+    printingPlan.machine &&
+    printingPlan.shift.length > 0 &&
+    printingRunningMachines.length > 0;
 
   useEffect(() => {
     if (design) {
@@ -556,8 +586,6 @@ function EditPlan() {
 
   const handlePlanDateChange = (setPlan, type) => (e) => {
     const { name, value } = e.target;
-
-    // Reset manual override if start date changes
     if (name === "start_date") {
       if (type === "coating") setCoatingManualEnd(false);
       if (type === "printing") setPrintingManualEnd(false);
@@ -565,10 +593,7 @@ function EditPlan() {
 
     setPlan((prev) => {
       const updated = { ...prev, [name]: value };
-
-      // Only update shift timings if start date changed
       if (name === "start_date" && prev.shift?.length) {
-        // If General selected
         if (prev.shift.includes("General")) {
           const cfg = SHIFT_CONFIG["General"];
 
@@ -577,8 +602,6 @@ function EditPlan() {
 
           return updated;
         }
-
-        // Multi-shift logic
         const firstShift = prev.shift[0];
         const lastShift = prev.shift[prev.shift.length - 1];
 
@@ -616,14 +639,18 @@ function EditPlan() {
       printingRequiredShifts,
     );
 
-    if (!coatingPlan.machine || !coatingPlan.shift || !coatingPlan.start_date) {
+    if (
+      !coatingPlan.machine ||
+      coatingPlan.shift.length === 0 ||
+      !coatingPlan.start_date
+    ) {
       toast.error("Please complete Coating Plan");
       return;
     }
 
     if (
       !printingPlan.machine ||
-      !printingPlan.shift ||
+      printingPlan.shift.length === 0 ||
       !printingPlan.start_date
     ) {
       toast.error("Please complete Printing Plan");
@@ -824,21 +851,9 @@ function EditPlan() {
                   <FormGroup>
                     <Typography mb={1}>
                       Machine
-                      {CoatingPrintableSheets > 0 && (
-                        <span
-                          style={{
-                            marginLeft: 8,
-                            color: "#2e7d32",
-                            fontWeight: 600,
-                            fontSize: "16px",
-                          }}
-                        >
-                          ({CoatingPrintableSheets} / Shift)
-                        </span>
-                      )}
                       {coatingRequiredShifts > 0 && (
-                        <span style={{ marginLeft: 10, color: "#d32f2f" }}>
-                          ({coatingRequiredShifts} Shifts Required)
+                        <span style={{ color: "#0a85cb" }}>
+                          ({coatingRequiredShifts} Shift Req)
                         </span>
                       )}
                     </Typography>
@@ -871,27 +886,27 @@ function EditPlan() {
                   <FormGroup>
                     <Typography mb={1}>
                       Shift
-                      {coatingPlan.shift_from && coatingPlan.shift_to && (
+                      {CoatingPrintableSheets > 0 && (
                         <span
                           style={{
-                            color: "#0288d1",
+                            marginLeft: 8,
+                            color: "#2e7d32",
+                            fontWeight: 600,
                             fontSize: "16px",
-                            marginLeft: "10px",
                           }}
                         >
-                          ({coatingPlan.shift_from} to {coatingPlan.shift_to})
+                          ({CoatingPrintableSheets} / Shift)
                         </span>
                       )}
                     </Typography>
                     <Select
                       multiple
                       name="shift"
-                      value={coatingPlan?.shift}
+                      value={coatingPlan?.shift ?? []}
                       size="small"
                       // onChange={handlePlanShiftChange(setCoatingPlan)}
                       onChange={(e) => {
                         const value = e.target.value;
-
                         if (value.includes("General")) {
                           setCoatingPlan((prev) => ({
                             ...prev,
@@ -910,12 +925,11 @@ function EditPlan() {
                           }));
                         }
                       }}
-                      renderValue={(selected) => selected.join(", ")}
+                      renderValue={(selected) =>
+                        selected.length ? selected.join(", ") : "Select"
+                      }
                       displayEmpty
                     >
-                      <MenuItem value="" disabled>
-                        Select
-                      </MenuItem>
                       {SHIFT_ORDER.map((shiftName) => {
                         const isGeneralSelected =
                           coatingPlan.shift.includes("General");
@@ -954,6 +968,12 @@ function EditPlan() {
                       name="start_date"
                       size="small"
                       type="date"
+                      error={coatingDateError}
+                      helperText={
+                        coatingDateError
+                          ? "Machine already booked on selected date"
+                          : ""
+                      }
                       inputProps={{
                         min: new Date().toISOString().split("T")[0],
                       }}
@@ -995,19 +1015,76 @@ function EditPlan() {
                     ) : (
                       coatingRunningMachines.map((m, index) => (
                         <Box
-                          key={index}
-                          sx={{
-                            p: 1,
-                            mb: 1,
-                            background: "#ffebee",
-                            borderRadius: 1,
-                            width: "40%",
-                          }}
+                          mt={1}
+                          sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}
                         >
-                          <Typography fontWeight={600}>{m.machine}</Typography>
-                          <Typography variant="body2">
-                            SO: {m.saleorder_no}
-                          </Typography>
+                          {Object.keys(groupedCoatingMachines).length === 0 ? (
+                            <Typography color="text.secondary">
+                              No machines running
+                            </Typography>
+                          ) : (
+                            Object.entries(groupedCoatingMachines).map(
+                              ([machineName, bookings], index) => (
+                                <Box
+                                  key={index}
+                                  sx={{
+                                    p: 1,
+                                    background: "#ffebee",
+                                    borderRadius: 1,
+                                    width: "20%",
+                                  }}
+                                >
+                                  <Tooltip
+                                    arrow
+                                    placement="right"
+                                    componentsProps={{
+                                      tooltip: {
+                                        sx: {
+                                          maxHeight: 300,
+                                          overflowY: "auto",
+                                          bgcolor: "#1e1e1e",
+                                          color: "#fff",
+                                        },
+                                      },
+                                    }}
+                                    title={
+                                      <Box>
+                                        {bookings.map((b, i) => (
+                                          <Box key={i} mb={1}>
+                                            <Typography variant="body2">
+                                              <strong>SO:</strong>{" "}
+                                              {b.saleorder_no}
+                                            </Typography>
+                                            <Typography variant="body2">
+                                              <strong>Customer:</strong>{" "}
+                                              {b.customer_name}
+                                            </Typography>
+                                            <Typography variant="body2">
+                                              <strong>Start:</strong>{" "}
+                                              {new Date(
+                                                b.start,
+                                              ).toLocaleString()}
+                                            </Typography>
+                                            <Typography variant="body2">
+                                              <strong>End:</strong>{" "}
+                                              {new Date(b.end).toLocaleString()}
+                                            </Typography>
+                                            {i !== bookings.length - 1 && (
+                                              <hr />
+                                            )}
+                                          </Box>
+                                        ))}
+                                      </Box>
+                                    }
+                                  >
+                                    <Typography sx={{ cursor: "pointer" }}>
+                                      {machineName} - ({bookings.length})
+                                    </Typography>
+                                  </Tooltip>
+                                </Box>
+                              ),
+                            )
+                          )}
                         </Box>
                       ))
                     )}
@@ -1075,21 +1152,9 @@ function EditPlan() {
                   <FormGroup>
                     <Typography mb={1}>
                       Machine
-                      {PrintingPrintableSheets > 0 && (
-                        <span
-                          style={{
-                            marginLeft: 8,
-                            color: "#2e7d32",
-                            fontWeight: 600,
-                            fontSize: "16px",
-                          }}
-                        >
-                          ({PrintingPrintableSheets} / Shift)
-                        </span>
-                      )}
                       {printingRequiredShifts > 0 && (
-                        <span style={{ marginLeft: 10, color: "#d32f2f" }}>
-                          ({printingRequiredShifts} Shifts Required)
+                        <span style={{ color: "#0a85cb" }}>
+                          ({printingRequiredShifts} Shift Req)
                         </span>
                       )}
                     </Typography>
@@ -1122,22 +1187,24 @@ function EditPlan() {
                   <FormGroup>
                     <Typography mb={1}>
                       Shift
-                      {printingPlan?.shift_from && printingPlan?.shift_to && (
+                      {PrintingPrintableSheets > 0 && (
                         <span
                           style={{
-                            color: "#0288d1",
+                            marginLeft: 8,
+                            color: "#2e7d32",
+                            fontWeight: 600,
                             fontSize: "16px",
-                            marginLeft: "10px",
                           }}
                         >
-                          ({printingPlan.shift_from} to {printingPlan.shift_to})
+                          ({PrintingPrintableSheets} / Shift)
                         </span>
                       )}
                     </Typography>
+
                     <Select
                       multiple
                       name="shift"
-                      value={printingPlan?.shift}
+                      value={printingPlan?.shift ?? []}
                       size="small"
                       onChange={(e) => {
                         const value = e.target.value;
@@ -1149,8 +1216,6 @@ function EditPlan() {
                           }));
                         } else {
                           const filtered = value.filter((v) => v !== "General");
-
-                          // ✅ Always maintain correct shift order
                           const sorted = SHIFT_ORDER.filter((s) =>
                             filtered.includes(s),
                           );
@@ -1161,13 +1226,11 @@ function EditPlan() {
                           }));
                         }
                       }}
-                      renderValue={(selected) => selected.join(", ")}
+                      renderValue={(selected) =>
+                        selected.length ? selected.join(", ") : "Select"
+                      }
                       displayEmpty
                     >
-                      <MenuItem value="" disabled>
-                        Select
-                      </MenuItem>
-
                       {SHIFT_ORDER.map((shiftName) => {
                         const isGeneralSelected =
                           printingPlan.shift.includes("General");
@@ -1207,6 +1270,12 @@ function EditPlan() {
                       name="start_date"
                       size="small"
                       type="date"
+                      error={printingDateError}
+                      helperText={
+                        printingDateError
+                          ? "Machine already booked on selected date"
+                          : ""
+                      }
                       inputProps={{
                         min: new Date().toISOString().split("T")[0],
                       }}
@@ -1243,29 +1312,72 @@ function EditPlan() {
                     Running Machines
                   </Typography>
 
-                  <Box mt={1} sx={{}}>
-                    {printingRunningMachines.length === 0 ? (
+                  <Box
+                    mt={1}
+                    sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}
+                  >
+                    {Object.keys(groupedPrintingMachines).length === 0 ? (
                       <Typography color="text.secondary">
                         No machines running
                       </Typography>
                     ) : (
-                      printingRunningMachines.map((m, index) => (
-                        <Box
-                          key={index}
-                          sx={{
-                            p: 1,
-                            mb: 1,
-                            background: "#ffebee",
-                            borderRadius: 1,
-                            width: "40%",
-                          }}
-                        >
-                          <Typography fontWeight={600}>{m.machine}</Typography>
-                          <Typography variant="body2">
-                            SO: {m.saleorder_no}
-                          </Typography>
-                        </Box>
-                      ))
+                      Object.entries(groupedPrintingMachines).map(
+                        ([machineName, bookings], index) => (
+                          <Box
+                            key={index}
+                            sx={{
+                              p: 1,
+                              mb: 1,
+                              background: "#ffebee",
+                              borderRadius: 1,
+                              width: "20%",
+                            }}
+                          >
+                            <Tooltip
+                              arrow
+                              placement="right"
+                              componentsProps={{
+                                tooltip: {
+                                  sx: {
+                                    maxHeight: 300,
+                                    overflowY: "auto",
+                                    bgcolor: "#1e1e1e",
+                                    color: "#fff",
+                                  },
+                                },
+                              }}
+                              title={
+                                <Box>
+                                  {bookings.map((b, i) => (
+                                    <Box key={i} mb={1}>
+                                      <Typography variant="body2">
+                                        <strong>SO:</strong> {b.saleorder_no}
+                                      </Typography>
+                                      <Typography variant="body2">
+                                        <strong>Customer:</strong>{" "}
+                                        {b.customer_name}
+                                      </Typography>
+                                      <Typography variant="body2">
+                                        <strong>Start:</strong>{" "}
+                                        {new Date(b.start).toLocaleString()}
+                                      </Typography>
+                                      <Typography variant="body2">
+                                        <strong>End:</strong>{" "}
+                                        {new Date(b.end).toLocaleString()}
+                                      </Typography>
+                                      {i !== bookings.length - 1 && <hr />}
+                                    </Box>
+                                  ))}
+                                </Box>
+                              }
+                            >
+                              <Typography sx={{ cursor: "pointer" }}>
+                                {machineName} - ({bookings.length})
+                              </Typography>
+                            </Tooltip>
+                          </Box>
+                        ),
+                      )
                     )}
                   </Box>
                 </Grid>
