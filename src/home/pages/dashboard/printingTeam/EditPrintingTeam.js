@@ -79,7 +79,7 @@ const ComponentRow = ({ component, name, onViewFile, totalQty, soNumber }) => {
       JSON.stringify({
         timers,
         statusMap,
-      })
+      }),
     );
   }, [timers, statusMap, storageKey]);
 
@@ -193,7 +193,7 @@ const ComponentRow = ({ component, name, onViewFile, totalQty, soNumber }) => {
 
     return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
       2,
-      "0"
+      "0",
     )}:${String(seconds).padStart(2, "0")}`;
   };
 
@@ -202,7 +202,20 @@ const ComponentRow = ({ component, name, onViewFile, totalQty, soNumber }) => {
     const c = component?.printingColor;
     if (!c) return [];
 
-    const toArr = (v) => (Array.isArray(v) ? v : v ? [v] : []);
+    const toArr = (v) => {
+      if (!v) return [];
+
+      if (Array.isArray(v)) return v;
+
+      if (typeof v === "string") {
+        return v
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean);
+      }
+
+      return [];
+    };
 
     return [...toArr(c.normalColor), ...toArr(c.splColor)];
   })();
@@ -535,7 +548,20 @@ function EditPrintingTeam() {
     const timers = {};
     const statusMap = {};
 
-    const toArr = (v) => (Array.isArray(v) ? v : v ? [v] : []);
+    const toArr = (v) => {
+      if (!v) return [];
+
+      if (Array.isArray(v)) return v;
+
+      if (typeof v === "string") {
+        return v
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean);
+      }
+
+      return [];
+    };
 
     // SAME ORDER AS UI
     const printingList = [
@@ -570,7 +596,7 @@ function EditPrintingTeam() {
       JSON.stringify({
         timers,
         statusMap,
-      })
+      }),
     );
   };
 
@@ -664,7 +690,7 @@ function EditPrintingTeam() {
 
       if (type === "FINAL" && !isAllPrintingCompleted()) {
         toast.warning(
-          "All Printing processes must be completed before submitting. Moving to Pending."
+          "All Printing processes must be completed before submitting. Moving to Pending.",
         );
         return;
       }
@@ -683,7 +709,20 @@ function EditPrintingTeam() {
           if (saved) {
             const { timers = {}, statusMap = {} } = JSON.parse(saved);
 
-            const toArr = (v) => (Array.isArray(v) ? v : v ? [v] : []);
+            const toArr = (v) => {
+              if (!v) return [];
+
+              if (Array.isArray(v)) return v;
+
+              if (typeof v === "string") {
+                return v
+                  .split(",")
+                  .map((item) => item.trim())
+                  .filter(Boolean);
+              }
+
+              return [];
+            };
 
             const PrintingList = [
               ...toArr(comp?.printingColor?.normalColor),
@@ -699,7 +738,7 @@ function EditPrintingTeam() {
                 end_time: new Date(t.endTime),
                 co_time: Math.floor((t.coTotalMs || 0) / 1000),
                 total_time: Math.floor(
-                  (t.endTime - t.startTime - (t.coTotalMs || 0)) / 1000
+                  (t.endTime - t.startTime - (t.coTotalMs || 0)) / 1000,
                 ),
                 status: statusMap[index] === "Yes" ? 1 : 0,
               };
@@ -934,6 +973,7 @@ function EditPrintingTeam() {
                 </button>
               </div>
             </Grid>
+            
             {/* Header Start Here  */}
             <Grid size={1}>
               <div className="Box-table-subtitle">Component</div>
@@ -973,7 +1013,7 @@ function EditPrintingTeam() {
             {/* Render Component Rows */}
             {Object.entries(components)
               .filter(([key]) =>
-                Object.keys(design?.components || {}).includes(key)
+                Object.keys(design?.components || {}).includes(key),
               )
               .map(([key, component]) => (
                 <ComponentRow
@@ -1012,7 +1052,9 @@ function EditPrintingTeam() {
               color="primary"
               onClick={() => {
                 if (isAllPrintingCompleted()) {
-                  toast.info("All Printing Process is completed. Please Submit.");
+                  toast.info(
+                    "All Printing Process is completed. Please Submit.",
+                  );
                   return;
                 }
                 setOpenPending(true);

@@ -79,7 +79,7 @@ const ComponentRow = ({ component, name, onViewFile, totalQty, soNumber }) => {
       JSON.stringify({
         timers,
         statusMap,
-      })
+      }),
     );
   }, [timers, statusMap, storageKey]);
 
@@ -193,7 +193,7 @@ const ComponentRow = ({ component, name, onViewFile, totalQty, soNumber }) => {
 
     return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
       2,
-      "0"
+      "0",
     )}:${String(seconds).padStart(2, "0")}`;
   };
 
@@ -201,7 +201,21 @@ const ComponentRow = ({ component, name, onViewFile, totalQty, soNumber }) => {
   const listOfCoating = (() => {
     const c = component?.coating;
     if (!c) return [];
-    const toArr = (v) => (Array.isArray(v) ? v : v ? [v] : []);
+    const toArr = (v) => {
+      if (!v) return [];
+
+      if (Array.isArray(v)) return v;
+
+      if (typeof v === "string") {
+        return v
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean);
+      }
+
+      return [];
+    };
+
     return [
       ...toArr(c.sizing),
       ...toArr(c.insideColor),
@@ -209,7 +223,7 @@ const ComponentRow = ({ component, name, onViewFile, totalQty, soNumber }) => {
       ...(c.coatingColor && c.coatingCount
         ? Array.from(
             { length: c.coatingCount },
-            (_, i) => `${c.coatingColor} - ${i + 1}`
+            (_, i) => `${c.coatingColor} - ${i + 1}`,
           )
         : []),
     ];
@@ -234,8 +248,8 @@ const ComponentRow = ({ component, name, onViewFile, totalQty, soNumber }) => {
           timer.status === "RUNNING" && timer.currentTime
             ? format12Hr(timer.currentTime)
             : timer.startTime
-            ? format12Hr(timer.startTime)
-            : "";
+              ? format12Hr(timer.startTime)
+              : "";
 
         const endTimeText = timer.endTime ? format12Hr(timer.endTime) : "";
 
@@ -541,7 +555,20 @@ function EditCoating() {
     const timers = {};
     const statusMap = {};
 
-    const toArr = (v) => (Array.isArray(v) ? v : v ? [v] : []);
+    const toArr = (v) => {
+      if (!v) return [];
+
+      if (Array.isArray(v)) return v;
+
+      if (typeof v === "string") {
+        return v
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean);
+      }
+
+      return [];
+    };
 
     // SAME ORDER AS UI
     const coatingList = [
@@ -552,7 +579,7 @@ function EditCoating() {
       componentData?.coating?.coatingCount
         ? Array.from(
             { length: componentData.coating.coatingCount },
-            (_, i) => `${componentData.coating.coatingColor} - ${i + 1}`
+            (_, i) => `${componentData.coating.coatingColor} - ${i + 1}`,
           )
         : []),
     ];
@@ -584,7 +611,7 @@ function EditCoating() {
       JSON.stringify({
         timers,
         statusMap,
-      })
+      }),
     );
   };
 
@@ -678,7 +705,7 @@ function EditCoating() {
 
       if (type === "FINAL" && !isAllCoatingCompleted()) {
         toast.warning(
-          "All coating processes must be completed before submitting. Moving to Pending."
+          "All coating processes must be completed before submitting. Moving to Pending.",
         );
         return;
       }
@@ -697,7 +724,20 @@ function EditCoating() {
           if (saved) {
             const { timers = {}, statusMap = {} } = JSON.parse(saved);
 
-            const toArr = (v) => (Array.isArray(v) ? v : v ? [v] : []);
+            const toArr = (v) => {
+              if (!v) return [];
+
+              if (Array.isArray(v)) return v;
+
+              if (typeof v === "string") {
+                return v
+                  .split(",")
+                  .map((item) => item.trim())
+                  .filter(Boolean);
+              }
+
+              return [];
+            };
 
             const coatingList = [
               ...toArr(comp?.coating?.sizing),
@@ -706,7 +746,7 @@ function EditCoating() {
               ...(comp?.coating?.coatingColor && comp?.coating?.coatingCount
                 ? Array.from(
                     { length: comp.coating.coatingCount },
-                    (_, i) => `${comp.coating.coatingColor} - ${i + 1}`
+                    (_, i) => `${comp.coating.coatingColor} - ${i + 1}`,
                   )
                 : []),
             ];
@@ -720,7 +760,7 @@ function EditCoating() {
                 end_time: new Date(t.endTime),
                 co_time: Math.floor((t.coTotalMs || 0) / 1000),
                 total_time: Math.floor(
-                  (t.endTime - t.startTime - (t.coTotalMs || 0)) / 1000
+                  (t.endTime - t.startTime - (t.coTotalMs || 0)) / 1000,
                 ),
                 status: statusMap[index] === "Yes" ? 1 : 0,
               };
@@ -995,7 +1035,7 @@ function EditCoating() {
             {/* Render Component Rows */}
             {Object.entries(components)
               .filter(([key]) =>
-                Object.keys(design?.components || {}).includes(key)
+                Object.keys(design?.components || {}).includes(key),
               )
               .map(([key, component]) => (
                 <ComponentRow
