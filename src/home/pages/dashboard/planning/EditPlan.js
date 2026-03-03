@@ -1,7 +1,7 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import React, { Fragment, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import Box from "@mui/material/Box";
 import {
+  Box,
   MenuItem,
   Grid,
   FormGroup,
@@ -9,8 +9,6 @@ import {
   TextField,
   Select,
   Modal,
-  ToggleButton,
-  ToggleButtonGroup,
   Button,
   Dialog,
   DialogTitle,
@@ -25,121 +23,388 @@ import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import CloseIcon from "@mui/icons-material/Close";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
+import InfoIcon from "@mui/icons-material/Info";
+
+import PrecisionManufacturingIcon from "@mui/icons-material/PrecisionManufacturing";
+import AssignmentIcon from "@mui/icons-material/Assignment";
+import PlaylistAddCheckIcon from "@mui/icons-material/PlaylistAddCheck";
+import PendingActionsIcon from "@mui/icons-material/PendingActions";
+import SummarizeIcon from "@mui/icons-material/Summarize";
 
 import { toast } from "react-toastify";
 
 import "../../../pages/pagestyle.scss";
 import server from "../../../../server/server";
 
-const ComponentRow = ({ component, name, onViewFile, totalQty, soNumber }) => {
-  const [machine, setMachine] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [selectedShifts, setSelectedShifts] = useState({});
+// Configurations for shifts and machines
+const SHIFT_CONFIG = {
+  General: { from: "09:00", to: "18:00", hours: 9, crossDay: false },
+  "Shift 1": { from: "06:00", to: "14:00", hours: 8, crossDay: false },
+  "Shift 2": { from: "14:00", to: "22:00", hours: 8, crossDay: false },
+  "Shift 3": { from: "22:00", to: "06:00", hours: 8, crossDay: true },
+};
+
+const SHIFT_ORDER = ["General", "Shift 1", "Shift 2", "Shift 3"];
+
+const MACHINE_CONFIG = {
+  coating: {
+    title: "Coating Machine",
+    machines: ["Crab Tree"],
+    sheetsPerHour: {
+      "Crab Tree": 3500,
+    },
+  },
+  printing: {
+    title: "Printing Machine",
+    machines: ["IGK", "DC", "NIGK", "RTCPL-DC"],
+    sheetsPerHour: {
+      IGK: 1600,
+      DC: 3500,
+      NIGK: 3500,
+      "RTCPL-DC": 2500,
+    },
+  },
+};
+
+const formatDateLocal = (date) => {
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+const ComponentRow = ({
+  component,
+  name,
+  onViewFile,
+  totalQty,
+  processType,
+  onPlanningChange,
+  existingBookings = [],
+  usedShiftMap = {},
+}) => {
+  const [processRows, setProcessRows] = useState([]);
+
   const [openShiftDialog, setOpenShiftDialog] = useState(false);
 
-  const [statusMap, setStatusMap] = useState({});
+  const [openInfoDialog, setOpenInfoDialog] = useState(false);
 
-  const handleStatusChange = (index, newValue) => {
-    if (newValue !== null) {
-      setStatusMap((prev) => ({
-        ...prev,
-        [index]: newValue,
-      }));
-    }
-  };
+  const [openShiftTypeDialog, setOpenShiftTypeDialog] = useState(false);
 
-  const getDateRange = (start, end) => {
-    if (!start || !end) return [];
+  const [activeRowIndex, setActiveRowIndex] = useState(null);
+
+  const [selectedRowIndex, setSelectedRowIndex] = useState(null);
+
+  const [infoData, setInfoData] = useState(null);
+
+  const currentRow =
+    activeRowIndex !== null ? processRows[activeRowIndex] : null;
+
+  const dateRange = useMemo(() => {
+    if (!currentRow?.startDate || !currentRow?.endDate) return [];
 
     const dates = [];
-
-    const current = new Date(start);
-    const last = new Date(end);
+    const current = new Date(currentRow.startDate);
+    const last = new Date(currentRow.endDate);
 
     while (current <= last) {
       dates.push(new Date(current));
       current.setDate(current.getDate() + 1);
     }
     return dates;
-  };
+  }, [currentRow]);
 
-  const dateRange = useMemo(() => {
-    if (!machine || !startDate || !endDate) return [];
-    return getDateRange(startDate, endDate);
-  }, [machine, startDate, endDate]);
-  // Data Handler
-  const listOfCoating = (() => {
-    const c = component?.coating;
-    if (!c) return [];
-    const toArr = (v) => {
-      if (!v) return [];
+  useEffect(() => {
+    let processes = [];
 
-      if (Array.isArray(v)) return v;
+    if (processType === "coating") {
+      const c = component?.coating || {};
 
-      if (typeof v === "string") {
-        return v
-          .split(",")
-          .map((item) => item.trim())
-          .filter(Boolean);
+      const toArr = (v) =>
+        typeof v === "string" && v.trim()
+          ? v.split(",").map((i) => i.trim())
+          : [];
+
+      processes = [
+        ...toArr(c.sizing),
+        ...toArr(c.insideColor),
+        ...toArr(c.varnish),
+        ...(c.coatingColor
+          ? Array.from(
+              { length: c.coatingCount || 1 },
+              (_, i) => `${c.coatingColor} - ${i + 1}`,
+            )
+          : []),
+      ];
+    }
+
+    if (processType === "printing") {
+      const p = component?.printingColor || {};
+
+      const toArr = (v) =>
+        Array.isArray(v)
+          ? v
+          : typeof v === "string" && v.trim()
+            ? v.split(",").map((i) => i.trim())
+            : [];
+
+      processes = [...toArr(p.normalColor), ...toArr(p.splColor)];
+
+      if (processes.length === 0) processes = ["Printing"];
+    }
+
+    const rows = processes.map((process) => {
+      // find existing bookings for this component + process
+      const matched = existingBookings.filter(
+        (b) => b.component === name && b.process === process,
+      );
+
+      if (!matched.length) {
+        return {
+          process,
+          machine: "",
+          startDate: "",
+          endDate: "",
+          shifts: {},
+        };
       }
 
-      return [];
-    };
+      const machine = matched[0].machine;
 
-    return [
-      ...toArr(c.sizing),
-      ...toArr(c.insideColor),
-      ...toArr(c.varnish),
-      ...(c.coatingColor && c.coatingCount
-        ? Array.from(
-            { length: c.coatingCount },
-            (_, i) => `${c.coatingColor} - ${i + 1}`,
-          )
-        : []),
-    ];
-  })();
+      const shiftsObj = {};
+
+      matched.forEach((b) => {
+        const date = formatDateLocal(b.shift_from_dt);
+
+        if (!shiftsObj[date]) shiftsObj[date] = [];
+
+        shiftsObj[date].push(b.shift);
+      });
+
+      const dates = Object.keys(shiftsObj).sort();
+
+      return {
+        process,
+        machine,
+        startDate: dates[0],
+        endDate: dates[dates.length - 1],
+        shifts: shiftsObj,
+      };
+    });
+
+    setProcessRows(rows);
+  }, [component, processType, name, existingBookings]);
 
   const originalSheets =
     component.ups && totalQty
       ? Math.ceil(Number(totalQty) / Number(component.ups))
       : "";
 
-  // Configurations for shifts and machines
-  const SHIFT_CONFIG = {
-    General: { from: "09:00", to: "18:00", hours: 9, crossDay: false },
-    "Shift 1": { from: "06:00", to: "14:00", hours: 8, crossDay: false },
-    "Shift 2": { from: "14:00", to: "22:00", hours: 8, crossDay: false },
-    "Shift 3": { from: "22:00", to: "06:00", hours: 8, crossDay: true },
+  const findNextFreeSlot = (machine, startDate) => {
+    let date = new Date(startDate);
+
+    const shiftList = ["Shift 1", "Shift 2", "Shift 3"];
+
+    while (true) {
+      const formatted = formatDateLocal(date);
+
+      const key = `${machine}_${formatted}`;
+
+      const used = usedShiftMap[key] || new Set();
+
+      for (let i = 0; i < shiftList.length; i++) {
+        const shift = shiftList[i];
+
+        if (!used.has(shift)) {
+          return {
+            date: formatted,
+            shift,
+            shiftIndex: i,
+          };
+        }
+      }
+
+      date.setDate(date.getDate() + 1);
+    }
   };
 
-  const SHIFT_ORDER = ["General", "Shift 1", "Shift 2", "Shift 3"];
+  const autoPlanProduction = (rowIndex, shiftType) => {
+    setProcessRows((prev) => {
+      const updated = [...prev];
 
-  const MACHINE_CONFIG = {
-    coating: {
-      title: "Coating Machine",
-      machines: ["Crab Tree"],
-      sheetsPerHour: {
-        "Crab Tree": 3500,
-      },
-    },
-    printing: {
-      title: "Printing Machine",
-      machines: ["IGK", "DC", "NIGK", "RTCPL-DC"],
-      sheetsPerHour: {
-        IGK: 1600,
-        DC: 3500,
-        NIGK: 3500,
-        "RTCPL-DC": 2500,
-      },
-    },
+      const row = { ...updated[rowIndex] };
+
+      if (!row.machine || !row.startDate) return prev;
+
+      const machineCapacity =
+        MACHINE_CONFIG[processType].sheetsPerHour[row.machine];
+
+      const shiftHours = shiftType === "General" ? 9 : 8;
+
+      const perShiftCapacity = machineCapacity * shiftHours;
+
+      const requiredShifts = Math.ceil(component?.sheets / perShiftCapacity);
+
+      let remainingShifts = requiredShifts;
+
+      const nextFree = findNextFreeSlot(row.machine, row.startDate);
+
+      let currentDate = new Date(nextFree.date);
+
+      let startShiftIndex = nextFree.shiftIndex;
+
+      const shiftList = ["Shift 1", "Shift 2", "Shift 3"];
+
+      const shifts = {};
+
+      const localUsed = {};
+
+      Object.keys(usedShiftMap).forEach((k) => {
+        localUsed[k] = new Set([...usedShiftMap[k]]);
+      });
+      while (remainingShifts > 0) {
+        const formatted = formatDateLocal(currentDate);
+
+        const key = `${row.machine}_${formatted}`;
+
+        if (!localUsed[key]) {
+          localUsed[key] = new Set();
+        }
+
+        shifts[formatted] = shifts[formatted] || [];
+
+        if (shiftType === "General") {
+          if (!localUsed[key].has("General")) {
+            shifts[formatted].push("General");
+
+            localUsed[key].add("General");
+
+            remainingShifts--;
+          }
+        } else {
+          for (let i = startShiftIndex; i < shiftList.length; i++) {
+            if (remainingShifts <= 0) break;
+
+            const shift = shiftList[i];
+
+            if (!localUsed[key].has(shift)) {
+              shifts[formatted].push(shift);
+
+              localUsed[key].add(shift);
+
+              remainingShifts--;
+            }
+          }
+        }
+
+        currentDate.setDate(currentDate.getDate() + 1);
+
+        startShiftIndex = 0;
+      }
+
+      currentDate.setDate(currentDate.getDate() - 1);
+
+      row.shifts = shifts;
+
+      row.startDate = nextFree.date;
+
+      row.endDate = formatDateLocal(currentDate);
+
+      updated[rowIndex] = row;
+
+      if (onPlanningChange) {
+        onPlanningChange(updated);
+      }
+
+      return updated;
+    });
   };
 
+  const calculateInfoData = (row) => {
+    if (!row.machine) return null;
+
+    const machineCapacity =
+      MACHINE_CONFIG[processType].sheetsPerHour[row.machine];
+
+    let totalPlanned = 0;
+
+    const shiftCounts = {
+      General: 0,
+      "Shift 1": 0,
+      "Shift 2": 0,
+      "Shift 3": 0,
+    };
+
+    Object.entries(row.shifts || {}).forEach(([date, shifts]) => {
+      shifts.forEach((shift) => {
+        const hours =
+          shift === "General"
+            ? SHIFT_CONFIG.General.hours
+            : SHIFT_CONFIG["Shift 1"].hours;
+
+        totalPlanned += machineCapacity * hours;
+        shiftCounts[shift]++;
+      });
+    });
+
+    const totalRequired = Number(component?.sheets) || 0;
+
+    const remaining = Math.max(totalRequired - totalPlanned, 0);
+
+    return {
+      machineCapacity,
+      totalRequired,
+      totalPlanned,
+      remaining,
+      shiftCounts,
+    };
+  };
+  const getRequiredShiftCount = (row) => {
+    if (!row?.machine || !component?.sheets) return 0;
+
+    const machineCapacity =
+      MACHINE_CONFIG[processType].sheetsPerHour[row.machine];
+    const hasGeneral = Object.values(row?.shifts || {})
+      .flat()
+      .includes("General");
+
+    const hoursPerShift = hasGeneral ? 9 : 8;
+
+    const perShiftCapacity = machineCapacity * hoursPerShift;
+
+    return Math.ceil(Number(component.sheets) / perShiftCapacity);
+  };
+  const getCurrentShiftCount = (row) => {
+    return Object.values(row?.shifts || {}).reduce(
+      (total, shifts) => total + shifts.length,
+      0,
+    );
+  };
+
+  const getMachineRunningInfo = (machine, date) => {
+    const key = `${machine}_${date}`;
+
+    const used = usedShiftMap[key];
+
+    if (!used || used.size === 0) return null;
+
+    const shiftList = ["Shift 1", "Shift 2", "Shift 3"];
+
+    for (let shift of shiftList) {
+      if (used.has(shift)) {
+        return {
+          machine,
+          date,
+          shift,
+        };
+      }
+    }
+
+    return null;
+  };
   return (
     <>
-      {listOfCoating.map((process, index) => {
-        const status = statusMap[index] || "No";
-
+      {processRows.map((row, index) => {
         return (
           <Fragment key={index}>
             <Grid size={12} sx={{ borderBottom: "1px solid #dcdddd" }}></Grid>
@@ -207,7 +472,7 @@ const ComponentRow = ({ component, name, onViewFile, totalQty, soNumber }) => {
                 <TextField
                   id="outlined-size-small"
                   size="small"
-                  value={process}
+                  value={row.process}
                   disabled
                 />
               </div>
@@ -218,17 +483,37 @@ const ComponentRow = ({ component, name, onViewFile, totalQty, soNumber }) => {
               <div className="Box-table-content">
                 <Select
                   size="small"
-                  value={machine}
+                  value={row.machine}
                   displayEmpty
                   onChange={(e) => {
-                    setMachine(e.target.value);
-                    setSelectedShifts({});
+                    const value = e.target.value;
+
+                    setProcessRows((prev) => {
+                      const updated = prev.map((row, i) =>
+                        i === index
+                          ? { ...row, machine: value, shifts: {} }
+                          : row,
+                      );
+
+                      if (onPlanningChange) {
+                        onPlanningChange(updated);
+                      }
+
+                      return updated;
+                    });
+
+                    const currentStartDate = processRows[index]?.startDate;
+
+                    if (value && currentStartDate) {
+                      setSelectedRowIndex(index);
+                      setOpenShiftTypeDialog(true);
+                    }
                   }}
                 >
                   <MenuItem value="" disabled>
                     Select
                   </MenuItem>
-                  {MACHINE_CONFIG?.coating?.machines?.map((m) => (
+                  {MACHINE_CONFIG[processType]?.machines?.map((m) => (
                     <MenuItem key={m} value={m}>
                       {m}
                     </MenuItem>
@@ -243,10 +528,30 @@ const ComponentRow = ({ component, name, onViewFile, totalQty, soNumber }) => {
                 <TextField
                   type="date"
                   size="small"
-                  value={startDate}
+                  value={row.startDate}
                   onChange={(e) => {
-                    setStartDate(e.target.value);
-                    setSelectedShifts({});
+                    const value = e.target.value;
+
+                    setProcessRows((prev) => {
+                      const updated = prev.map((row, i) =>
+                        i === index
+                          ? { ...row, startDate: value, shifts: {} }
+                          : row,
+                      );
+
+                      if (onPlanningChange) {
+                        onPlanningChange(updated);
+                      }
+
+                      return updated;
+                    });
+
+                    const currentMachine = processRows[index]?.machine;
+
+                    if (value && currentMachine) {
+                      setSelectedRowIndex(index);
+                      setOpenShiftTypeDialog(true);
+                    }
                   }}
                 />
               </div>
@@ -258,10 +563,23 @@ const ComponentRow = ({ component, name, onViewFile, totalQty, soNumber }) => {
                 <TextField
                   type="date"
                   size="small"
-                  value={endDate}
+                  value={row.endDate}
                   onChange={(e) => {
-                    setEndDate(e.target.value);
-                    setSelectedShifts({});
+                    const value = e.target.value;
+
+                    setProcessRows((prev) => {
+                      const updated = prev.map((row, i) =>
+                        i === index
+                          ? { ...row, endDate: value, shifts: {} }
+                          : row,
+                      );
+
+                      if (onPlanningChange) {
+                        onPlanningChange(updated);
+                      }
+
+                      return updated;
+                    });
                   }}
                 />
               </div>
@@ -273,72 +591,39 @@ const ComponentRow = ({ component, name, onViewFile, totalQty, soNumber }) => {
                 <Button
                   variant="outlined"
                   size="small"
+                  color={
+                    Object.keys(row.shifts).length > 0 ? "error" : "inherit"
+                  }
                   onClick={() => {
-                    if (!machine || !startDate || !endDate) {
+                    if (!row.machine || !row.startDate || !row.endDate) {
                       toast.error("Please select Machine and Dates first");
                       return;
                     }
+                    setActiveRowIndex(index);
                     setOpenShiftDialog(true);
                   }}
                 >
-                  {Object.keys(selectedShifts).length > 0
-                    ? "Edit Shift"
-                    : "Select Shift"}
+                  {Object.keys(row.shifts).length > 0 ? "Edit" : "Select"}
                 </Button>
               </div>
             </Grid>
-
-            {/* Status */}
             <Grid size={1}>
               <div className="Box-table-content">
-                <ToggleButtonGroup
-                  value={status}
-                  exclusive
-                  onChange={(e, val) => handleStatusChange(index, val)}
-                  size="small"
-                >
-                  <ToggleButton
-                    value="Yes"
-                    sx={{
-                      "&.Mui-selected": {
-                        backgroundColor: "green",
-                        color: "white",
-                      },
-                      "&:hover": {
-                        backgroundColor: "#008000db",
-                      },
-                      "&.Mui-selected:hover": {
-                        backgroundColor: "#008000",
-                      },
-                    }}
-                  >
-                    Yes
-                  </ToggleButton>
-
-                  <ToggleButton
-                    value="No"
-                    sx={{
-                      "&.Mui-selected": {
-                        backgroundColor: "red",
-                        color: "white",
-                      },
-                      "&:hover": {
-                        backgroundColor: "#ff0000bf",
-                      },
-                      "&.Mui-selected:hover": {
-                        backgroundColor: "#ff0000",
-                      },
-                    }}
-                  >
-                    No
-                  </ToggleButton>
-                </ToggleButtonGroup>
+                <InfoIcon
+                  sx={{ cursor: "pointer", color: "#0a85cb" }}
+                  onClick={() => {
+                    const data = calculateInfoData(row);
+                    setInfoData(data);
+                    setOpenInfoDialog(true);
+                  }}
+                />
               </div>
             </Grid>
           </Fragment>
         );
       })}
 
+      {/* Shift Dialog */}
       <Dialog
         open={openShiftDialog}
         onClose={() => setOpenShiftDialog(false)}
@@ -346,7 +631,13 @@ const ComponentRow = ({ component, name, onViewFile, totalQty, soNumber }) => {
         maxWidth="sm"
         PaperProps={{ sx: { borderRadius: "16px" } }}
       >
-        <DialogTitle sx={{ display: "flex", justifyContent: "space-between" }}>
+        <DialogTitle
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
           <Typography variant="h6" fontWeight="bold" color="#0a85cb">
             Select Shift
           </Typography>
@@ -357,22 +648,51 @@ const ComponentRow = ({ component, name, onViewFile, totalQty, soNumber }) => {
         </DialogTitle>
 
         <DialogContent dividers>
+          {currentRow && dateRange.length > 0 && (
+            <Box display="flex" justifyContent="flex-end">
+              <Box
+                sx={{
+                  color: "#2e7d32",
+                }}
+              >
+                {getCurrentShiftCount(currentRow)} /
+                {getRequiredShiftCount(currentRow)} Shifts Selected
+              </Box>
+            </Box>
+          )}
+
           {dateRange.length === 0 ? (
             <Typography color="error">
               Please select Machine and Date range
             </Typography>
           ) : (
             dateRange.map((dateObj, index) => {
-              const formatted = dateObj.toISOString().split("T")[0];
+              const formatted = formatDateLocal(dateObj);
 
               return (
                 <Box key={index} mb={2}>
-                  <Typography fontWeight={600}>{formatted}</Typography>
+                  <Typography sx={{ fontWeight: 600, color: "#0a85cb" }}>
+                    {formatted}
+                  </Typography>
 
                   <Box mt={1} display="flex" gap={2} flexWrap="wrap">
                     {SHIFT_ORDER.map((shift) => {
                       const isChecked =
-                        selectedShifts[formatted]?.includes(shift) || false;
+                        currentRow?.shifts?.[formatted]?.includes(shift) ||
+                        false;
+                      const machine = currentRow?.machine;
+
+                      const key = `${machine}_${formatted}`;
+
+                      const usedShifts = usedShiftMap[key] || new Set();
+
+                      const isUsedElsewhere =
+                        usedShifts.has(shift) &&
+                        !currentRow?.shifts?.[formatted]?.includes(shift);
+
+                      const requiredCount = getRequiredShiftCount(currentRow);
+                      const currentCount = getCurrentShiftCount(currentRow);
+                      const isMaxReached = currentCount >= requiredCount;
 
                       return (
                         <FormControlLabel
@@ -382,23 +702,52 @@ const ComponentRow = ({ component, name, onViewFile, totalQty, soNumber }) => {
                             <Checkbox
                               color="success"
                               checked={isChecked}
+                              disabled={
+                                isUsedElsewhere ||
+                                (isMaxReached && !isChecked) ||
+                                (shift === "General"
+                                  ? (
+                                      currentRow?.shifts?.[formatted] || []
+                                    ).some((s) => s !== "General")
+                                  : (
+                                      currentRow?.shifts?.[formatted] || []
+                                    ).includes("General"))
+                              }
                               onChange={(e) => {
-                                setSelectedShifts((prev) => {
-                                  const prevShifts = prev[formatted] || [];
+                                setProcessRows((prev) => {
+                                  const updated = [...prev];
+
+                                  const rowData = {
+                                    ...updated[activeRowIndex],
+                                  };
+                                  const shifts = { ...rowData.shifts };
+
+                                  let prevShifts = shifts[formatted] || [];
 
                                   if (e.target.checked) {
-                                    return {
-                                      ...prev,
-                                      [formatted]: [...prevShifts, shift],
-                                    };
+                                    if (shift === "General") {
+                                      shifts[formatted] = ["General"];
+                                    } else {
+                                      prevShifts = prevShifts.filter(
+                                        (s) => s !== "General",
+                                      );
+                                      shifts[formatted] = [
+                                        ...prevShifts,
+                                        shift,
+                                      ];
+                                    }
                                   } else {
-                                    return {
-                                      ...prev,
-                                      [formatted]: prevShifts.filter(
-                                        (s) => s !== shift,
-                                      ),
-                                    };
+                                    shifts[formatted] = prevShifts.filter(
+                                      (s) => s !== shift,
+                                    );
                                   }
+
+                                  rowData.shifts = shifts;
+                                  updated[activeRowIndex] = rowData;
+                                  if (onPlanningChange) {
+                                    onPlanningChange(updated);
+                                  }
+                                  return updated;
                                 });
                               }}
                             />
@@ -433,6 +782,242 @@ const ComponentRow = ({ component, name, onViewFile, totalQty, soNumber }) => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Shift Type Dialog */}
+
+      <Dialog
+        open={openShiftTypeDialog}
+        onClose={() => setOpenShiftTypeDialog(false)}
+        fullWidth
+        maxWidth="xs"
+        PaperProps={{ sx: { borderRadius: "16px" } }}
+      >
+        <DialogTitle
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Typography variant="h6" fontWeight="bold" color="#0a85cb">
+            Shift Type
+          </Typography>
+
+          <IconButton onClick={() => setOpenShiftTypeDialog(false)}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+
+        <DialogContent dividers>
+          <Box display="flex" flexDirection="row" gap={1}>
+            <Button
+              fullWidth
+              variant="contained"
+              color="success"
+              sx={{
+                borderRadius: "10px",
+                textTransform: "none",
+                fontWeight: 600,
+                py: 1.2,
+              }}
+              onClick={() => {
+                autoPlanProduction(selectedRowIndex, "General");
+                setOpenShiftTypeDialog(false);
+              }}
+            >
+              General - 9H
+            </Button>
+
+            <Button
+              fullWidth
+              variant="outlined"
+              color="primary"
+              sx={{
+                borderRadius: "10px",
+                textTransform: "none",
+                fontWeight: 600,
+                py: 1.2,
+              }}
+              onClick={() => {
+                autoPlanProduction(selectedRowIndex, "Shift");
+                setOpenShiftTypeDialog(false);
+              }}
+            >
+              Shift - 8H
+            </Button>
+          </Box>
+        </DialogContent>
+      </Dialog>
+
+      {/* Machine Info Dialog */}
+
+      <Dialog
+        open={openInfoDialog}
+        onClose={() => setOpenInfoDialog(false)}
+        fullWidth
+        maxWidth="sm"
+        PaperProps={{
+          sx: {
+            borderRadius: "16px",
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Typography variant="h6" fontWeight="bold" color="#0a85cb">
+            Machine Production Info
+          </Typography>
+
+          <IconButton onClick={() => setOpenInfoDialog(false)}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+
+        <DialogContent dividers>
+          {infoData ? (
+            <Box display="flex" flexDirection="column" gap={2}>
+              {/* Card Item */}
+              <Box
+                sx={{
+                  p: 2,
+                  borderRadius: 3,
+                  background: "#f4f9ff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Box display="flex" alignItems="center" gap={1}>
+                  <PrecisionManufacturingIcon color="primary" />
+                  <Typography color="text.secondary">
+                    Machine Capacity
+                  </Typography>
+                </Box>
+
+                <Typography fontWeight="bold" color="primary">
+                  {infoData.machineCapacity.toLocaleString()} sheets/hr
+                </Typography>
+              </Box>
+
+              {/* Required */}
+              <Box
+                sx={{
+                  p: 2,
+                  borderRadius: 3,
+                  background: "#f6fff6",
+                  display: "flex",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Box display="flex" alignItems="center" gap={1}>
+                  <AssignmentIcon sx={{ color: "#2e7d32" }} />
+                  <Typography color="text.secondary">
+                    Required Quantity
+                  </Typography>
+                </Box>
+
+                <Typography fontWeight="bold" sx={{ color: "#2e7d32" }}>
+                  {infoData.totalRequired.toLocaleString()} sheets
+                </Typography>
+              </Box>
+
+              {/* Planned */}
+              <Box
+                sx={{
+                  p: 2,
+                  borderRadius: 3,
+                  background: "#fff8f0",
+                  display: "flex",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Box display="flex" alignItems="center" gap={1}>
+                  <PlaylistAddCheckIcon sx={{ color: "#ed6c02" }} />
+                  <Typography color="text.secondary">
+                    Planned Quantity
+                  </Typography>
+                </Box>
+
+                <Typography fontWeight="bold" sx={{ color: "#ed6c02" }}>
+                  {infoData.totalPlanned.toLocaleString()} sheets
+                </Typography>
+              </Box>
+
+              {/* Remaining */}
+              <Box
+                sx={{
+                  p: 2,
+                  borderRadius: 3,
+                  background: "#fff0f0",
+                  display: "flex",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Box display="flex" alignItems="center" gap={1}>
+                  <PendingActionsIcon sx={{ color: "#d32f2f" }} />
+                  <Typography color="text.secondary">
+                    Remaining Quantity
+                  </Typography>
+                </Box>
+
+                <Typography fontWeight="bold" sx={{ color: "#d32f2f" }}>
+                  {infoData.remaining.toLocaleString()} sheets
+                </Typography>
+              </Box>
+              {/* Shift Summary */}
+
+              <Box
+                sx={{
+                  p: 2,
+                  borderRadius: 3,
+                  background: "#ede7f6",
+                  border: "1px solid #d1c4e9",
+                }}
+              >
+                <Box display="flex" alignItems="center" gap={1} mb={1}>
+                  <SummarizeIcon sx={{ color: "#5e35b1" }} />
+
+                  <Typography fontWeight="bold" sx={{ color: "#5e35b1" }}>
+                    Shift Summary
+                  </Typography>
+                </Box>
+
+                {Object.entries(infoData.shiftCounts).map(([shift, count]) =>
+                  count > 0 ? (
+                    <Box
+                      key={shift}
+                      display="flex"
+                      justifyContent="space-between"
+                      alignItems="center"
+                      sx={{ py: 0.5 }}
+                    >
+                      <Typography sx={{ color: "#4527a0" }}>{shift}</Typography>
+
+                      <Typography fontWeight="bold" sx={{ color: "#5e35b1" }}>
+                        {count} - Shift
+                      </Typography>
+                    </Box>
+                  ) : null,
+                )}
+              </Box>
+            </Box>
+          ) : (
+            <Typography
+              color="error"
+              textAlign="center"
+              fontWeight="bold"
+              py={3}
+            >
+              Machine not selected
+            </Typography>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
@@ -443,24 +1028,36 @@ function EditPlan() {
   const location = useLocation();
   const { design } = location?.state || {};
 
+  const [components, setComponents] = useState({});
+
   const [open, setOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState("");
-  const [components, setComponents] = useState({});
 
   const [formData, setFormData] = useState({
     customer_name: design?.customer_name || "",
     saleorder_no: design?.saleorder_no || "",
     posting_date: design?.posting_date
-      ? new Date(design?.posting_date).toISOString().split("T")[0]
+      ? formatDateLocal(design?.posting_date)
       : "",
     item_quantity: design?.item_quantity || "",
     shift: design?.planning_work_details?.shift || "",
     fab_site: design?.planning_work_details?.fab_site || "",
     sales_employee: design?.sales_employee || "",
-    machine: design?.machine,
-    coating_operator_name: design?.coating_operator_name,
+    telephone: design?.telephone || "",
     art_work: design?.art_work || "NA",
   });
+
+  const [planningData, setPlanningData] = useState({
+    coating: {},
+    printing: {},
+  });
+  const coatingBookings = useMemo(() => {
+    return design?.planning_work_details?.coating_machine_plan?.bookings ?? [];
+  }, [design]);
+
+  const printingBookings = useMemo(() => {
+    return design?.planning_work_details?.printing_machine_plan?.bookings ?? [];
+  }, [design]);
 
   //Pending Dialog
   const [openPending, setOpenPending] = useState(false);
@@ -506,6 +1103,63 @@ function EditPlan() {
   }, [design, initialComponentsState]);
 
   useEffect(() => {
+    if (!design?.planning_work_details) return;
+
+    const buildPlanningSection = (bookings = []) => {
+      const section = {};
+
+      bookings.forEach((b) => {
+        if (!section[b.component]) section[b.component] = [];
+
+        let row = section[b.component].find((r) => r.process === b.process);
+
+        if (!row) {
+          row = {
+            process: b.process,
+            machine: b.machine,
+            startDate: "",
+            endDate: "",
+            shifts: {},
+          };
+          section[b.component].push(row);
+        }
+
+        const date = formatDateLocal(b.shift_from_dt);
+
+        if (!row.shifts[date]) row.shifts[date] = [];
+
+        row.shifts[date].push(b.shift);
+      });
+
+      // set start & end date
+      Object.values(section).forEach((rows) => {
+        rows.forEach((row) => {
+          const dates = Object.keys(row.shifts).sort();
+          if (dates.length) {
+            row.startDate = dates[0];
+            row.endDate = dates[dates.length - 1];
+          }
+        });
+      });
+
+      return section;
+    };
+
+    const coatingSection = buildPlanningSection(
+      design.planning_work_details.coating_machine_plan?.bookings || [],
+    );
+
+    const printingSection = buildPlanningSection(
+      design.planning_work_details.printing_machine_plan?.bookings || [],
+    );
+
+    setPlanningData({
+      coating: coatingSection,
+      printing: printingSection,
+    });
+  }, [design]);
+
+  useEffect(() => {
     return () => {
       if (currentImage?.startsWith("blob:")) {
         URL.revokeObjectURL(currentImage);
@@ -521,6 +1175,55 @@ function EditPlan() {
       }));
     }
   }, [design]);
+
+  const usedShiftMap = useMemo(() => {
+    const map = {};
+
+    const addFromPlanningData = (section) => {
+      Object.entries(section).forEach(([component, rows]) => {
+        rows.forEach((row) => {
+          if (!row.machine) return;
+
+          Object.entries(row.shifts || {}).forEach(([date, shifts]) => {
+            shifts.forEach((shift) => {
+              const key = `${row.machine}_${date}`;
+
+              if (!map[key]) map[key] = new Set();
+
+              map[key].add(shift);
+            });
+          });
+        });
+      });
+    };
+
+    const addFromExistingBookings = (bookings = []) => {
+      bookings.forEach((b) => {
+        const date = formatDateLocal(b.shift_from_dt);
+
+        const key = `${b.machine}_${date}`;
+
+        if (!map[key]) map[key] = new Set();
+
+        map[key].add(b.shift);
+      });
+    };
+
+    // from UI planning
+    addFromPlanningData(planningData.coating);
+    addFromPlanningData(planningData.printing);
+
+    // from backend existing bookings
+    addFromExistingBookings(
+      design?.planning_work_details?.coating_machine_plan?.bookings,
+    );
+
+    addFromExistingBookings(
+      design?.planning_work_details?.printing_machine_plan?.bookings,
+    );
+
+    return map;
+  }, [planningData, design]);
 
   // Handler Functions
 
@@ -548,25 +1251,95 @@ function EditPlan() {
     setCurrentImage("");
   };
 
-  const handleSubmit = () => {
-    console.log("Submit");
+  const generateBookings = (planningSection) => {
+    const bookings = [];
+
+    Object.entries(planningSection).forEach(([componentName, rows]) => {
+      rows.forEach((row) => {
+        if (!row.machine) return;
+
+        Object.entries(row.shifts || {}).forEach(([date, shifts]) => {
+          if (!shifts?.length) return;
+
+          shifts.forEach((shift) => {
+            const shiftConfig = SHIFT_CONFIG[shift];
+
+            let from = `${date}T${shiftConfig.from}:00`;
+            let toDate = date;
+
+            if (shiftConfig.crossDay) {
+              const temp = new Date(date);
+              temp.setDate(temp.getDate() + 1);
+              toDate = formatDateLocal(temp);
+            }
+
+            let to = `${toDate}T${shiftConfig.to}:00`;
+
+            bookings.push({
+              component: componentName,
+              process: row.process,
+              machine: row.machine,
+              shift,
+              shift_from_dt: from,
+              shift_to_dt: to,
+            });
+          });
+        });
+      });
+    });
+
+    return bookings;
   };
 
+  const handleArtworkView = () => {
+    if (!design?.file_name || !design?.file_ext) return;
+
+    const imageUrl = `${server?.defaults?.baseURL}/artworkImages/${encodeURIComponent(
+      design?.file_name,
+    )}.${design?.file_ext}`;
+
+    setCurrentImage(imageUrl);
+    setOpen(true);
+  };
+
+  const handleSubmit = async (status) => {
+    try {
+      const coatingBookings = generateBookings(planningData.coating);
+
+      const printingBookings = generateBookings(planningData.printing);
+
+      if (!coatingBookings.length && !printingBookings.length) {
+        toast.error("Please plan at least one machine shift");
+        return;
+      }
+
+      const payload = {
+        saleorder_no: formData.saleorder_no,
+
+        planning_status: status === "FINAL" ? 2 : status === "PENDING" ? 1 : 0,
+
+        planning_work_details: {
+          coating_machine_plan: {
+            bookings: coatingBookings,
+          },
+
+          printing_machine_plan: {
+            bookings: printingBookings,
+          },
+        },
+      };
+
+      await server.post(`/design/add`, payload);
+
+      toast.success("Planning Saved");
+
+      navigate("/planning_dashboard");
+    } catch (err) {
+      toast.error("Save Failed");
+    }
+  };
   const handleCancel = () => {
-    const soNo = formData.saleorder_no;
-
-    Object.keys(localStorage)
-      .filter((key) => key.startsWith(`COATING_${soNo}_`))
-      .forEach((key) => localStorage.removeItem(key));
-
-    setComponents({});
-    setTimeout(() => {
-      setComponents(initialComponentsState);
-    }, 0);
-
-    toast.info("Changes cleared. Initial values restored.");
-
-    navigate("/coating_dashboard");
+    navigate("/planning_dashboard");
   };
 
   const modalStyle = {
@@ -586,12 +1359,12 @@ function EditPlan() {
           <div className="main-inner-txts">
             <Link
               style={{ color: "#0a85cb", textDecoration: "none" }}
-              to={"/coating_dashboard"}
+              to={"/Planning_dashboard"}
             >
-              Coating Dashboard
+              Planning Dashboard
             </Link>
             <KeyboardArrowRightIcon sx={{ color: "#0a85cb" }} />
-            <div>Edit Coating</div>
+            <div>Edit Planning</div>
           </div>
         </Box>
       </Box>
@@ -620,9 +1393,7 @@ function EditPlan() {
                   type="date"
                   value={
                     formData?.posting_date
-                      ? new Date(formData?.posting_date)
-                          .toISOString()
-                          .split("T")[0]
+                      ? formatDateLocal(formData?.posting_date)
                       : ""
                   }
                   disabled
@@ -640,20 +1411,8 @@ function EditPlan() {
                   disabled
                 />
               </FormGroup>
+              
             </Grid>
-
-            <Grid size={2}>
-              <FormGroup>
-                <Typography mb={1}>Sales Person</Typography>
-                <TextField
-                  id="outlined-size-small"
-                  size="small"
-                  value={formData?.sales_employee}
-                  disabled
-                />
-              </FormGroup>
-            </Grid>
-
             <Grid size={2}>
               <FormGroup>
                 <Typography mb={1}>Total Qty</Typography>
@@ -669,6 +1428,29 @@ function EditPlan() {
 
             <Grid size={2}>
               <FormGroup>
+                <Typography mb={1}>Sales Person</Typography>
+                <TextField
+                  id="outlined-size-small"
+                  size="small"
+                  value={formData?.sales_employee}
+                  disabled
+                />
+              </FormGroup>
+            </Grid>
+            <Grid size={2}>
+              <FormGroup>
+                <Typography mb={1}>SP Contact No</Typography>
+                <TextField
+                  id="outlined-size-small"
+                  size="small"
+                  value={formData?.telephone}
+                  disabled
+                />
+              </FormGroup>
+            </Grid>
+
+            {/* <Grid size={2}>
+              <FormGroup>
                 <Typography mb={1}>Fab Site</Typography>
                 <TextField
                   id="outlined-size-small"
@@ -678,10 +1460,36 @@ function EditPlan() {
                   disabled
                 />
               </FormGroup>
+            </Grid> */}
+
+            <Grid size={12}>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "5px",
+                }}
+              >
+                {/* Left Side - Machine Calendar */}
+                <button
+                  className="gray-md-btn"
+                  onClick={() => navigate("/machine_calendar")}
+                >
+                  <CalendarMonthOutlinedIcon style={{ fontSize: 20 }} /> Machine
+                  Calendar
+                </button>
+
+                {/* Right Side - Artwork Image */}
+                <button className="gray-md-btn" onClick={handleArtworkView}>
+                  <VisibilityIcon style={{ fontSize: 20 }} /> Artwork Image
+                </button>
+              </Box>
             </Grid>
           </Grid>
         </Box>
 
+        {/* Coating Machine plan  */}
         <Box
           sx={{
             background: "#fff",
@@ -701,13 +1509,6 @@ function EditPlan() {
                 }}
               >
                 <div>Coating Machine Plan</div>
-                <button
-                  className="gray-md-btn"
-                  onClick={() => navigate("/machine_calendar")}
-                >
-                  <CalendarMonthOutlinedIcon style={{ fontSize: 20 }} /> Machine
-                  Calendar
-                </button>
               </div>
             </Grid>
             {/* Header Start Here  */}
@@ -739,60 +1540,113 @@ function EditPlan() {
             <Grid size={1}>
               <div className="Box-table-subtitle">Shift</div>
             </Grid>
+
             <Grid size={1}>
-              <div className="Box-table-subtitle">Status</div>
+              <div className="Box-table-subtitle">Info</div>
             </Grid>
             {/* Header End Here  */}
 
-            {/* Render Component Rows */}
+            {/* Coating Render Componnet */}
             {Object.entries(components)
               .filter(([key]) =>
                 Object.keys(design?.components || {}).includes(key),
               )
               .map(([key, component]) => (
-                <ComponentRow
-                  key={key}
+                <MemoComponentRow
+                  key={`coating-${key}`}
                   component={component}
                   name={key}
                   onViewFile={handleViewFile}
                   totalQty={design?.item_quantity}
-                  soNumber={design?.saleorder_no}
+                  processType="coating"
+                  existingBookings={coatingBookings}
+                  usedShiftMap={usedShiftMap}
+                  onPlanningChange={(data) => {
+                    setPlanningData((prev) => ({
+                      ...prev,
+                      coating: {
+                        ...prev.coating,
+                        [key]: data,
+                      },
+                    }));
+                  }}
                 />
               ))}
           </Grid>
+        </Box>
 
-          {/* Action Buttons */}
+        <Box
+          sx={{
+            background: "#fff",
+            mt: 3,
+            boxShadow:
+              "rgba(0, 0, 0, 0.02) 0px 1px 3px 0px, rgba(27, 31, 35, 0.15) 0px 0px 0px 1px",
+          }}
+        >
+          <Grid container spacing={0.5}>
+            <Grid size={12}>
+              <div className="Box-table-title">Printing Machine Plan</div>
+            </Grid>
 
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "flex-end",
-              p: 2,
-              mt: 2,
-              gap: 2,
-            }}
-          >
-            <Button
-              variant="contained"
-              color="error"
-              onClick={handleCancel}
-              sx={{ minWidth: 100 }}
-            >
-              Cancel
-            </Button>
+            {/* Header */}
+            <Grid size={1}>
+              <div className="Box-table-subtitle">Component</div>
+            </Grid>
+            <Grid size={1.5}>
+              <div className="Box-table-subtitle">Sheet Size</div>
+            </Grid>
+            <Grid size={1}>
+              <div className="Box-table-subtitle">No of Sheets</div>
+            </Grid>
+            <Grid size={1}>
+              <div className="Box-table-subtitle">Source File</div>
+            </Grid>
+            <Grid size={1.5}>
+              <div className="Box-table-subtitle">Printing Type</div>
+            </Grid>
+            <Grid size={1}>
+              <div className="Box-table-subtitle">Machine</div>
+            </Grid>
+            <Grid size={1.5}>
+              <div className="Box-table-subtitle">Start Date</div>
+            </Grid>
+            <Grid size={1.5}>
+              <div className="Box-table-subtitle">End Date</div>
+            </Grid>
+            <Grid size={1}>
+              <div className="Box-table-subtitle">Shift</div>
+            </Grid>
+            <Grid size={1}>
+              <div className="Box-table-subtitle">Info</div>
+            </Grid>
 
-            <Button variant="contained" color="primary" sx={{ minWidth: 100 }}>
-              Pending
-            </Button>
-
-            <Button
-              variant="contained"
-              color="success"
-              onClick={() => handleSubmit("FINAL")}
-            >
-              Submit
-            </Button>
-          </Box>
+            {/* Printing Render Componnet */}
+            {Object.entries(components)
+              .filter(([key]) =>
+                Object.keys(design?.components || {}).includes(key),
+              )
+              .map(([key, component]) => (
+                <MemoComponentRow
+                  key={`printing-${key}`}
+                  component={component}
+                  name={key}
+                  onViewFile={handleViewFile}
+                  totalQty={design?.item_quantity}
+                  processType="printing"
+                  existingBookings={printingBookings}
+                  usedShiftMap={usedShiftMap}
+                  onPlanningChange={(data) => {
+                    setPlanningData((prev) => ({
+                      ...prev,
+                      printing: {
+                        ...prev.printing,
+                        [key]: data,
+                      },
+                    }));
+                  }}
+                />
+              ))}
+          </Grid>
         </Box>
 
         {/* File Preview Modal */}
@@ -859,8 +1713,18 @@ function EditPlan() {
                   <MenuItem value="" disabled>
                     Select
                   </MenuItem>
-                  <MenuItem value="Work is Not Completed">
-                    Work is Not Completed
+                  <MenuItem value="Material Not Available">
+                    Material Not Available
+                  </MenuItem>
+                  <MenuItem value="No Man Power">No Man Power</MenuItem>
+                  <MenuItem value="Machine Breakdown - Mechanical">
+                    Machine Breakdown - Mechanical
+                  </MenuItem>
+                  <MenuItem value="Machine Breakdown - Electrical">
+                    Machine Breakdown - Electrical
+                  </MenuItem>
+                  <MenuItem value="Flim Plate Damage">
+                    Flim Plate Damage
                   </MenuItem>
                 </Select>
               </Grid>
@@ -900,8 +1764,48 @@ function EditPlan() {
           </DialogActions>
         </Dialog>
       </Box>
+      {/* Action Buttons */}
+
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "flex-end",
+          p: 2,
+          mt: 2,
+          gap: 2,
+          mr: 6,
+        }}
+      >
+        <Button
+          variant="contained"
+          color="error"
+          onClick={handleCancel}
+          sx={{ minWidth: 100 }}
+        >
+          Cancel
+        </Button>
+
+        <Button
+          variant="contained"
+          color="primary"
+          sx={{ minWidth: 100 }}
+          onClick={() => setOpenPending(true)}
+        >
+          Pending
+        </Button>
+
+        <Button
+          variant="contained"
+          color="success"
+          onClick={() => handleSubmit("FINAL")}
+        >
+          Submit
+        </Button>
+      </Box>
     </Box>
   );
 }
+
+const MemoComponentRow = React.memo(ComponentRow);
 
 export default EditPlan;

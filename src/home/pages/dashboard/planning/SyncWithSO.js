@@ -10,7 +10,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { SalesOrder } from "../../../../API/Salesorder";
 
 function SyncWithSO() {
-  const { salesOrders, sync, lastSync } = SalesOrder();
+  const { salesOrders, sync, lastSync, syncProgress, isSyncing } = SalesOrder();
 
   const navigate = useNavigate();
 
@@ -102,7 +102,7 @@ function SyncWithSO() {
         ),
       },
     ],
-    []
+    [],
   );
 
   return (
@@ -117,8 +117,17 @@ function SyncWithSO() {
               alignItems: "center",
             }}
           >
-            <button className="gray-md-btn" onClick={sync}>
-              <SyncIcon /> Sync With SO
+            <button className="gray-md-btn" onClick={sync} disabled={isSyncing}>
+              <SyncIcon
+                sx={{
+                  animation: isSyncing ? "spin 1s linear infinite" : "none",
+                  "@keyframes spin": {
+                    from: { transform: "rotate(0deg)" },
+                    to: { transform: "rotate(360deg)" },
+                  },
+                }}
+              />
+              {isSyncing ? ` Syncing... ${syncProgress}%` : " Sync With SO"}
             </button>
 
             {lastSync && (

@@ -17,6 +17,7 @@ import {
   FormControl,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import { toast } from "react-toastify";
 
 export const CoatingTypeModal = ({ open, onClose, onSubmit, value }) => {
   // Initial Values
@@ -61,12 +62,12 @@ export const CoatingTypeModal = ({ open, onClose, onSubmit, value }) => {
       getCoatingValues.insideColor.length === 0 &&
       getCoatingValues.varnish.length === 0
     ) {
-      alert("Please select at least one coating option");
+      toast.error("Please select at least one coating option");
       return;
     }
 
     if (getCoatingValues?.coatingCount <= 0) {
-      alert("Please enter valid coating count");
+      toast.error("Please enter valid coating count");
       return;
     }
 
@@ -87,7 +88,13 @@ export const CoatingTypeModal = ({ open, onClose, onSubmit, value }) => {
       maxWidth="sm"
       PaperProps={{ sx: { borderRadius: "16px" } }}
     >
-      <DialogTitle sx={{ display: "flex", justifyContent: "space-between" }}>
+      <DialogTitle
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
         <Typography variant="h6" fontWeight="bold" color="#0a85cb">
           Coating Type
         </Typography>
@@ -288,7 +295,7 @@ export const PrintingColorModal = ({ open, onClose, onSubmit, value }) => {
       getPrintingValues.normalColor.length === 0 &&
       getPrintingValues.splColor.length === 0
     ) {
-      alert("Please select at least one printing color");
+      toast.error("Please select at least one printing color");
       return;
     }
 
@@ -309,7 +316,13 @@ export const PrintingColorModal = ({ open, onClose, onSubmit, value }) => {
       maxWidth="sm"
       PaperProps={{ sx: { borderRadius: "16px" } }}
     >
-      <DialogTitle sx={{ display: "flex", justifyContent: "space-between" }}>
+      <DialogTitle
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
         <Typography variant="h6" fontWeight="bold" color="#0a85cb">
           Printing Color
         </Typography>

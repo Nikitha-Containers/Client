@@ -179,11 +179,11 @@ const ComponentRow = ({
       <Grid size={1}>
         <div className="Box-table-upload">
           <Button
-            color={selectedCoating[name] ? "success" : "neutral"}
+            color={selectedCoating[name] ? "error" : "neutral"}
             variant="outlined"
             onClick={() => onOpenCoating(name)}
           >
-            {selectedCoating[name] ? "Selected" : "Select"}
+            {selectedCoating[name] ? "Edit" : "Select"}
           </Button>
         </div>
       </Grid>
@@ -192,11 +192,11 @@ const ComponentRow = ({
       <Grid size={1}>
         <div className="Box-table-upload">
           <Button
-            color={selectedColor[name] ? "success" : "neutral"}
+            color={selectedColor[name] ? "error" : "neutral"}
             variant="outlined"
             onClick={() => onOpenColor(name)}
           >
-            {selectedColor[name] ? "Selected" : "Select"}
+            {selectedColor[name] ? "Edit" : "Select"}
           </Button>
         </div>
       </Grid>
@@ -220,7 +220,7 @@ function EditPrint() {
       : "",
     item_quantity: design?.item_quantity || "",
     sales_employee: design?.sales_employee || "",
-    sales_person_code: design?.sales_person_code || "",
+    telephone: design?.telephone || "",
     art_work: design?.art_work || "NA",
   });
 
@@ -341,6 +341,17 @@ function EditPrint() {
         ? file
         : `${server?.defaults?.baseURL}/uploads/${file}`;
     }
+    setCurrentImage(imageUrl);
+    setOpen(true);
+  };
+
+  const handleArtworkView = () => {
+    if (!design?.file_name || !design?.file_ext) return;
+
+    const imageUrl = `${server?.defaults?.baseURL}/artworkImages/${encodeURIComponent(
+      design?.file_name,
+    )}.${design?.file_ext}`;
+
     setCurrentImage(imageUrl);
     setOpen(true);
   };
@@ -587,9 +598,9 @@ function EditPrint() {
                   name=""
                   size="small"
                   type="text"
-                  value={formData?.sales_person_code}
+                  value={formData?.telephone}
                   onChange={(e) =>
-                    handleFormChange("sales_person_code", e.target.value)
+                    handleFormChange("telephone", e.target.value)
                   }
                   disabled
                 />
@@ -621,7 +632,7 @@ function EditPrint() {
                     {formData?.art_work || "NA"}
                   </span>
                 </div>
-                <button className="gray-md-btn">
+                <button className="gray-md-btn" onClick={handleArtworkView}>
                   <VisibilityIcon style={{ fontSize: 20 }} /> Artwork Image
                 </button>
               </div>
@@ -725,7 +736,7 @@ function EditPrint() {
           <Box sx={modalStyle}>
             <img
               src={currentImage}
-              alt="preview"
+              alt="Image Not Available"
               style={{
                 width: "100%",
                 height: "auto",
@@ -827,8 +838,18 @@ function EditPrint() {
                   <MenuItem value="" disabled>
                     Select
                   </MenuItem>
-                  <MenuItem value="Print Color Not Availbale">
-                    Print Color Not Availbale
+                  <MenuItem value="Material Not Available">
+                    Material Not Available
+                  </MenuItem>
+                  <MenuItem value="No Man Power">No Man Power</MenuItem>
+                  <MenuItem value="Machine Breakdown - Mechanical">
+                    Machine Breakdown - Mechanical
+                  </MenuItem>
+                  <MenuItem value="Machine Breakdown - Electrical">
+                    Machine Breakdown - Electrical
+                  </MenuItem>
+                  <MenuItem value="Flim Plate Damage">
+                    Flim Plate Damage
                   </MenuItem>
                 </Select>
               </Grid>

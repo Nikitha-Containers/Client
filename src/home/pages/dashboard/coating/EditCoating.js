@@ -27,6 +27,8 @@ import PlayCircleFilledWhiteIcon from "@mui/icons-material/PlayCircleFilledWhite
 import StopCircleIcon from "@mui/icons-material/StopCircle";
 import TimerIcon from "@mui/icons-material/Timer";
 import TimerOffIcon from "@mui/icons-material/TimerOff";
+import { Accordion, AccordionSummary, AccordionDetails } from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 import { toast } from "react-toastify";
 
@@ -498,6 +500,7 @@ function EditCoating() {
   const navigate = useNavigate();
   const location = useLocation();
   const { design } = location?.state || {};
+  console.log("design", design);
 
   const [open, setOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState("");
@@ -514,7 +517,8 @@ function EditCoating() {
     item_quantity: design?.item_quantity || "",
     shift: design?.planning_work_details?.shift || "",
     fab_site: design?.planning_work_details?.fab_site || "",
-    sales_person_code: design?.sales_person_code || "",
+    sales_employee: design?.sales_employee || "",
+    telephone: design?.telephone || "",
     machine: design?.machine,
     coating_operator_name: design?.coating_operator_name,
     art_work: design?.art_work || "NA",
@@ -661,6 +665,16 @@ function EditCoating() {
         ? file
         : `${server?.defaults?.baseURL}/uploads/${file}`;
     }
+    setCurrentImage(imageUrl);
+    setOpen(true);
+  };
+  const handleArtworkView = () => {
+    if (!design?.file_name || !design?.file_ext) return;
+
+    const imageUrl = `${server?.defaults?.baseURL}/artworkImages/${encodeURIComponent(
+      design?.file_name,
+    )}.${design?.file_ext}`;
+
     setCurrentImage(imageUrl);
     setOpen(true);
   };
@@ -902,7 +916,7 @@ function EditCoating() {
               </FormGroup>
             </Grid>
 
-            <Grid size={2}>
+            {/* <Grid size={2}>
               <FormGroup>
                 <Typography mb={1}>Machine</Typography>
                 <TextField
@@ -913,9 +927,9 @@ function EditCoating() {
                   disabled
                 />
               </FormGroup>
-            </Grid>
+            </Grid> */}
 
-            <Grid size={2}>
+            {/* <Grid size={2}>
               <FormGroup>
                 <Typography mb={1}>Shift</Typography>
                 <TextField
@@ -926,8 +940,9 @@ function EditCoating() {
                   disabled
                 />
               </FormGroup>
-            </Grid>
-            <Grid size={2}>
+            </Grid> */}
+
+            {/* <Grid size={2}>
               <FormGroup>
                 <Typography mb={1}>Fab Site</Typography>
                 <TextField
@@ -935,6 +950,32 @@ function EditCoating() {
                   name=""
                   size="small"
                   value={formData?.fab_site}
+                  disabled
+                />
+              </FormGroup>
+            </Grid> */}
+
+            <Grid size={2}>
+              <FormGroup>
+                <Typography mb={1}>Sales Person</Typography>
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  value={formData?.sales_employee}
+                  disabled
+                />
+              </FormGroup>
+            </Grid>
+
+            <Grid size={2}>
+              <FormGroup>
+                <Typography mb={1}>SP Contact No</Typography>
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  value={formData?.telephone}
                   disabled
                 />
               </FormGroup>
@@ -958,9 +999,9 @@ function EditCoating() {
                   <MenuItem value="" disabled>
                     Select
                   </MenuItem>
-                  <MenuItem value="Name 1">Name 1</MenuItem>
-                  <MenuItem value="Name 2">Name 2</MenuItem>
-                  <MenuItem value="Name 3">Name 3</MenuItem>
+                  <MenuItem value="KATHIRAVAN K">KATHIRAVAN K</MenuItem>
+                  <MenuItem value="AMARNATH D">AMARNATH D</MenuItem>
+                  <MenuItem value="SAMAY MARANDI">SAMAY MARANDI</MenuItem>
                 </Select>
               </FormGroup>
             </Grid>
@@ -991,7 +1032,7 @@ function EditCoating() {
                     {design?.art_work || "NA"}
                   </span>
                 </div>
-                <button className="gray-md-btn">
+                <button className="gray-md-btn" onClick={handleArtworkView}>
                   <VisibilityIcon style={{ fontSize: 20 }} /> Artwork Image
                 </button>
               </div>

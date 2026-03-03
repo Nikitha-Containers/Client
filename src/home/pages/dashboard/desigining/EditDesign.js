@@ -280,8 +280,7 @@ function EditDesign() {
     customer_name: design?.customer_name || salesOrder?.customer_name || "",
     due_date: design?.due_date || salesOrder?.due_date || "",
     sales_employee: design?.sales_employee || salesOrder?.sales_employee || "",
-    sales_person_code:
-      design?.sales_person_code || salesOrder?.sales_person_code || "",
+    telephone: design?.telephone || salesOrder?.telephone || "",
   };
 
   const [formData, setFormData] = useState(initialComp);
@@ -421,6 +420,17 @@ function EditDesign() {
     setOpen(true);
   };
 
+  const handleArtworkView = () => {
+    if (!salesOrder?.file_name || !salesOrder?.file_ext) return;
+
+    const imageUrl = `${server?.defaults?.baseURL}/artworkImages/${encodeURIComponent(
+      salesOrder.file_name,
+    )}.${salesOrder.file_ext}`;
+
+    setCurrentImage(imageUrl);
+    setOpen(true);
+  };
+
   const handleSubmit = async (type) => {
     setIsSubmitted(true);
     const fullComponents = {};
@@ -472,7 +482,8 @@ function EditDesign() {
     formDataToSend.append("posting_date", formData?.posting_date);
     formDataToSend.append("item_quantity", formData?.item_quantity);
     formDataToSend.append("sales_employee", formData?.sales_employee);
-    formDataToSend.append("sales_person_code", formData?.sales_person_code);
+    formDataToSend.append("telephone", formData?.telephone);
+
     formDataToSend.append("components", JSON.stringify(fullComponents));
     formDataToSend.append(
       "art_work",
@@ -491,6 +502,8 @@ function EditDesign() {
       formData?.due_date || salesOrder?.due_date || "",
     );
     formDataToSend.append("design_status", design_status);
+    formDataToSend.append("file_name", salesOrder?.file_name || "");
+    formDataToSend.append("file_ext", salesOrder?.file_ext || "");
 
     formDataToSend.append(
       "design_pending_details",
@@ -639,9 +652,9 @@ function EditDesign() {
                   name=""
                   size="small"
                   type="text"
-                  value={formData?.sales_person_code}
+                  value={formData?.telephone}
                   onChange={(e) =>
-                    handleFormChange("sales_person_code", e.target.value)
+                    handleFormChange("telephone", e.target.value)
                   }
                   disabled
                 />
@@ -679,7 +692,7 @@ function EditDesign() {
                   </span>
                 </div>
 
-                <button className="gray-md-btn">
+                <button className="gray-md-btn" onClick={handleArtworkView}>
                   <VisibilityIcon style={{ fontSize: 20 }} />
                   Artwork Image
                 </button>
@@ -772,7 +785,7 @@ function EditDesign() {
           <Box sx={modalStyle}>
             <img
               src={currentImage}
-              alt="ups-modal"
+              alt="Image Not Available"
               style={{
                 width: "100%",
                 height: "auto",

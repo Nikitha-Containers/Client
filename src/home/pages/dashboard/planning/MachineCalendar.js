@@ -16,22 +16,10 @@ function MachineCalendar() {
       title: "COATING MACHINES",
       children: [
         {
-          id: "Machine 1",
-          title: "Machine 1",
+          id: "Crab Tree",
+          title: "Crab Tree",
           eventColor: "#1e88e5",
           labelColor: "#1e88e5",
-        },
-        {
-          id: "Machine 2",
-          title: "Machine 2",
-          eventColor: "#43a047",
-          labelColor: "#43a047",
-        },
-        {
-          id: "Machine 3",
-          title: "Machine 3",
-          eventColor: "#8e24aa",
-          labelColor: "#8e24aa",
         },
       ],
     },

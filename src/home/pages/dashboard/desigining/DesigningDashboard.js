@@ -167,7 +167,7 @@ const DesigningDashboard = () => {
         ),
       },
     ],
-    [designMap]
+    [designMap],
   );
 
   return (

@@ -507,7 +507,8 @@ function EditPrintingTeam() {
     item_quantity: design?.item_quantity || "",
     shift: design?.planning_work_details?.shift || "",
     fab_site: design?.planning_work_details?.fab_site || "",
-    sales_person_code: design?.sales_person_code || "",
+    sales_employee: design?.sales_employee || "",
+    telephone: design?.telephone || "",
     machine: design?.machine,
     printingteam_operator_name: design?.printingteam_operator_name,
     art_work: design?.art_work || "NA",
@@ -650,6 +651,16 @@ function EditPrintingTeam() {
     setOpen(true);
   };
 
+  const handleArtworkView = () => {
+    if (!design?.file_name || !design?.file_ext) return;
+
+    const imageUrl = `${server?.defaults?.baseURL}/artworkImages/${encodeURIComponent(
+      design?.file_name,
+    )}.${design?.file_ext}`;
+
+    setCurrentImage(imageUrl);
+    setOpen(true);
+  };
   const handleOpen = () => setOpen(true);
 
   const handleClose = () => {
@@ -881,6 +892,32 @@ function EditPrintingTeam() {
 
             <Grid size={2}>
               <FormGroup>
+                <Typography mb={1}>Sales Person</Typography>
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  value={formData?.sales_employee}
+                  disabled
+                />
+              </FormGroup>
+            </Grid>
+
+            <Grid size={2}>
+              <FormGroup>
+                <Typography mb={1}>SP Contact No</Typography>
+                <TextField
+                  id="outlined-size-small"
+                  name=""
+                  size="small"
+                  value={formData?.telephone}
+                  disabled
+                />
+              </FormGroup>
+            </Grid>
+
+            {/* <Grid size={2}>
+              <FormGroup>
                 <Typography mb={1}>Machine</Typography>
                 <TextField
                   id="outlined-size-small"
@@ -915,7 +952,7 @@ function EditPrintingTeam() {
                   disabled
                 />
               </FormGroup>
-            </Grid>
+            </Grid> */}
 
             <Grid size={2}>
               <FormGroup>
@@ -935,9 +972,21 @@ function EditPrintingTeam() {
                   <MenuItem value="" disabled>
                     Select
                   </MenuItem>
-                  <MenuItem value="Name 1">Name 1</MenuItem>
-                  <MenuItem value="Name 2">Name 2</MenuItem>
-                  <MenuItem value="Name 3">Name 3</MenuItem>
+                  <MenuItem value="SAKAYARAJ JOSEPH K">
+                    SAKAYARAJ JOSEPH K
+                  </MenuItem>
+                  <MenuItem value="ARUNA V">ARUNA V</MenuItem>
+                  <MenuItem value="GURURAJAN B">GURURAJAN B</MenuItem>
+                  <MenuItem value="KUZHANDAIVEL R">KUZHANDAIVEL R</MenuItem>
+                  <MenuItem value="SUBRAYAN S">SUBRAYAN S</MenuItem>
+                  <MenuItem value="NITHIYANANDHAM S">NITHIYANANDHAM S</MenuItem>
+                  <MenuItem value="DEEPAK.K.JEEN">DEEPAK.K.JEEN</MenuItem>
+                  <MenuItem value="DINABANDHU MAJHI">DINABANDHU MAJHI</MenuItem>
+                  <MenuItem value="SAGAYARAJ P">SAGAYARAJ P</MenuItem>
+                  <MenuItem value="KARTHIKEYAN R">KARTHIKEYAN R</MenuItem>
+                  <MenuItem value="AKHILESH R">AKHILESH R</MenuItem>
+                  <MenuItem value="GIRICHAND">GIRICHAND</MenuItem>
+                  <MenuItem value="SIDHU SOREN">SIDHU SOREN</MenuItem>
                 </Select>
               </FormGroup>
             </Grid>
@@ -968,12 +1017,12 @@ function EditPrintingTeam() {
                     {design?.art_work || "NA"}
                   </span>
                 </div>
-                <button className="gray-md-btn">
+                <button className="gray-md-btn" onClick={handleArtworkView}>
                   <VisibilityIcon style={{ fontSize: 20 }} /> Artwork Image
                 </button>
               </div>
             </Grid>
-            
+
             {/* Header Start Here  */}
             <Grid size={1}>
               <div className="Box-table-subtitle">Component</div>

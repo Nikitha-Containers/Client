@@ -3,7 +3,7 @@ import { styled } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Grid from "@mui/material/Grid";
-import { IconButton } from "@mui/material";
+import { FormControl, IconButton, MenuItem, Select } from "@mui/material";
 import Completed from "../../../../assets/icons/circle-check-solid.svg";
 import Pending from "../../../../assets/icons/hourglass-half-solid.svg";
 import Todaywork from "../../../../assets/icons/list-check-solid.svg";
@@ -31,6 +31,8 @@ const CoatingDashboard = () => {
   const { designs } = useDesign();
 
   const [getStatus, setStatus] = useState("all");
+  const [getShift, setShift] = useState("Shift 1");
+
 
   // Filter Coating For Dashboard
   const filterDesigns = useMemo(() => {
@@ -40,13 +42,13 @@ const CoatingDashboard = () => {
 
     if (getStatus === "pending") {
       return (designs || []).filter(
-        (d) => d.planning_status === 2 && d.coating_status === 1
+        (d) => d.planning_status === 2 && d.coating_status === 1,
       );
     }
 
     if (getStatus === "completed") {
       return (designs || []).filter(
-        (d) => d.planning_status === 2 && d.coating_status === 2
+        (d) => d.planning_status === 2 && d.coating_status === 2,
       );
     }
     return [];
@@ -59,13 +61,13 @@ const CoatingDashboard = () => {
 
   const pendingCount = useMemo(() => {
     return (designs || []).filter(
-      (d) => d.planning_status === 2 && d.coating_status === 1
+      (d) => d.planning_status === 2 && d.coating_status === 1,
     ).length;
   }, [designs]);
 
   const completedCount = useMemo(() => {
     return (designs || []).filter(
-      (d) => d.planning_status === 2 && d.coating_status === 2
+      (d) => d.planning_status === 2 && d.coating_status === 2,
     ).length;
   }, [designs]);
 
@@ -177,7 +179,7 @@ const CoatingDashboard = () => {
         ),
       },
     ],
-    []
+    [],
   );
 
   return (
@@ -292,17 +294,34 @@ const CoatingDashboard = () => {
               },
             }}
             renderTopToolbarCustomActions={({ table }) => (
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  width: "65%",
-                  padding: "0px 0px 0px 0px",
-                }}
-              >
-                <div className="table-title">{tableTitle[getStatus]}</div>
-              </Box>
+              <>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    width: "65%",
+                    padding: "0px 0px 0px 0px",
+                  }}
+                >
+                  <div className="table-title">{tableTitle[getStatus]}</div>
+                </Box>
+
+                <FormControl sx={{ width: "200px" }}>
+                  <Select
+                    value={getShift}
+                    size="small"
+                    onChange={(e) => {
+                      setShift(e.target.value);
+                    }}
+                  >
+                    <MenuItem value="General">General Shift</MenuItem>
+                    <MenuItem value="Shift 1">Shift 1</MenuItem>
+                    <MenuItem value="Shift 2">Shift 2</MenuItem>
+                    <MenuItem value="Shift 3">Shift 3</MenuItem>
+                  </Select>
+                </FormControl>
+              </>
             )}
           />
         </Box>
