@@ -351,6 +351,7 @@ const ComponentRow = ({ component, name, onViewFile, totalQty, soNumber }) => {
                     cursor: timer.status === "IDLE" ? "pointer" : "not-allowed",
                     color: "green",
                     opacity: timer.status === "IDLE" ? 1 : 0.3,
+                    fontSize: "32px",
                   }}
                 />
 
@@ -365,6 +366,7 @@ const ComponentRow = ({ component, name, onViewFile, totalQty, soNumber }) => {
                       timer.status === "RUNNING" ? "pointer" : "not-allowed",
                     color: "red",
                     opacity: timer.status === "RUNNING" ? 1 : 0.3,
+                    fontSize: "30px",
                   }}
                 />
 
@@ -380,6 +382,7 @@ const ComponentRow = ({ component, name, onViewFile, totalQty, soNumber }) => {
                       cursor:
                         timer.status === "RUNNING" ? "pointer" : "not-allowed",
                       color: "#0a85cb",
+                      fontSize: "30px",
                     }}
                     titleAccess="Stop CO Time"
                   />
@@ -395,6 +398,7 @@ const ComponentRow = ({ component, name, onViewFile, totalQty, soNumber }) => {
                         timer.status === "RUNNING" ? "pointer" : "not-allowed",
                       color: "#0a85cb",
                       opacity: timer.status === "RUNNING" ? 1 : 0.3,
+                      fontSize: "30px",
                     }}
                     titleAccess="Start CO Time"
                   />
@@ -501,11 +505,9 @@ function EditCoating() {
   const location = useLocation();
   const { design } = location?.state || {};
 
-
   const [open, setOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState("");
   const [components, setComponents] = useState({});
-
 
   const [formData, setFormData] = useState({
     customer_name: design?.customer_name || "",

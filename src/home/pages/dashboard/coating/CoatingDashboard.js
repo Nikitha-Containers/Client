@@ -33,7 +33,6 @@ const CoatingDashboard = () => {
   const [getStatus, setStatus] = useState("all");
   const [getShift, setShift] = useState("Shift 1");
 
-
   // Filter Coating For Dashboard
   const filterDesigns = useMemo(() => {
     if (getStatus === "all") {
@@ -123,7 +122,7 @@ const CoatingDashboard = () => {
         id: 4,
         accessorKey: "item_description",
         header: "Size",
-        size: 30,
+        size: 150,
       },
       {
         id: 5,
@@ -155,29 +154,29 @@ const CoatingDashboard = () => {
         size: 20,
         Cell: ({ row }) => <StatusChip status={getStatusText(row.original)} />,
       },
-      {
-        id: 9,
-        accessorKey: "actions",
-        header: "Actions",
-        size: 30,
-        Cell: ({ row }) => (
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              columnGap: "20px",
-            }}
-          >
-            <IconButton>
-              <EditIcon />
-            </IconButton>
-            <IconButton>
-              <DeleteIcon />
-            </IconButton>
-          </Box>
-        ),
-      },
+      // {
+      //   id: 9,
+      //   accessorKey: "actions",
+      //   header: "Actions",
+      //   size: 30,
+      //   Cell: ({ row }) => (
+      //     <Box
+      //       sx={{
+      //         display: "flex",
+      //         alignItems: "center",
+      //         justifyContent: "center",
+      //         columnGap: "20px",
+      //       }}
+      //     >
+      //       <IconButton>
+      //         <EditIcon />
+      //       </IconButton>
+      //       <IconButton>
+      //         <DeleteIcon />
+      //       </IconButton>
+      //     </Box>
+      //   ),
+      // },
     ],
     [],
   );

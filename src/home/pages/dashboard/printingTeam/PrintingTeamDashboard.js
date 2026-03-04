@@ -40,13 +40,13 @@ const PrintingTeamDashboard = () => {
 
     if (getStatus === "pending") {
       return (designs || []).filter(
-        (d) => d.coating_status === 2 && d.printingteam_status === 1
+        (d) => d.coating_status === 2 && d.printingteam_status === 1,
       );
     }
 
     if (getStatus === "completed") {
       return (designs || []).filter(
-        (d) => d.coating_status === 2 && d.printingteam_status === 2
+        (d) => d.coating_status === 2 && d.printingteam_status === 2,
       );
     }
     return [];
@@ -59,13 +59,13 @@ const PrintingTeamDashboard = () => {
 
   const pendingCount = useMemo(() => {
     return (designs || []).filter(
-      (d) => d.coating_status === 2 && d.printingteam_status === 1
+      (d) => d.coating_status === 2 && d.printingteam_status === 1,
     ).length;
   }, [designs]);
 
   const completedCount = useMemo(() => {
     return (designs || []).filter(
-      (d) => d.coating_status === 2 && d.printingteam_status === 2
+      (d) => d.coating_status === 2 && d.printingteam_status === 2,
     ).length;
   }, [designs]);
 
@@ -121,7 +121,7 @@ const PrintingTeamDashboard = () => {
         id: 4,
         accessorKey: "item_description",
         header: "Size",
-        size: 30,
+        size: 150,
       },
       {
         id: 5,
@@ -153,31 +153,31 @@ const PrintingTeamDashboard = () => {
         size: 20,
         Cell: ({ row }) => <StatusChip status={getStatusText(row.original)} />,
       },
-      {
-        id: 9,
-        accessorKey: "actions",
-        header: "Actions",
-        size: 30,
-        Cell: ({ row }) => (
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              columnGap: "20px",
-            }}
-          >
-            <IconButton>
-              <EditIcon />
-            </IconButton>
-            <IconButton>
-              <DeleteIcon />
-            </IconButton>
-          </Box>
-        ),
-      },
+      // {
+      //   id: 9,
+      //   accessorKey: "actions",
+      //   header: "Actions",
+      //   size: 30,
+      //   Cell: ({ row }) => (
+      //     <Box
+      //       sx={{
+      //         display: "flex",
+      //         alignItems: "center",
+      //         justifyContent: "center",
+      //         columnGap: "20px",
+      //       }}
+      //     >
+      //       <IconButton>
+      //         <EditIcon />
+      //       </IconButton>
+      //       <IconButton>
+      //         <DeleteIcon />
+      //       </IconButton>
+      //     </Box>
+      //   ),
+      // },
     ],
-    [navigate]
+    [navigate],
   );
 
   return (

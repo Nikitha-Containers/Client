@@ -108,7 +108,7 @@ const ComponentRow = ({
         <div className="Box-table-content">
           <TextField
             size="small"
-            type="number"
+            type="text"
             value={component?.thickness}
             onChange={(e) => onChangeField(name, "thickness", e.target.value)}
             sx={

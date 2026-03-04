@@ -285,7 +285,6 @@ function EditDesign() {
 
   const [formData, setFormData] = useState(initialComp);
 
-
   const createComponent = () => ({
     selected: false,
     length: "",
@@ -503,6 +502,7 @@ function EditDesign() {
     formDataToSend.append("design_status", design_status);
     formDataToSend.append("file_name", salesOrder?.file_name || "");
     formDataToSend.append("file_ext", salesOrder?.file_ext || "");
+    formDataToSend.append("thickness", salesOrder?.thickness || "");
 
     formDataToSend.append(
       "design_pending_details",
