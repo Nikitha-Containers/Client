@@ -176,7 +176,7 @@ const generateMultiShiftBookings = (plan, requiredDays) => {
 function EditPlanOld() {
   const { designs } = useDesign();
 
-  console.log("Designsss", designs);
+
 
   const navigate = useNavigate();
   const location = useLocation();

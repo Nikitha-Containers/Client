@@ -210,7 +210,7 @@ function EditPrint() {
   const navigate = useNavigate();
   const location = useLocation();
   const { design } = location?.state || {};
-  console.log("design", design);
+
 
   const [formData, setFormData] = useState({
     customer_name: design?.customer_name || "",

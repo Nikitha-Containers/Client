@@ -138,7 +138,6 @@ function Uploadsheet() {
   };
 
   const downloadSample = () => {
-    console.log("downloadSample");
     const link = document.createElement("a");
     link.href = sampleFile;
     link.download = "sample.xlsx";

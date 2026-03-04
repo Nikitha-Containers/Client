@@ -134,7 +134,7 @@ const ComponentRow = ({
         <div className="Box-table-content">
           <TextField
             size="small"
-            type="number"
+            type="text"
             value={component.thickness}
             onChange={(e) => onDataChange(name, "thickness", e.target.value)}
             disabled={!component.selected}
@@ -285,7 +285,6 @@ function EditDesign() {
 
   const [formData, setFormData] = useState(initialComp);
 
-  console.log("formData", salesOrder);
 
   const createComponent = () => ({
     selected: false,

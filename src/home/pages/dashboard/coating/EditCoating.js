@@ -500,13 +500,12 @@ function EditCoating() {
   const navigate = useNavigate();
   const location = useLocation();
   const { design } = location?.state || {};
-  console.log("design", design);
+
 
   const [open, setOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState("");
   const [components, setComponents] = useState({});
 
-  console.log("components", components);
 
   const [formData, setFormData] = useState({
     customer_name: design?.customer_name || "",

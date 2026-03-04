@@ -116,7 +116,7 @@ const DesigningDashboard = () => {
         header: "Customer Name",
         size: 30,
       },
-      { id: 4, accessorKey: "item_description", header: "Size", size: 30 },
+      { id: 4, accessorKey: "item_description", header: "Size", size: 150 },
       { id: 5, accessorKey: "item_quantity", header: "Quantity", size: 30 },
       {
         id: 6,
@@ -143,29 +143,29 @@ const DesigningDashboard = () => {
         Cell: ({ row }) => <StatusChip status={getStatusText(row.original)} />,
       },
 
-      {
-        id: 9,
-        accessorKey: "actions",
-        header: "Actions",
-        size: 30,
-        Cell: ({ row }) => (
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              columnGap: "20px",
-            }}
-          >
-            <IconButton>
-              <EditIcon />
-            </IconButton>
-            <IconButton>
-              <DeleteIcon />
-            </IconButton>
-          </Box>
-        ),
-      },
+      // {
+      //   id: 9,
+      //   accessorKey: "actions",
+      //   header: "Actions",
+      //   size: 30,
+      //   Cell: ({ row }) => (
+      //     <Box
+      //       sx={{
+      //         display: "flex",
+      //         alignItems: "center",
+      //         justifyContent: "center",
+      //         columnGap: "20px",
+      //       }}
+      //     >
+      //       <IconButton>
+      //         <EditIcon />
+      //       </IconButton>
+      //       <IconButton>
+      //         <DeleteIcon />
+      //       </IconButton>
+      //     </Box>
+      //   ),
+      // },
     ],
     [designMap],
   );

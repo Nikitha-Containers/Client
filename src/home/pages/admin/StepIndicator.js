@@ -112,7 +112,7 @@ function EditPlan() {
   const navigate = useNavigate();
   const location = useLocation();
   const design = location.state?.design;
-  console.log("macj=hine", design.machine);
+
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);

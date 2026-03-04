@@ -496,7 +496,7 @@ function EditPrintingTeam() {
   const [currentImage, setCurrentImage] = useState("");
   const [components, setComponents] = useState({});
 
-  console.log("components", components);
+
 
   const [formData, setFormData] = useState({
     customer_name: design?.customer_name || "",
