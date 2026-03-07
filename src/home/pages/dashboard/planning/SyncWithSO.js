@@ -1,20 +1,30 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
-import { IconButton, Button, Typography } from "@mui/material";
+import { IconButton, Typography } from "@mui/material";
 import SyncIcon from "@mui/icons-material/Sync";
 import { MaterialReactTable } from "material-react-table";
 import "../../../pages/pagestyle.scss";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { SalesOrder } from "../../../../API/Salesorder";
+import server from "../../../../server/server";
+import StatusChip from "../../../components/StatusChip";
 
 function SyncWithSO() {
-  const { salesOrders, sync, lastSync, syncProgress, isSyncing } = SalesOrder();
-
-  const navigate = useNavigate();
+  const { salesOrders, sync, lastSync, syncProgress, isSyncing, refetch } =
+    SalesOrder();
 
   const formatDate = (value) => {
+    if (!value) return "-";
+
+    const date = new Date(value?.$date || value);
+    if (isNaN(date)) return "-";
+
+    const [y, m, d] = date.toISOString().split("T")[0].split("-");
+    return `${d}/${m}/${y}`;
+  };
+
+  const formatDateTime = (value) => {
     if (!value) return "";
 
     const date = new Date(value);
@@ -31,6 +41,14 @@ function SyncWithSO() {
 
     return `${day}-${month}-${year} ${formattedHour}:${minutes} ${ampm}`;
   };
+
+  const getStatusText = (row) => {
+    if (row.status === 0) return "CANCEL";
+    if (row.status === 1) return "ACTIVE";
+
+    return "ACTIVE";
+  };
+
   const columns = useMemo(
     () => [
       {
@@ -58,7 +76,7 @@ function SyncWithSO() {
         id: 4,
         accessorKey: "item_description",
         header: "Size",
-        size: 30,
+        size: 200,
       },
       {
         id: 5,
@@ -86,6 +104,16 @@ function SyncWithSO() {
       },
       {
         id: 8,
+        accessorKey: "status",
+        header: "Status",
+        size: 30,
+        Cell: ({ row }) => {
+          const statusText = getStatusText(row.original);
+          return <StatusChip status={statusText} />;
+        },
+      },
+      {
+        id: 9,
         accessorKey: "actions",
         header: "Actions",
         size: 30,
@@ -98,11 +126,13 @@ function SyncWithSO() {
               columnGap: "20px",
             }}
           >
-            <IconButton>
+            <IconButton color="primary" title="Edit SO" size="small">
               <EditIcon />
             </IconButton>
-            <IconButton>
-              <DeleteIcon />
+            <IconButton
+              onClick={() => handleDeleteSO(row?.original?.unique_id)}
+            >
+              <DeleteIcon color="error" title="Delete SO" size="small" />
             </IconButton>
           </Box>
         ),
@@ -110,6 +140,17 @@ function SyncWithSO() {
     ],
     [],
   );
+
+  // Soft Delete SO
+
+  const handleDeleteSO = async (id) => {
+    try {
+      await server.put(`/salesorder/${id}`, { status: 0 });
+      refetch();
+    } catch (error) {
+      console.error("Error cancelling SO", error);
+    }
+  };
 
   return (
     <Box className="Dashboard-con">
@@ -130,7 +171,7 @@ function SyncWithSO() {
 
             {lastSync && (
               <Typography style={{ fontSize: "14px", marginTop: "6px" }}>
-                Last Sync : {formatDate(lastSync)}
+                Last Sync : {formatDateTime(lastSync)}
               </Typography>
             )}
 

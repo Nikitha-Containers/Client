@@ -1,6 +1,7 @@
 import { Chip } from "@mui/material";
 
 const STATUS_CONFIG = {
+  // For All Dashboard
   NEW: {
     label: "New",
     color: "primary",
@@ -12,6 +13,17 @@ const STATUS_CONFIG = {
   COMPLETED: {
     label: "Completed",
     color: "success",
+  },
+
+  // For Sales Order Dashboard
+
+  ACTIVE: {
+    label: "Active",
+    color: "success",
+  },
+  CANCEL: {
+    label: "Cancel",
+    color: "error",
   },
 };
 
