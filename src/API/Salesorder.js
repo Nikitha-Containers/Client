@@ -15,34 +15,29 @@ export const SalesOrder = () => {
   const fetchSO = async () => {
     try {
       dispatch(setSOLoading());
+
       const response = await server.get("/salesorder");
+
       const data = response?.data?.data;
+
       dispatch(setSO(data));
 
-      if (data && data.length > 0) {
-        const latestRecord = data.reduce((a, b) =>
-          new Date(a.updatedAt) > new Date(b.updatedAt) ? a : b,
-        );
-
-        setLastSync(latestRecord.updatedAt);
-      }
+      setLastSync(response?.data?.lastSync);
     } catch (error) {
+      toast.error("Failed to fetch Sales Orders");
       dispatch(setSOError(error.message));
     }
   };
 
   const sapSync = async () => {
+    let interval;
     try {
       setIsSyncing(true);
       setSyncProgress(0);
 
-      const interval = setInterval(() => {
-        setSyncProgress((prev) => {
-          if (prev >= 90) return prev;
-          return prev + 10;
-        });
+      interval = setInterval(() => {
+        setSyncProgress((prev) => Math.min(prev + 5, 90));
       }, 300);
-
       const response = await server.post("/sap/sapSync");
 
       clearInterval(interval);
@@ -60,8 +55,11 @@ export const SalesOrder = () => {
         setSyncProgress(0);
       }, 800);
     } catch (error) {
+      toast.error("SAP Sync Failed");
       dispatch(setSOError(error.message));
       setIsSyncing(false);
+    } finally {
+      clearInterval(interval);
     }
   };
 
@@ -70,7 +68,7 @@ export const SalesOrder = () => {
   }, []);
 
   return {
-    salesOrders: getSO,
+    salesOrders: getSO || [],
     loading,
     error,
     refetch: fetchSO,

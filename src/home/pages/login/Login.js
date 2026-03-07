@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { styled } from "@mui/material/styles";
 import Alert from "@mui/material/Alert";
 import Stack from "@mui/material/Stack";
-import { Box, Button, Paper, TextField, Typography } from "@mui/material";
+import { Box, Paper, TextField, Typography } from "@mui/material";
+import LoadingButton from "@mui/lab/LoadingButton";
 import server from "../../../server/server";
 import "../../pages/pagestyle.scss";
 import GoogleAuth from "./GoogleAuth";
@@ -22,22 +23,28 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
 function Login() {
   const navigate = useNavigate();
 
+  const [loading, setLoading] = useState(false);
+
   const [getLoginVal, setLoginVal] = useState({
-    empID: "Admin",
-    password: "Admin@123",
+    empID: "",
+    password: "",
   });
 
   const [getLoginDetails, setLoginDetails] = useState("");
   const [getAuthPage, setAuthPage] = useState(false);
-
   // Custom function start here
 
-  const handleLogin = async () => {
+  const handleLogin = async (e) => {
+    e.preventDefault();
+
     if (!getLoginVal.empID || !getLoginVal.password) {
-      return alert("Please fill all fields");
+      setLoginDetails("Please fill all fields");
+      return;
     }
 
     try {
+      setLoading(true);
+
       const res = await server.post("/user/login", {
         empID: getLoginVal?.empID,
         password: getLoginVal?.password,
@@ -57,6 +64,8 @@ function Login() {
       }
     } catch (error) {
       setLoginDetails(error.response?.data?.message || "Login failed");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -65,7 +74,7 @@ function Login() {
     <Box
       sx={{
         minHeight: "100vh",
-        background: `#fff`,
+        background: "#fff",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -92,38 +101,42 @@ function Login() {
               )}
             </Stack>
 
-            <TextField
-              label="Emp ID"
-              variant="outlined"
-              fullWidth
-              margin="normal"
-              value={getLoginVal.empID}
-              onChange={(e) => {
-                setLoginVal({ ...getLoginVal, empID: e.target.value });
-              }}
-            />
+            <form onSubmit={handleLogin}>
+              <TextField
+                label="Emp ID"
+                variant="outlined"
+                fullWidth
+                autoFocus
+                margin="normal"
+                value={getLoginVal.empID}
+                onChange={(e) =>
+                  setLoginVal({ ...getLoginVal, empID: e.target.value })
+                }
+              />
 
-            <TextField
-              label="Password"
-              type="password"
-              variant="outlined"
-              fullWidth
-              margin="normal"
-              value={getLoginVal.password}
-              onChange={(e) => {
-                setLoginVal({ ...getLoginVal, password: e.target.value });
-              }}
-            />
+              <TextField
+                label="Password"
+                type="password"
+                variant="outlined"
+                fullWidth
+                margin="normal"
+                value={getLoginVal.password}
+                onChange={(e) =>
+                  setLoginVal({ ...getLoginVal, password: e.target.value })
+                }
+              />
 
-            <Button
-              variant="contained"
-              color="primary"
-              fullWidth
-              sx={{ mt: 3, py: 1.5, fontWeight: "bold" }}
-              onClick={handleLogin}
-            >
-              Login
-            </Button>
+              <LoadingButton
+                type="submit"
+                fullWidth
+                loading={loading}
+                variant="contained"
+                sx={{ mt: 3, py: 1.5, fontWeight: "bold" }}
+                disabled={loading}
+              >
+                Login
+              </LoadingButton>
+            </form>
           </StyledPaper>
         )}
       </Box>

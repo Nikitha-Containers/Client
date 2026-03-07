@@ -11,7 +11,7 @@ import { useEffect } from "react";
 export const useDesign = () => {
   const dispatch = useDispatch();
   const { getDesign, error, loading } = useSelector(
-    (state) => state.DesignInfo
+    (state) => state.DesignInfo,
   );
 
   const fetchDesign = async () => {
@@ -31,7 +31,7 @@ export const useDesign = () => {
   }, []);
 
   return {
-    designs: getDesign,
+    designs: getDesign || [],
     error,
     loading,
     refetch: fetchDesign,

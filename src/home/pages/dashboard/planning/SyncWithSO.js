@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
-import { IconButton, Button } from "@mui/material";
+import { IconButton, Button, Typography } from "@mui/material";
 import SyncIcon from "@mui/icons-material/Sync";
 import { MaterialReactTable } from "material-react-table";
 import "../../../pages/pagestyle.scss";
@@ -16,15 +16,21 @@ function SyncWithSO() {
 
   const formatDate = (value) => {
     if (!value) return "";
-    const dateString = value?.$date || value;
-    const [y, m, d] = new Date(dateString)
-      .toISOString()
-      .split("T")[0]
-      .split("-");
 
-    return `${d}/${m}/${y}`;
+    const date = new Date(value);
+
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+
+    const hours = date.getHours();
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+
+    const ampm = hours >= 12 ? "PM" : "AM";
+    const formattedHour = hours % 12 || 12;
+
+    return `${day}-${month}-${year} ${formattedHour}:${minutes} ${ampm}`;
   };
-
   const columns = useMemo(
     () => [
       {
@@ -108,34 +114,53 @@ function SyncWithSO() {
   return (
     <Box className="Dashboard-con">
       <Box className="breadcrump-con">
-        <Box className="main-title">
-          <div>Sales Order</div>
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-            }}
-          >
-            <button className="gray-md-btn" onClick={sync} disabled={isSyncing}>
-              <SyncIcon
-                sx={{
-                  animation: isSyncing ? "spin 1s linear infinite" : "none",
-                  "@keyframes spin": {
-                    from: { transform: "rotate(0deg)" },
-                    to: { transform: "rotate(360deg)" },
-                  },
-                }}
-              />
-              {isSyncing ? ` Syncing... ${syncProgress}%` : " Sync With SO"}
-            </button>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            background: "#ffffff",
+            padding: "20px 24px",
+            border: "1px solid #e5e7eb",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+          }}
+        >
+          <Box>
+            <Typography className="main-title">Sales Order</Typography>
 
             {lastSync && (
-              <span style={{ fontSize: "16px", marginTop: "16px" }}>
-                Last Sync: {new Date(lastSync).toLocaleString()}
-              </span>
+              <Typography style={{ fontSize: "14px", marginTop: "6px" }}>
+                Last Sync : {formatDate(lastSync)}
+              </Typography>
             )}
+
+            <Typography style={{ fontSize: "14px", marginTop: "4px" }}>
+              Total Records : {salesOrders?.length || 0}
+            </Typography>
           </Box>
+
+          <button
+            className="gray-md-btn"
+            onClick={sync}
+            disabled={isSyncing}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              fontWeight: "600",
+            }}
+          >
+            <SyncIcon
+              sx={{
+                animation: isSyncing ? "spin 1s linear infinite" : "none",
+                "@keyframes spin": {
+                  from: { transform: "rotate(0deg)" },
+                  to: { transform: "rotate(360deg)" },
+                },
+              }}
+            />
+            {isSyncing ? ` Syncing... ${syncProgress}%` : " Sync With SO"}
+          </button>
         </Box>
       </Box>
 
