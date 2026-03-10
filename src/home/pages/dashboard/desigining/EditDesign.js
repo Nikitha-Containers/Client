@@ -268,8 +268,17 @@ function EditDesign() {
   const location = useLocation();
   const { salesOrder, design } = location.state || {};
 
+  // Common Pending Reasons
+  const pendingReasons = [
+    "Artwork Change",
+    "Sheets Not Available",
+    "SO Correction",
+  ];
+
   const initialComp = {
+    unique_id: salesOrder?.unique_id || "",
     saleorder_no: salesOrder?.saleorder_no || "",
+    item_line_no: salesOrder?.item_line_no || "",
     posting_date: salesOrder?.posting_date
       ? new Date(salesOrder?.posting_date).toISOString().split("T")[0]
       : "",
@@ -309,9 +318,8 @@ function EditDesign() {
 
   const [openPending, setOpenPending] = useState(false);
   const [pendingData, setPendingData] = useState({
-    completedWork: "",
-    pendingWork: 0,
     reason: "",
+    otherReason: "",
   });
   const [open, setOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState("");
@@ -343,12 +351,13 @@ function EditDesign() {
   }, [design, salesOrder, initialComponentsState]);
 
   useEffect(() => {
-    if (design?.design_pending_details?.pending_reason) {
-      setPendingData((prev) => ({
-        ...prev,
-        reason: design.design_pending_details.pending_reason,
-      }));
-    }
+    const reason = design?.design_pending_details?.pending_reason;
+    if (!reason) return;
+
+    setPendingData({
+      reason: pendingReasons?.includes(reason) ? reason : "Others",
+      otherReason: pendingReasons?.includes(reason) ? "" : reason,
+    });
   }, [design]);
 
   useEffect(() => {
@@ -476,7 +485,9 @@ function EditDesign() {
       return;
     }
 
+    formDataToSend.append("unique_id", salesOrder?.unique_id);
     formDataToSend.append("saleorder_no", formData?.saleorder_no);
+    formDataToSend.append("item_line_no", salesOrder?.item_line_no);
     formDataToSend.append("posting_date", formData?.posting_date);
     formDataToSend.append("item_quantity", formData?.item_quantity);
     formDataToSend.append("sales_employee", formData?.sales_employee);
@@ -509,7 +520,9 @@ function EditDesign() {
       JSON.stringify({
         pending_reason:
           type === "PENDING"
-            ? pendingData.reason
+            ? pendingData.reason === "Others"
+              ? pendingData.otherReason
+              : pendingData.reason
             : design?.design_pending_details?.pending_reason || "",
       }),
     );
@@ -824,50 +837,6 @@ function EditDesign() {
 
         <DialogContent dividers>
           <Grid container spacing={2}>
-            {/* <Grid size={5}>
-              <Typography>No of Completed Works</Typography>
-            </Grid>
-            <Grid size={7}>
-              <Select
-                fullWidth
-                size="small"
-                value={pendingData?.completedWork}
-                onChange={(e) =>
-                  setPendingData({
-                    ...pendingData,
-                    completedWork: e.target.value,
-                  })
-                }
-                displayEmpty
-              >
-                <MenuItem value="">Select</MenuItem>
-                <MenuItem value="Coating - TDM">Coating - TDM</MenuItem>
-                <MenuItem value="Printing - TDM">Printing - TDM</MenuItem>
-              </Select>
-            </Grid> */}
-
-            {/* Pending Works */}
-
-            {/* <Grid size={5}>
-              <Typography>No of Pending Works</Typography>
-            </Grid>
-            <Grid size={7}>
-              <TextField
-                fullWidth
-                size="small"
-                type="number"
-                value={pendingData?.pendingWork}
-                onChange={(e) =>
-                  setPendingData({
-                    ...pendingData,
-                    pendingWork: e.target.value,
-                  })
-                }
-              />
-            </Grid> */}
-
-            {/* Reason */}
-
             <Grid size={5}>
               <Typography>Reason for Pending</Typography>
             </Grid>
@@ -887,11 +856,42 @@ function EditDesign() {
                 <MenuItem value="" disabled>
                   Select
                 </MenuItem>
-                <MenuItem value="Sheets Not Available">
-                  Sheets Not Available
-                </MenuItem>
+
+                {pendingReasons.map((reason) => (
+                  <MenuItem key={reason} value={reason}>
+                    {reason}
+                  </MenuItem>
+                ))}
+
+                <MenuItem value="Others">Others</MenuItem>
               </Select>
             </Grid>
+
+            {pendingData.reason === "Others" && (
+              <>
+                <Grid size={5}>
+                  <Typography>Enter Reason</Typography>
+                </Grid>
+
+                <Grid size={7}>
+                  <TextField
+                    autoFocus
+                    fullWidth
+                    size="small"
+                    multiline
+                    rows={3}
+                    placeholder="Enter Pending Reason"
+                    value={pendingData?.otherReason}
+                    onChange={(e) =>
+                      setPendingData({
+                        ...pendingData,
+                        otherReason: e.target.value,
+                      })
+                    }
+                  />
+                </Grid>
+              </>
+            )}
           </Grid>
         </DialogContent>
 
@@ -919,6 +919,12 @@ function EditDesign() {
                 toast.error("Please Select Pending Reason");
                 return;
               }
+
+              if (pendingData.reason === "Others" && !pendingData.otherReason) {
+                toast.error("Please enter pending reason");
+                return;
+              }
+
               setOpenPending(false);
               handleSubmit("PENDING");
             }}

@@ -54,7 +54,7 @@ const DesigningDashboard = () => {
   const designMap = useMemo(() => {
     const map = {};
     designs?.forEach((d) => {
-      map[String(d.saleorder_no).trim()] = d;
+      map[d?.unique_id] = d;
     });
     return map;
   }, [designs]);
@@ -63,33 +63,37 @@ const DesigningDashboard = () => {
     if (getStatus === "all") return salesOrders || [];
 
     return (salesOrders || []).filter((so) => {
-      const design = designMap[String(so.saleorder_no).trim()];
+      const design = designMap[so?.unique_id];
 
-      if (!design) return false;
-      if (getStatus === "pending") return design.design_status === 1;
-      if (getStatus === "completed") return design.design_status === 2;
+      if (getStatus === "pending") return design?.design_status === 1;
+
+      if (getStatus === "completed") return design?.design_status === 2;
 
       return false;
     });
   }, [getStatus, salesOrders, designMap]);
 
   const completedCount = useMemo(() => {
-    return designs?.filter((d) => d?.design_status === 2).length || 0;
-  }, [designs]);
+    return (salesOrders || []).filter(
+      (so) => designMap[so?.unique_id]?.design_status === 2,
+    ).length;
+  }, [salesOrders, designMap]);
 
   const pendingCount = useMemo(() => {
-    return designs?.filter((d) => d?.design_status === 1).length || 0;
-  }, [designs]);
+    return (salesOrders || []).filter(
+      (so) => designMap[so?.unique_id]?.design_status === 1,
+    ).length;
+  }, [salesOrders, designMap]);
 
   const allCount = salesOrders?.length || 0;
 
   // Chip For Status
   const getStatusText = (row) => {
-    const design = designMap[String(row.saleorder_no).trim()];
+    const status = designMap[row?.unique_id]?.design_status;
 
-    if (!design) return "NEW";
-    if (design?.design_status === 1) return "PENDING";
-    if (design?.design_status === 2) return "COMPLETED";
+    if (status === 1) return "PENDING";
+    if (status === 2) return "COMPLETED";
+
     return "NEW";
   };
 
@@ -256,10 +260,8 @@ const DesigningDashboard = () => {
             }}
             muiTableBodyRowProps={({ row }) => ({
               onClick: () => {
-                const salesOrderNo = row?.original?.saleorder_no;
-
                 const relatedDesign =
-                  designMap[String(salesOrderNo).trim()] || null;
+                  designMap[row?.original?.unique_id] || null;
 
                 navigate(`/edit_design`, {
                   state: {
