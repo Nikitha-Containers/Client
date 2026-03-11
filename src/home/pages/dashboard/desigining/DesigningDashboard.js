@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { styled } from "@mui/material/styles";
-import { Box, Paper, Grid, IconButton } from "@mui/material";
+import { Box, Paper, Grid, IconButton, Tooltip } from "@mui/material";
 import { MaterialReactTable } from "material-react-table";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -28,7 +28,9 @@ const Item = styled(Paper)(({ theme }) => ({
 
 const DesigningDashboard = () => {
   const navigate = useNavigate();
+
   const { salesOrders } = SalesOrder();
+
   const { designs } = useDesign();
 
   const [getStatus, setStatus] = useState("all");
@@ -59,6 +61,7 @@ const DesigningDashboard = () => {
     return map;
   }, [designs]);
 
+  // Filter Design For Dashboard
   const filterStatus = useMemo(() => {
     if (getStatus === "all") return salesOrders || [];
 
@@ -73,6 +76,7 @@ const DesigningDashboard = () => {
     });
   }, [getStatus, salesOrders, designMap]);
 
+  // Count for Cards
   const completedCount = useMemo(() => {
     return (salesOrders || []).filter(
       (so) => designMap[so?.unique_id]?.design_status === 2,
@@ -95,6 +99,11 @@ const DesigningDashboard = () => {
     if (status === 2) return "COMPLETED";
 
     return "NEW";
+  };
+
+  const getPendingReason = (row) => {
+    const design = designMap[row?.unique_id];
+    return design?.design_pending_details?.pending_reason || "";
   };
 
   const columns = useMemo(
@@ -144,7 +153,33 @@ const DesigningDashboard = () => {
         id: 8,
         header: "Status",
         size: 20,
-        Cell: ({ row }) => <StatusChip status={getStatusText(row.original)} />,
+        Cell: ({ row }) => {
+          const status = getStatusText(row.original);
+          const reason = getPendingReason(row.original);
+
+          if (status === "PENDING" && reason) {
+            return (
+              <Tooltip
+                title={reason}
+                arrow
+                slotProps={{
+                  tooltip: {
+                    sx: {
+                      fontSize: "15px",
+                      padding: "8px 12px",
+                    },
+                  },
+                }}
+              >
+                <span>
+                  <StatusChip status={status} />
+                </span>
+              </Tooltip>
+            );
+          }
+
+          return <StatusChip status={status} />;
+        },
       },
 
       // {

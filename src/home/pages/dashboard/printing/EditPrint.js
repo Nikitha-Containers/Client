@@ -36,6 +36,12 @@ const PrintingColorModal = lazy(() =>
   })),
 );
 
+const VarnishModal = lazy(() =>
+  import("./CoatingColorModal").then((m) => ({
+    default: m.VarnishModal,
+  })),
+);
+
 const getArtWorkClass = (art) => {
   if (!art || art === "NA") return "art-badge art-blue";
   if (art.toLowerCase() === "old") return "art-badge art-red";
@@ -49,9 +55,11 @@ const ComponentRow = ({
   name,
   onViewFile,
   onOpenCoating,
-  onOpenColor,
   selectedCoating,
+  onOpenColor,
   selectedColor,
+  onOpenVarnish,
+  selectedVarnish,
   totalQty,
   onChangeField,
   isFieldModified,
@@ -121,7 +129,7 @@ const ComponentRow = ({
       </Grid>
 
       {/* Ups */}
-      <Grid size={1.5}>
+      <Grid size={1}>
         <div className="Box-table-content">
           <TextField
             size="small"
@@ -136,7 +144,7 @@ const ComponentRow = ({
       </Grid>
 
       {/* No. of Sheets */}
-      <Grid size={1.5}>
+      <Grid size={1}>
         <div className="Box-table-content">
           <TextField
             size="small"
@@ -161,7 +169,7 @@ const ComponentRow = ({
       </Grid>
 
       {/* Source File */}
-      <Grid size={1.5}>
+      <Grid size={1}>
         <Box sx={{ display: "flex", alignItems: "center", columnGap: 2.5 }}>
           <div className="Box-table-content">
             <div
@@ -200,6 +208,19 @@ const ComponentRow = ({
           </Button>
         </div>
       </Grid>
+
+      {/* Varnish */}
+      <Grid size={1}>
+        <div className="Box-table-upload">
+          <Button
+            color={selectedVarnish[name] ? "error" : "neutral"}
+            variant="outlined"
+            onClick={() => onOpenVarnish(name)}
+          >
+            {selectedVarnish[name] ? "Edit" : "Select"}
+          </Button>
+        </div>
+      </Grid>
     </>
   );
 };
@@ -211,10 +232,9 @@ function EditPrint() {
   const location = useLocation();
   const { design } = location?.state || {};
 
-
   const [formData, setFormData] = useState({
     customer_name: design?.customer_name || "",
-    saleorder_no: design?.saleorder_no || "",
+    saleorder_no: design?.saleorder_no,
     posting_date: design?.posting_date
       ? new Date(design?.posting_date).toISOString().split("T")[0]
       : "",
@@ -233,18 +253,29 @@ function EditPrint() {
 
   // Coating & Color
   const [selectedComponent, setSelectedComponent] = useState("");
+
   const [selectedCoating, setSelectedCoating] = useState({});
-  const [selectedColor, setSelectedColor] = useState({});
   const [coatingModal, setCoatingModal] = useState(false);
+
+  const [selectedColor, setSelectedColor] = useState({});
   const [colorModal, setColorModal] = useState(false);
+
+  const [selectedVarnish, setSelectedVarnish] = useState({});
+  const [varnishModal, setVarnishModal] = useState(false);
 
   //Pending Dialog
   const [openPending, setOpenPending] = useState(false);
   const [pendingData, setPendingData] = useState({
-    completedWork: "",
-    pendingWork: 0,
-    pending_reason: "",
+    reason: "",
+    otherReason: "",
   });
+
+  // Common Pending Reasons
+  const pendingReasons = [
+    "Artwork Change",
+    "Sheets Not Available",
+    "SO Correction",
+  ];
 
   const initialComponentsState = useMemo(() => {
     const names = [
@@ -290,6 +321,7 @@ function EditPrint() {
 
     const coatingInit = {};
     const colorInit = {};
+    const varnishInit = {};
 
     Object.entries(design.components).forEach(([name, comp]) => {
       if (comp.coating) {
@@ -320,12 +352,13 @@ function EditPrint() {
   }, [design]);
 
   useEffect(() => {
-    if (design?.printingmanager_pending_details?.pending_reason) {
-      setPendingData((prev) => ({
-        ...prev,
-        pending_reason: design?.printingmanager_pending_details.pending_reason,
-      }));
-    }
+    const reason = design?.printingmanager_pending_details?.pending_reason;
+    if (!reason) return;
+
+    setPendingData({
+      reason: pendingReasons?.includes(reason) ? reason : "Others",
+      otherReason: pendingReasons?.includes(reason) ? "" : reason,
+    });
   }, [design]);
 
   // Handle View
@@ -379,19 +412,13 @@ function EditPrint() {
     }));
   };
 
-  // Handle Coating & Color
+  // Handle Coating Modal
   const handleCoatingModal = (name) => {
     setSelectedComponent(name);
     setCoatingModal(true);
   };
 
-  const handleColorModal = (name) => {
-    setSelectedComponent(name);
-    setColorModal(true);
-  };
-
   const handleCloseCoating = () => setCoatingModal(false);
-  const handleCloseColor = () => setColorModal(false);
 
   const handleSaveCoating = (value) => {
     setSelectedCoating((prev) => ({
@@ -401,12 +428,37 @@ function EditPrint() {
     setCoatingModal(false);
   };
 
+  // Handle Printing Color
+  const handleColorModal = (name) => {
+    setSelectedComponent(name);
+    setColorModal(true);
+  };
+
+  const handleCloseColor = () => setColorModal(false);
+
   const handleSaveColor = (value) => {
     setSelectedColor((prev) => ({
       ...prev,
       [selectedComponent]: value,
     }));
     setColorModal(false);
+  };
+
+  // Handle Varnish Modal
+
+  const handleVarnishModal = (name) => {
+    setSelectedComponent(name);
+    setVarnishModal(true);
+  };
+
+  const handleCloseVarnish = () => setVarnishModal(false);
+
+  const handleSaveVarnish = (value) => {
+    setSelectedVarnish((prev) => ({
+      ...prev,
+      [selectedComponent]: value,
+    }));
+    setVarnishModal(false);
   };
 
   const handleSubmit = async (type) => {
@@ -421,8 +473,9 @@ function EditPrint() {
 
       const coating = selectedCoating[name];
       const printing = selectedColor[name];
+      const varnish = selectedVarnish[name];
 
-      if (!coating || !printing) {
+      if (!coating || !printing || !varnish) {
         missingComponents.push(name);
         return;
       }
@@ -434,17 +487,9 @@ function EditPrint() {
         thickness: data.thickness,
         ups: data.ups,
         sheets: data.sheets,
-        coating: {
-          sizing: coating.sizing?.join(", ") || "",
-          insideColor: coating.insideColor?.join(", ") || "",
-          varnish: coating.varnish?.join(", ") || "",
-          coatingColor: coating.coatingColor || "",
-          coatingCount: Number(coating.coatingCount) || 1,
-        },
-        printingColor: {
-          normalColor: printing.normalColor?.join(", ") || "",
-          splColor: printing.splColor?.join(", ") || "",
-        },
+        coating,
+        printingColor: printing,
+        varnish,
       };
     });
 
@@ -456,12 +501,18 @@ function EditPrint() {
     }
 
     const payload = {
+      unique_id: design.unique_id,
       ...formData,
       components: componentsPayload,
       printingmanager_status,
       printingmanager_pending_details:
         type === "PENDING"
-          ? { pending_reason: pendingData.pending_reason }
+          ? {
+              pending_reason:
+                pendingData.reason === "Others"
+                  ? pendingData.otherReason
+                  : pendingData.reason,
+            }
           : design?.printingmanager_pending_details || {},
     };
 
@@ -469,7 +520,7 @@ function EditPrint() {
       await server.post("/design/add", payload);
 
       if (type === "PENDING") {
-        toast.info("Design moved to Pending");
+        toast.error("Design moved to Pending");
       } else {
         toast.success("Design saved successfully");
       }
@@ -651,13 +702,13 @@ function EditPrint() {
             <Grid size={1}>
               <div className="Box-table-subtitle">Thickness</div>
             </Grid>
-            <Grid size={1.5}>
+            <Grid size={1}>
               <div className="Box-table-subtitle">Ups</div>
             </Grid>
-            <Grid size={1.5}>
+            <Grid size={1}>
               <div className="Box-table-subtitle">No. of Sheets</div>
             </Grid>
-            <Grid size={1.5}>
+            <Grid size={1}>
               <div className="Box-table-subtitle">Source File</div>
             </Grid>
             <Grid size={1}>
@@ -665,6 +716,9 @@ function EditPrint() {
             </Grid>
             <Grid size={1}>
               <div className="Box-table-subtitle">Printing Color</div>
+            </Grid>
+            <Grid size={1}>
+              <div className="Box-table-subtitle">Varnish</div>
             </Grid>
 
             {/* Header End Here */}
@@ -681,9 +735,11 @@ function EditPrint() {
                   name={key}
                   onViewFile={handleViewFile}
                   onOpenCoating={handleCoatingModal}
-                  onOpenColor={handleColorModal}
                   selectedCoating={selectedCoating}
+                  onOpenColor={handleColorModal}
                   selectedColor={selectedColor}
+                  onOpenVarnish={handleVarnishModal}
+                  selectedVarnish={selectedVarnish}
                   onChangeField={handleComponentChange}
                   totalQty={design?.item_quantity}
                   isFieldModified={isFieldModified}
@@ -775,50 +831,6 @@ function EditPrint() {
 
           <DialogContent dividers>
             <Grid container spacing={2}>
-              {/* <Grid size={5}>
-                      <Typography>No of Completed Works</Typography>
-                    </Grid>
-                    <Grid size={7}>
-                      <Select
-                        fullWidth
-                        size="small"
-                        value={pendingData?.completedWork}
-                        onChange={(e) =>
-                          setPendingData({
-                            ...pendingData,
-                            completedWork: e.target.value,
-                          })
-                        }
-                        displayEmpty
-                      >
-                        <MenuItem value="">Select</MenuItem>
-                        <MenuItem value="Coating - TDM">Coating - TDM</MenuItem>
-                        <MenuItem value="Printing - TDM">Printing - TDM</MenuItem>
-                      </Select>
-                    </Grid> */}
-
-              {/* Pending Works */}
-
-              {/* <Grid size={5}>
-                      <Typography>No of Pending Works</Typography>
-                    </Grid>
-                    <Grid size={7}>
-                      <TextField
-                        fullWidth
-                        size="small"
-                        type="number"
-                        value={pendingData?.pendingWork}
-                        onChange={(e) =>
-                          setPendingData({
-                            ...pendingData,
-                            pendingWork: e.target.value,
-                          })
-                        }
-                      />
-                    </Grid> */}
-
-              {/* Reason */}
-
               <Grid size={5}>
                 <Typography>Reason for Pending</Typography>
               </Grid>
@@ -826,33 +838,53 @@ function EditPrint() {
                 <Select
                   fullWidth
                   size="small"
-                  value={pendingData?.pending_reason ?? ""}
+                  value={pendingData?.reason ?? ""}
                   displayEmpty
                   onChange={(e) =>
                     setPendingData({
                       ...pendingData,
-                      pending_reason: e.target.value,
+                      reason: e.target.value,
                     })
                   }
                 >
                   <MenuItem value="" disabled>
                     Select
                   </MenuItem>
-                  <MenuItem value="Material Not Available">
-                    Material Not Available
-                  </MenuItem>
-                  <MenuItem value="No Man Power">No Man Power</MenuItem>
-                  <MenuItem value="Machine Breakdown - Mechanical">
-                    Machine Breakdown - Mechanical
-                  </MenuItem>
-                  <MenuItem value="Machine Breakdown - Electrical">
-                    Machine Breakdown - Electrical
-                  </MenuItem>
-                  <MenuItem value="Flim Plate Damage">
-                    Flim Plate Damage
-                  </MenuItem>
+
+                  {pendingReasons.map((reason) => (
+                    <MenuItem key={reason} value={reason}>
+                      {reason}
+                    </MenuItem>
+                  ))}
+                  <MenuItem value="Others">Others</MenuItem>
                 </Select>
               </Grid>
+
+              {pendingData.reason === "Others" && (
+                <>
+                  <Grid size={5}>
+                    <Typography>Enter Reason</Typography>
+                  </Grid>
+
+                  <Grid size={7}>
+                    <TextField
+                      autoFocus
+                      fullWidth
+                      size="small"
+                      multiline
+                      rows={3}
+                      placeholder="Enter Pending Reason"
+                      value={pendingData?.otherReason}
+                      onChange={(e) =>
+                        setPendingData({
+                          ...pendingData,
+                          otherReason: e.target.value,
+                        })
+                      }
+                    />
+                  </Grid>
+                </>
+              )}
             </Grid>
           </DialogContent>
 
@@ -876,10 +908,19 @@ function EditPrint() {
               variant="contained"
               color="success"
               onClick={() => {
-                if (!pendingData?.pending_reason) {
+                if (!pendingData?.reason) {
                   toast.error("Please Select Pending Reason");
                   return;
                 }
+
+                if (
+                  pendingData.reason === "Others" &&
+                  !pendingData.otherReason.trim()
+                ) {
+                  toast.error("Please Enter Pending Reason");
+                  return;
+                }
+
                 setOpenPending(false);
                 handleSubmit("PENDING");
               }}
@@ -908,6 +949,16 @@ function EditPrint() {
               selectedComponent={selectedComponent}
               onSubmit={handleSaveColor}
               value={selectedColor[selectedComponent]}
+            />
+          )}
+
+          {varnishModal && (
+            <VarnishModal
+              open={varnishModal}
+              onClose={handleCloseVarnish}
+              selectedComponent={selectedComponent}
+              onSubmit={handleSaveVarnish}
+              value={selectedVarnish[selectedComponent]}
             />
           )}
         </Suspense>

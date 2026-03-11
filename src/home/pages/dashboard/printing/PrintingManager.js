@@ -3,7 +3,7 @@ import { styled } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Grid from "@mui/material/Grid";
-import { IconButton } from "@mui/material";
+import { IconButton, Tooltip } from "@mui/material";
 import Completed from "../../../../assets/icons/circle-check-solid.svg";
 import Pending from "../../../../assets/icons/hourglass-half-solid.svg";
 import Todaywork from "../../../../assets/icons/list-check-solid.svg";
@@ -31,6 +31,24 @@ const PrintingManager = () => {
   const { designs } = useDesign();
 
   const [getStatus, setStatus] = useState("all");
+
+  // Helper Function
+  const formatDate = (value) => {
+    if (!value) return "-";
+
+    const date = new Date(value?.$date || value);
+    if (isNaN(date)) return "-";
+
+    const [y, m, d] = date.toISOString().split("T")[0].split("-");
+    return `${d}/${m}/${y}`;
+  };
+
+  // Table Title
+  const tableTitle = {
+    all: "All Process",
+    pending: "Pending Process",
+    completed: "Completed Process",
+  };
 
   // Filter Design For Dashboard
   const filterDesigns = useMemo(() => {
@@ -69,29 +87,16 @@ const PrintingManager = () => {
     ).length;
   }, [designs]);
 
-  // Table Title
-  const tableTitle = {
-    all: "All Process",
-    pending: "Pending Process",
-    completed: "Completed Process",
-  };
-
   const getStatusText = (row) => {
     if (row.printingmanager_status === 2) return "COMPLETED";
     if (row.printingmanager_status === 1) return "PENDING";
-    if (row.design_status === 2) return "NEW";
+    if (row.design_status === 2 && !row.printingmanager_status) return "NEW";
 
     return "NEW";
   };
 
-  const formatDate = (value) => {
-    if (!value) return "-";
-
-    const date = new Date(value?.$date || value);
-    if (isNaN(date)) return "-";
-
-    const [y, m, d] = date.toISOString().split("T")[0].split("-");
-    return `${d}/${m}/${y}`;
+  const getPendingReason = (row) => {
+    return row?.printingmanager_pending_details?.pending_reason || "";
   };
 
   const columns = useMemo(
@@ -151,7 +156,33 @@ const PrintingManager = () => {
         id: 8,
         header: "Status",
         size: 20,
-        Cell: ({ row }) => <StatusChip status={getStatusText(row.original)} />,
+        Cell: ({ row }) => {
+          const status = getStatusText(row.original);
+          const reason = getPendingReason(row.original);
+
+          if (status === "PENDING" && reason) {
+            return (
+              <Tooltip
+                title={reason}
+                arrow
+                slotProps={{
+                  tooltip: {
+                    sx: {
+                      fontSize: "15px",
+                      padding: "8px 12px",
+                    },
+                  },
+                }}
+              >
+                <span>
+                  <StatusChip status={status} />
+                </span>
+              </Tooltip>
+            );
+          }
+
+          return <StatusChip status={status} />;
+        },
       },
       // {
       //   id: 9,
@@ -275,7 +306,12 @@ const PrintingManager = () => {
             }}
             muiTableBodyRowProps={({ row }) => ({
               onClick: () => {
-                navigate(`/edit_print`, { state: { design: row.original } });
+                navigate(`/edit_print`, {
+                  state: {
+                    design: row.original,
+                    unique_id: row.original.unique_id,
+                  },
+                });
               },
               sx: {
                 cursor: "pointer",

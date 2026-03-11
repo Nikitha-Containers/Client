@@ -268,13 +268,6 @@ function EditDesign() {
   const location = useLocation();
   const { salesOrder, design } = location.state || {};
 
-  // Common Pending Reasons
-  const pendingReasons = [
-    "Artwork Change",
-    "Sheets Not Available",
-    "SO Correction",
-  ];
-
   const initialComp = {
     unique_id: salesOrder?.unique_id || "",
     saleorder_no: salesOrder?.saleorder_no || "",
@@ -316,11 +309,20 @@ function EditDesign() {
     [salesOrder?.thickness],
   );
 
+  // Pending Dialog
   const [openPending, setOpenPending] = useState(false);
   const [pendingData, setPendingData] = useState({
     reason: "",
     otherReason: "",
   });
+
+  // Common Pending Reasons
+  const pendingReasons = [
+    "Artwork Change",
+    "Sheets Not Available",
+    "SO Correction",
+  ];
+
   const [open, setOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState("");
   const [components, setComponents] = useState(initialComponentsState);
@@ -533,7 +535,7 @@ function EditDesign() {
       });
 
       if (type === "PENDING") {
-        toast.info("Design moved to Pending");
+        toast.error("Design moved to Pending");
       } else {
         toast.success("Design saved successfully");
       }
