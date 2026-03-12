@@ -120,9 +120,22 @@ export const CoatingTypeModal = ({ open, onClose, onSubmit, value }) => {
       return;
     }
 
+    // Validate Other fields
+    const insideOther = getCoatingValues.insideColor?.Other;
+    const outsideOther = getCoatingValues.outsideColor?.Other;
+
+    if (insideOther && !insideOther.name?.trim()) {
+      toast.error("Please enter Inside coating type for Other");
+      return;
+    }
+
+    if (outsideOther && !outsideOther.name?.trim()) {
+      toast.error("Please enter Outside coating type for Other");
+      return;
+    }
+
     onSubmit(getCoatingValues);
   };
-
   // Handle Cancel
   const handleCancel = () => {
     setCoatingValues(coatingInitialVal);
@@ -437,9 +450,21 @@ export const PrintingColorModal = ({ open, onClose, onSubmit, value }) => {
       return;
     }
 
+    const normalOther = getPrintingValues.normalColor?.Other;
+    const splOther = getPrintingValues.splColor?.Other;
+
+    if (normalOther && !normalOther.name?.trim()) {
+      toast.error("Please enter Normal Color type for Other");
+      return;
+    }
+
+    if (splOther && !splOther.name?.trim()) {
+      toast.error("Please enter Special Color type for Other");
+      return;
+    }
+
     onSubmit(getPrintingValues);
   };
-
   const handleCancel = () => {
     setPrintingValues(printingInitVal);
     onClose();
@@ -709,6 +734,13 @@ export const VarnishModal = ({ open, onClose, onSubmit, value }) => {
   const handleSubmit = () => {
     if (Object.keys(getVarnishValues.varnish).length === 0) {
       toast.error("Please select at least one varnish option");
+      return;
+    }
+
+    const other = getVarnishValues.varnish?.Other;
+
+    if (other && !other.name?.trim()) {
+      toast.error("Please enter Varnish type for Other");
       return;
     }
 

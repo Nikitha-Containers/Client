@@ -25,19 +25,19 @@ import { toast } from "react-toastify";
 
 // Lazy Loading
 const CoatingTypeModal = lazy(() =>
-  import("./CoatingColorModal").then((m) => ({
+  import("../printing/CoatingColorModal").then((m) => ({
     default: m.CoatingTypeModal,
   })),
 );
 
 const PrintingColorModal = lazy(() =>
-  import("./CoatingColorModal").then((m) => ({
+  import("../printing/CoatingColorModal").then((m) => ({
     default: m.PrintingColorModal,
   })),
 );
 
 const VarnishModal = lazy(() =>
-  import("./CoatingColorModal").then((m) => ({
+  import("../printing/CoatingColorModal").then((m) => ({
     default: m.VarnishModal,
   })),
 );
@@ -227,7 +227,7 @@ const ComponentRow = ({
 // Component Row End Here
 
 // Main Component Started Here
-function EditPrint() {
+function EditFlimPlate() {
   const navigate = useNavigate();
   const location = useLocation();
   const { design } = location?.state || {};
@@ -272,7 +272,7 @@ function EditPrint() {
 
   // Common Pending Reasons
   const pendingReasons = [
-    "Printer Colors Not Available",
+    "Flim Plate Not Available",
     "Artwork Change",
     "SO Correction",
   ];
@@ -351,7 +351,7 @@ function EditPrint() {
   }, [design]);
 
   useEffect(() => {
-    const reason = design?.printingmanager_pending_details?.pending_reason;
+    const reason = design?.flimplate_pending_reason?.pending_reason;
     if (!reason) return;
 
     setPendingData({
@@ -504,7 +504,7 @@ function EditPrint() {
       ...formData,
       components: componentsPayload,
       printingmanager_status,
-      printingmanager_pending_details:
+      flimplate_pending_reason:
         type === "PENDING"
           ? {
               pending_reason:
@@ -512,7 +512,7 @@ function EditPrint() {
                   ? pendingData.otherReason
                   : pendingData.reason,
             }
-          : design?.printingmanager_pending_details || {},
+          : design?.flimplate_pending_reason || {},
     };
 
     try {
@@ -523,7 +523,7 @@ function EditPrint() {
       } else {
         toast.success("Design saved successfully");
       }
-      navigate("/printingmanager_dashboard");
+      navigate("/flimplate_dashboard");
     } catch (error) {
       const errorMessage = error.response?.data?.error || error.message;
       toast.error(errorMessage);
@@ -531,7 +531,7 @@ function EditPrint() {
   };
 
   const handleCancel = () => {
-    navigate("/printingmanager_dashboard");
+    navigate("/flimplate_dashboard");
   };
 
   const isFieldModified = (name, field) => {
@@ -555,12 +555,12 @@ function EditPrint() {
           <div className="main-inner-txts">
             <Link
               style={{ color: "#0a85cb", textDecoration: "none" }}
-              to={"/printingmanager_dashboard"}
+              to={"/flimplate_dashboard"}
             >
-              Printing Manager
+              Flim Plate
             </Link>
             <KeyboardArrowRightIcon sx={{ color: "#0a85cb" }} />
-            <div>Edit Print </div>
+            <div>Edit Flimplate </div>
           </div>
         </Box>
       </Box>
@@ -966,4 +966,4 @@ function EditPrint() {
   );
 }
 
-export default EditPrint;
+export default EditFlimPlate;

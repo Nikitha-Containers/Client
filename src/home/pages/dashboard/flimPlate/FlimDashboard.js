@@ -25,7 +25,7 @@ const Item = styled(Paper)(({ theme }) => ({
   }),
 }));
 
-const PrintingManager = () => {
+const FlimDashboard = () => {
   const navigate = useNavigate();
 
   const { designs } = useDesign();
@@ -51,9 +51,9 @@ const PrintingManager = () => {
   };
 
   const getStatusText = (row) => {
-    if (row.printingmanager_status === 2) return "COMPLETED";
-    if (row.printingmanager_status === 1) return "PENDING";
-    if (row.design_status === 2 && !row.printingmanager_status) return "NEW";
+    if (row.flim_plate_status === 2) return "COMPLETED";
+    if (row.flim_plate_status === 1) return "PENDING";
+    if (row.printingmanager_status === 2) return "NEW";
 
     return "NEW";
   };
@@ -61,18 +61,18 @@ const PrintingManager = () => {
   // Filter PrintingManager For Dashboard
   const filterDesigns = useMemo(() => {
     if (getStatus === "all") {
-      return (designs || []).filter((d) => d.design_status === 2);
+      return (designs || []).filter((d) => d.printingmanager_status === 2);
     }
 
     if (getStatus === "pending") {
       return (designs || []).filter(
-        (d) => d.design_status === 2 && d.printingmanager_status === 1,
+        (d) => d.printingmanager_status === 2 && d.flim_plate_status === 1,
       );
     }
 
     if (getStatus === "completed") {
       return (designs || []).filter(
-        (d) => d.design_status === 2 && d.printingmanager_status === 2,
+        (d) => d.printingmanager_status === 2 && d.flim_plate_status === 2,
       );
     }
     return [];
@@ -80,23 +80,23 @@ const PrintingManager = () => {
 
   // Count for Cards
   const allCount = useMemo(() => {
-    return (designs || []).filter((d) => d.design_status === 2).length;
+    return (designs || []).filter((d) => d.printingmanager_status === 2).length;
   }, [designs]);
 
   const pendingCount = useMemo(() => {
     return (designs || []).filter(
-      (d) => d.design_status === 2 && d.printingmanager_status === 1,
+      (d) => d.printingmanager_status === 2 && d.flim_plate_status === 1,
     ).length;
   }, [designs]);
 
   const completedCount = useMemo(() => {
     return (designs || []).filter(
-      (d) => d.design_status === 2 && d.printingmanager_status === 2,
+      (d) => d.printingmanager_status === 2 && d.flim_plate_status === 2,
     ).length;
   }, [designs]);
 
   const getPendingReason = (row) => {
-    return row?.printingmanager_pending_details?.pending_reason || "";
+    return row?.flimplate_pending_reason?.pending_reason || "";
   };
 
   const columns = useMemo(
@@ -215,7 +215,7 @@ const PrintingManager = () => {
     <Box className="Dashboard-con">
       <Box className="breadcrump-con">
         <Box className="main-title">
-          <div>Printing Manager</div>
+          <div>Flim Plate</div>
         </Box>
       </Box>
 
@@ -306,7 +306,7 @@ const PrintingManager = () => {
             }}
             muiTableBodyRowProps={({ row }) => ({
               onClick: () => {
-                navigate(`/edit_print`, {
+                navigate(`/edit_flimplate`, {
                   state: {
                     design: row.original,
                     unique_id: row.original.unique_id,
@@ -347,4 +347,4 @@ const PrintingManager = () => {
   );
 };
 
-export default PrintingManager;
+export default FlimDashboard;

@@ -14,6 +14,10 @@ import SyncWithSo from "./pages/dashboard/planning/SyncWithSO";
 import PrintingTeamDashboard from "./pages/dashboard/printingTeam/PrintingTeamDashboard";
 import EditPrintingTeam from "./pages/dashboard/printingTeam/EditPrintingTeam";
 import MachineCalendar from "./pages/dashboard/planning/MachineCalendar";
+import FlimDashboard from "./pages/dashboard/flimPlate/FlimDashboard";
+import EditFlimPlate from "./pages/dashboard/flimPlate/EditFlimPlate";
+import Fabrication from "./pages/dashboard/fabrication/Fabrication";
+import EditFabrication from "./pages/dashboard/fabrication/EditFabrication";
 
 export const ROUTE_CONFIG = {
   Designing: [
@@ -34,6 +38,16 @@ export const ROUTE_CONFIG = {
       key: "Dashboard",
     },
     { path: "/edit_print", component: EditPrint, key: "Dashboard" },
+    { path: "/upload_sheet", component: Uploadsheet, key: "Sheet Taken" },
+  ],
+
+  "Flim Plate": [
+    {
+      path: "/flimplate_dashboard",
+      component: FlimDashboard,
+      key: "Dashboard",
+    },
+    { path: "/edit_flimplate", component: EditFlimPlate, key: "Dashboard" },
     { path: "/upload_sheet", component: Uploadsheet, key: "Sheet Taken" },
   ],
 
@@ -59,7 +73,7 @@ export const ROUTE_CONFIG = {
     { path: "/upload_sheet", component: Uploadsheet, key: "Sheet Taken" },
   ],
 
-  "Printing Team": [
+  Printing: [
     {
       path: "/printingteam_dashboard",
       component: PrintingTeamDashboard,
@@ -70,6 +84,16 @@ export const ROUTE_CONFIG = {
       component: EditPrintingTeam,
       key: "Dashboard",
     },
+    { path: "/upload_sheet", component: Uploadsheet, key: "Sheet Taken" },
+  ],
+
+  Fabrication: [
+    {
+      path: "/fabrication_dashboard",
+      component: Fabrication,
+      key: "Dashboard",
+    },
+    { path: "/edit_fabrication", component: EditFabrication, key: "Dashboard" },
     { path: "/upload_sheet", component: Uploadsheet, key: "Sheet Taken" },
   ],
 

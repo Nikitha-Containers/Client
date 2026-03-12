@@ -173,13 +173,14 @@ const UserDialog = React.memo(
                   setFormValues((prev) => ({ ...prev, pages: [] }));
                 }}
               >
-                <MenuItem value={"Planning"}>Planning</MenuItem>
-                <MenuItem value={"Stores"}>Stores</MenuItem>
                 <MenuItem value={"Designing"}>Designing</MenuItem>
                 <MenuItem value={"Printing Manager"}>Printing Manager</MenuItem>
+                <MenuItem value={"Flim Plate"}>Flim Plate</MenuItem>
+                <MenuItem value={"Planning"}>Planning</MenuItem>
                 <MenuItem value={"Coating"}>Coating</MenuItem>
-                <MenuItem value={"Printing Team"}>Printing</MenuItem>
+                <MenuItem value={"Printing"}>Printing</MenuItem>
                 <MenuItem value={"Fabrication"}>Fabrication</MenuItem>
+                <MenuItem value={"Stores"}>Stores</MenuItem>
               </Select>
             </Grid>
 
@@ -471,13 +472,14 @@ function CreateUser() {
   };
 
   const pageConfig = {
-    Planning: ["Dashboard", "Sync With SO", "Sheet Taken", "Machine Calendar"],
     Designing: ["Dashboard", "Sheet Taken", "Sync With SO"],
-    Stores: ["Dashboard", "Sheet Taken"],
     "Printing Manager": ["Dashboard", "Sheet Taken"],
+    "Flim Plate": ["Dashboard", "Sheet Taken"],
+    Planning: ["Dashboard", "Sync With SO", "Sheet Taken", "Machine Calendar"],
     Coating: ["Dashboard", "Sheet Taken"],
-    " Printing Team": ["Dashboard", "Sheet Taken"],
-    Fabrication: ["Dashboard", "Quality Control"],
+    Printing: ["Dashboard", "Sheet Taken"],
+    Fabrication: ["Dashboard", "Sheet Taken"],
+    Stores: ["Dashboard", "Sheet Taken"],
   };
 
   // Save handler

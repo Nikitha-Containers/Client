@@ -4,7 +4,6 @@ import DesignServicesIcon from "@mui/icons-material/DesignServices";
 import FormatPaintIcon from "@mui/icons-material/FormatPaint";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
-import { matchRoutes } from "react-router-dom";
 
 export const SIDEBAR_MENU = {
   Designing: [
@@ -36,6 +35,22 @@ export const SIDEBAR_MENU = {
       icon: DesignServicesIcon,
       key: "Dashboard",
       matchRoutes: ["/printingmanager_dashboard", "/edit_print"],
+    },
+    {
+      label: "Sheet Store",
+      path: "/upload_sheet",
+      icon: DashboardIcon,
+      key: "Sheet Taken",
+    },
+  ],
+
+  "Flim Plate": [
+    {
+      label: "Flim Plate",
+      path: "/flimplate_dashboard",
+      icon: DesignServicesIcon,
+      key: "Dashboard",
+      matchRoutes: ["/flimplate_dashboard", "/edit_flimplate"],
     },
     {
       label: "Sheet Store",
@@ -89,9 +104,9 @@ export const SIDEBAR_MENU = {
     },
   ],
 
-  "Printing Team": [
+  Printing: [
     {
-      label: "Printing Team",
+      label: "Printing Dashboard",
       path: "/printingteam_dashboard",
       icon: FormatPaintIcon,
       key: "Dashboard",
@@ -105,6 +120,22 @@ export const SIDEBAR_MENU = {
     },
   ],
 
+  Fabrication: [
+    {
+      label: "Fabrication",
+      path: "/fabrication_dashboard",
+      icon: DesignServicesIcon,
+      key: "Dashboard",
+      matchRoutes: ["/fabrication_dashboard", "/edit_fabrication"],
+    },
+    {
+      label: "Sheet Store",
+      path: "/upload_sheet",
+      icon: DashboardIcon,
+      key: "Sheet Taken",
+    },
+  ],
+  
   Stores: [
     {
       label: "Store Dashboard",
