@@ -15,6 +15,9 @@ import {
   Select,
   MenuItem,
   DialogActions,
+  ToggleButtonGroup,
+  ToggleButton,
+  Stack,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -22,25 +25,6 @@ import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import "../../../pages/pagestyle.scss";
 import server from "../../../../server/server";
 import { toast } from "react-toastify";
-
-// Lazy Loading
-const CoatingTypeModal = lazy(() =>
-  import("../printing/CoatingColorModal").then((m) => ({
-    default: m.CoatingTypeModal,
-  })),
-);
-
-const PrintingColorModal = lazy(() =>
-  import("../printing/CoatingColorModal").then((m) => ({
-    default: m.PrintingColorModal,
-  })),
-);
-
-const VarnishModal = lazy(() =>
-  import("../printing/CoatingColorModal").then((m) => ({
-    default: m.VarnishModal,
-  })),
-);
 
 const getArtWorkClass = (art) => {
   if (!art || art === "NA") return "art-badge art-blue";
@@ -54,15 +38,10 @@ const ComponentRow = ({
   component,
   name,
   onViewFile,
-  onOpenCoating,
-  selectedCoating,
-  onOpenColor,
-  selectedColor,
-  onOpenVarnish,
-  selectedVarnish,
+  onViewPMDetails,
   totalQty,
-  onChangeField,
   isFieldModified,
+  onChangeField,
 }) => {
   const originalSheets =
     component.ups && totalQty
@@ -77,53 +56,13 @@ const ComponentRow = ({
         <div className="Box-table-text"> {name}</div>
       </Grid>
 
-      {/* Length */}
-      <Grid size={1}>
+      {/* L X B X T */}
+      <Grid size={2}>
         <div className="Box-table-content">
           <TextField
             size="small"
-            type="number"
-            value={component?.length}
-            onChange={(e) => onChangeField(name, "length", e.target.value)}
-            sx={
-              isFieldModified(name, "length")
-                ? { backgroundColor: "#fff9c4" }
-                : {}
-            }
-          />
-        </div>
-      </Grid>
-
-      {/* Breadth */}
-      <Grid size={1}>
-        <div className="Box-table-content">
-          <TextField
-            size="small"
-            type="number"
-            value={component?.breadth}
-            onChange={(e) => onChangeField(name, "breadth", e.target.value)}
-            sx={
-              isFieldModified(name, "breadth")
-                ? { backgroundColor: "#fff9c4" }
-                : {}
-            }
-          />
-        </div>
-      </Grid>
-
-      {/* Thickness */}
-      <Grid size={1}>
-        <div className="Box-table-content">
-          <TextField
-            size="small"
-            type="text"
-            value={component?.thickness}
-            onChange={(e) => onChangeField(name, "thickness", e.target.value)}
-            sx={
-              isFieldModified(name, "thickness")
-                ? { backgroundColor: "#fff9c4" }
-                : {}
-            }
+            value={`${component?.length} X ${component?.breadth} X ${component?.thickness}`}
+            disabled
           />
         </div>
       </Grid>
@@ -135,10 +74,7 @@ const ComponentRow = ({
             size="small"
             type="number"
             value={component.ups}
-            onChange={(e) => onChangeField(name, "ups", e.target.value)}
-            sx={
-              isFieldModified(name, "ups") ? { backgroundColor: "#fff9c4" } : {}
-            }
+            disabled
           />
         </div>
       </Grid>
@@ -151,7 +87,6 @@ const ComponentRow = ({
             type="number"
             label={originalSheets}
             value={component?.sheets}
-            onChange={(e) => onChangeField(name, "sheets", e.target.value)}
             InputLabelProps={{ shrink: true }}
             sx={{
               "& .MuiInputLabel-root": {
@@ -164,6 +99,7 @@ const ComponentRow = ({
                 backgroundColor: "#fff9c4",
               }),
             }}
+            disabled
           />
         </div>
       </Grid>
@@ -183,42 +119,85 @@ const ComponentRow = ({
         </Box>
       </Grid>
 
-      {/* Coating Type */}
+      {/* Printing Manager Details */}
       <Grid size={1}>
-        <div className="Box-table-upload">
-          <Button
-            color={selectedCoating[name] ? "error" : "neutral"}
-            variant="outlined"
-            onClick={() => onOpenCoating(name)}
+        <Box sx={{ display: "flex", alignItems: "center", columnGap: 2.5 }}>
+          <div className="Box-table-content">
+            <div
+              className="gray-md-btn"
+              style={{ cursor: "pointer" }}
+              onClick={() => onViewPMDetails(name)}
+            >
+              <VisibilityIcon /> View
+            </div>
+          </div>
+        </Box>
+      </Grid>
+
+      {/* Flim Availablity */}
+      <Grid size={1}>
+        <div className="Box-table-content">
+          <ToggleButtonGroup
+            exclusive
+            size="small"
+            value={component?.filmAvailable || ""}
+            onChange={(e, value) => {
+              onChangeField(name, "filmAvailable", value);
+
+              if (value === "No") {
+                onChangeField(name, "filmPlateNo", "");
+              }
+            }}
           >
-            {selectedCoating[name] ? "Edit" : "Select"}
-          </Button>
+            <ToggleButton
+              value="Yes"
+              sx={{
+                "&.Mui-selected": {
+                  backgroundColor: "green",
+                  color: "white",
+                },
+                "&:hover": {
+                  backgroundColor: "#008000db",
+                },
+                "&.Mui-selected:hover": {
+                  backgroundColor: "#008000",
+                },
+              }}
+            >
+              Yes
+            </ToggleButton>
+
+            <ToggleButton
+              value="No"
+              sx={{
+                "&.Mui-selected": {
+                  backgroundColor: "red",
+                  color: "white",
+                },
+                "&:hover": {
+                  backgroundColor: "#ff0000bf",
+                },
+                "&.Mui-selected:hover": {
+                  backgroundColor: "#ff0000",
+                },
+              }}
+            >
+              No
+            </ToggleButton>
+          </ToggleButtonGroup>
         </div>
       </Grid>
 
-      {/* Printing Color */}
+      {/* Flim Plate No */}
       <Grid size={1}>
-        <div className="Box-table-upload">
-          <Button
-            color={selectedColor[name] ? "error" : "neutral"}
-            variant="outlined"
-            onClick={() => onOpenColor(name)}
-          >
-            {selectedColor[name] ? "Edit" : "Select"}
-          </Button>
-        </div>
-      </Grid>
-
-      {/* Varnish */}
-      <Grid size={1}>
-        <div className="Box-table-upload">
-          <Button
-            color={selectedVarnish[name] ? "error" : "neutral"}
-            variant="outlined"
-            onClick={() => onOpenVarnish(name)}
-          >
-            {selectedVarnish[name] ? "Edit" : "Select"}
-          </Button>
+        <div className="Box-table-content">
+          <TextField
+            size="small"
+            type="text"
+            value={component?.filmPlateNo || ""}
+            disabled={component.filmAvailable !== "Yes"}
+            onChange={(e) => onChangeField(name, "filmPlateNo", e.target.value)}
+          />
         </div>
       </Grid>
     </>
@@ -247,21 +226,15 @@ function EditFlimPlate() {
   const [components, setComponents] = useState({});
   const [initialComponents, setInitialComponents] = useState({});
 
+  const [openPMModal, setOpenPMModal] = useState(false);
+  const [pmDetails, setPmDetails] = useState(null);
+
   // Preview Modal
   const [open, setOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState("");
 
   // Coating & Color
   const [selectedComponent, setSelectedComponent] = useState("");
-
-  const [selectedCoating, setSelectedCoating] = useState({});
-  const [coatingModal, setCoatingModal] = useState(false);
-
-  const [selectedColor, setSelectedColor] = useState({});
-  const [colorModal, setColorModal] = useState(false);
-
-  const [selectedVarnish, setSelectedVarnish] = useState({});
-  const [varnishModal, setVarnishModal] = useState(false);
 
   //Pending Dialog
   const [openPending, setOpenPending] = useState(false);
@@ -297,6 +270,8 @@ function EditFlimPlate() {
           ups: "",
           sheets: "",
           file: null,
+          filmAvailable: "",
+          filmPlateNo: "",
         },
       ]),
     );
@@ -314,41 +289,6 @@ function EditFlimPlate() {
     setComponents(updatedComponents);
     setInitialComponents(updatedComponents);
   }, [design, initialComponentsState]);
-
-  // Initial State For Coating Type & Printing Values
-  useEffect(() => {
-    if (!design?.components) return;
-
-    const coatingInit = {};
-    const colorInit = {};
-    const varnishInit = {};
-
-    Object.entries(design.components).forEach(([name, comp]) => {
-      if (comp.coating) {
-        coatingInit[name] = {
-          insideColor: comp.coating.insideColor || {},
-          outsideColor: comp.coating.outsideColor || {},
-        };
-      }
-
-      if (comp.printingColor) {
-        colorInit[name] = {
-          normalColor: comp.printingColor.normalColor || {},
-          splColor: comp.printingColor.splColor || {},
-        };
-      }
-
-      if (comp.varnish) {
-        varnishInit[name] = {
-          varnish: comp.varnish.varnish || {},
-        };
-      }
-    });
-
-    setSelectedCoating(coatingInit);
-    setSelectedColor(colorInit);
-    setSelectedVarnish(varnishInit);
-  }, [design]);
 
   useEffect(() => {
     const reason = design?.flimplate_pending_reason?.pending_reason;
@@ -411,91 +351,46 @@ function EditFlimPlate() {
     }));
   };
 
-  // Handle Coating Modal
-  const handleCoatingModal = (name) => {
-    setSelectedComponent(name);
-    setCoatingModal(true);
-  };
+  const handleViewPMDetails = (componentName) => {
+    const component = components[componentName];
 
-  const handleCloseCoating = () => setCoatingModal(false);
+    if (!component) return;
 
-  const handleSaveCoating = (value) => {
-    setSelectedCoating((prev) => ({
-      ...prev,
-      [selectedComponent]: value,
-    }));
-    setCoatingModal(false);
-  };
+    setPmDetails({
+      name: componentName,
+      coating: component?.coating || {},
+      printingColor: component?.printingColor || {},
+      varnish: component?.varnish || {},
+    });
 
-  // Handle Printing Color
-  const handleColorModal = (name) => {
-    setSelectedComponent(name);
-    setColorModal(true);
-  };
-
-  const handleCloseColor = () => setColorModal(false);
-
-  const handleSaveColor = (value) => {
-    setSelectedColor((prev) => ({
-      ...prev,
-      [selectedComponent]: value,
-    }));
-    setColorModal(false);
-  };
-
-  // Handle Varnish Modal
-
-  const handleVarnishModal = (name) => {
-    setSelectedComponent(name);
-    setVarnishModal(true);
-  };
-
-  const handleCloseVarnish = () => setVarnishModal(false);
-
-  const handleSaveVarnish = (value) => {
-    setSelectedVarnish((prev) => ({
-      ...prev,
-      [selectedComponent]: value,
-    }));
-    setVarnishModal(false);
+    setOpenPMModal(true);
   };
 
   const handleSubmit = async (type) => {
-    const printingmanager_status = type === "PENDING" ? 1 : 2;
-
+    const flim_plate_status = type === "PENDING" ? 1 : 2;
     const componentsPayload = {};
-    const missingComponents = [];
+    const missingFilmPlate = [];
 
-    Object.entries(components).forEach(([name, data]) => {
+    Object.entries(components).forEach(([name, comp]) => {
       const original = design?.components?.[name];
+
       if (!original?.selected) return;
 
-      const coating = selectedCoating[name];
-      const printing = selectedColor[name];
-      const varnish = selectedVarnish[name];
-
-      if (!coating || !printing || !varnish) {
-        missingComponents.push(name);
+      // Validate Film Plate
+      if (comp.filmAvailable === "Yes" && !comp.filmPlateNo) {
+        missingFilmPlate.push(name);
         return;
       }
 
       componentsPayload[name] = {
-        selected: true,
-        length: data.length,
-        breadth: data.breadth,
-        thickness: data.thickness,
-        ups: data.ups,
-        sheets: data.sheets,
-        coating,
-        printingColor: printing,
-        varnish,
+        ...original,
+        filmAvailable: comp.filmAvailable,
+        filmPlateNo: comp.filmPlateNo,
       };
     });
 
-    if (missingComponents.length) {
-      toast.error(
-        `Select coating & printing color for: ${missingComponents.join(", ")}`,
-      );
+    if (missingFilmPlate.length) {
+      toast.error(`Enter Film Plate No for: ${missingFilmPlate.join(", ")}`);
       return;
     }
 
@@ -503,7 +398,7 @@ function EditFlimPlate() {
       unique_id: design.unique_id,
       ...formData,
       components: componentsPayload,
-      printingmanager_status,
+      flim_plate_status,
       flimplate_pending_reason:
         type === "PENDING"
           ? {
@@ -692,14 +587,8 @@ function EditFlimPlate() {
             <Grid size={2}>
               <div className="Box-table-subtitle">Component</div>
             </Grid>
-            <Grid size={1}>
-              <div className="Box-table-subtitle">Length</div>
-            </Grid>
-            <Grid size={1}>
-              <div className="Box-table-subtitle">Breadth</div>
-            </Grid>
-            <Grid size={1}>
-              <div className="Box-table-subtitle">Thickness</div>
+            <Grid size={2}>
+              <div className="Box-table-subtitle">L X B X T</div>
             </Grid>
             <Grid size={1}>
               <div className="Box-table-subtitle">Ups</div>
@@ -711,13 +600,13 @@ function EditFlimPlate() {
               <div className="Box-table-subtitle">Source File</div>
             </Grid>
             <Grid size={1}>
-              <div className="Box-table-subtitle">Coating Type</div>
+              <div className="Box-table-subtitle">PM details</div>
             </Grid>
             <Grid size={1}>
-              <div className="Box-table-subtitle">Printing Color</div>
+              <div className="Box-table-subtitle">Flim Avl</div>
             </Grid>
             <Grid size={1}>
-              <div className="Box-table-subtitle">Varnish</div>
+              <div className="Box-table-subtitle">Flim Plate No</div>
             </Grid>
 
             {/* Header End Here */}
@@ -733,13 +622,8 @@ function EditFlimPlate() {
                   component={component}
                   name={key}
                   onViewFile={handleViewFile}
-                  onOpenCoating={handleCoatingModal}
-                  selectedCoating={selectedCoating}
-                  onOpenColor={handleColorModal}
-                  selectedColor={selectedColor}
-                  onOpenVarnish={handleVarnishModal}
-                  selectedVarnish={selectedVarnish}
                   onChangeField={handleComponentChange}
+                  onViewPMDetails={handleViewPMDetails}
                   totalQty={design?.item_quantity}
                   isFieldModified={isFieldModified}
                 />
@@ -801,6 +685,188 @@ function EditFlimPlate() {
             />
           </Box>
         </Modal>
+
+        {/* Printing Manager Modal */}
+
+        <Dialog
+          open={openPMModal}
+          onClose={() => setOpenPMModal(false)}
+          fullWidth
+          maxWidth="md"
+          PaperProps={{ sx: { borderRadius: "16px" } }}
+        >
+          <DialogTitle
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <Typography variant="h6" fontWeight="bold" color="#0a85cb">
+              Printing Manager Details
+            </Typography>
+
+            <IconButton onClick={() => setOpenPMModal(false)}>
+              <CloseIcon />
+            </IconButton>
+          </DialogTitle>
+
+          <DialogContent dividers>
+            <Stack spacing={2}>
+              {/* COATING */}
+              <Typography
+                color="primary"
+                variant="subtitle1"
+                sx={{ fontSize: 18, fontWeight: "bold" }}
+              >
+                Coating
+              </Typography>
+
+              {/* Inside */}
+              <Typography variant="body1" fontWeight="bold">
+                Inside :
+              </Typography>
+
+              <Grid container spacing={2}>
+                {Object.entries(pmDetails?.coating?.insideColor || {}).map(
+                  ([key, val]) => (
+                    <Grid item xs={6} key={key}>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Typography sx={{ minWidth: 120 }}>
+                          {key === "Other" ? val.name : key}
+                        </Typography>
+
+                        <TextField
+                          size="small"
+                          value={key === "Other" ? val.count : val}
+                          sx={{ width: 50 }}
+                          disabled
+                        />
+                      </Stack>
+                    </Grid>
+                  ),
+                )}
+              </Grid>
+
+              {/* Outside */}
+              <Typography variant="body1" fontWeight="bold">
+                Outside :
+              </Typography>
+
+              <Grid container spacing={2}>
+                {Object.entries(pmDetails?.coating?.outsideColor || {}).map(
+                  ([key, val]) => (
+                    <Grid item xs={6} key={key}>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Typography sx={{ minWidth: 120 }}>
+                          {key === "Other" ? val.name : key}
+                        </Typography>
+
+                        <TextField
+                          size="small"
+                          value={key === "Other" ? val.count : val}
+                          sx={{ width: 50 }}
+                          disabled
+                        />
+                      </Stack>
+                    </Grid>
+                  ),
+                )}
+              </Grid>
+
+              {/* PRINTING */}
+              <Typography
+                color="primary"
+                variant="subtitle1"
+                sx={{ fontSize: 18, fontWeight: "bold" }}
+              >
+                Printing Color
+              </Typography>
+
+              {/* Normal */}
+              <Typography variant="body1" fontWeight="bold">
+                Normal :
+              </Typography>
+
+              <Grid container spacing={2}>
+                {Object.entries(
+                  pmDetails?.printingColor?.normalColor || {},
+                ).map(([key, val]) => (
+                  <Grid item xs={6} key={key}>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <Typography sx={{ minWidth: 120 }}>
+                        {key === "Other" ? val.name : key}
+                      </Typography>
+
+                      <TextField
+                        size="small"
+                        value={key === "Other" ? val.count : val}
+                        sx={{ width: 50 }}
+                        disabled
+                      />
+                    </Stack>
+                  </Grid>
+                ))}
+              </Grid>
+
+              {/* Special */}
+              <Typography variant="body1" fontWeight="bold">
+                Special :
+              </Typography>
+
+              <Grid container spacing={2}>
+                {Object.entries(pmDetails?.printingColor?.splColor || {}).map(
+                  ([key, val]) => (
+                    <Grid item xs={6} key={key}>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Typography sx={{ minWidth: 120 }}>
+                          {key === "Other" ? val.name : key}
+                        </Typography>
+
+                        <TextField
+                          size="small"
+                          value={key === "Other" ? val.count : val}
+                          sx={{ width: 50 }}
+                          disabled
+                        />
+                      </Stack>
+                    </Grid>
+                  ),
+                )}
+              </Grid>
+
+              {/* VARNISH */}
+              <Typography
+                color="primary"
+                variant="subtitle1"
+                sx={{ fontSize: 18, fontWeight: "bold" }}
+              >
+                Varnish
+              </Typography>
+
+              <Grid container spacing={2}>
+                {Object.entries(pmDetails?.varnish?.varnish || {}).map(
+                  ([key, val]) => (
+                    <Grid item xs={6} key={key}>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Typography sx={{ minWidth: 120 }}>
+                          {key === "Other" ? val.name : key}
+                        </Typography>
+
+                        <TextField
+                          size="small"
+                          value={key === "Other" ? val.count : val}
+                          sx={{ width: 50 }}
+                          disabled
+                        />
+                      </Stack>
+                    </Grid>
+                  ),
+                )}
+              </Grid>
+            </Stack>
+          </DialogContent>
+        </Dialog>
 
         {/* Pending Dialouge */}
         <Dialog
@@ -928,39 +994,6 @@ function EditFlimPlate() {
             </Button>
           </DialogActions>
         </Dialog>
-
-        {/* Coating Type & Printing Color Modal */}
-        <Suspense fallback={null}>
-          {coatingModal && (
-            <CoatingTypeModal
-              open={coatingModal}
-              onClose={handleCloseCoating}
-              selectedComponent={selectedComponent}
-              onSubmit={handleSaveCoating}
-              value={selectedCoating[selectedComponent]}
-            />
-          )}
-
-          {colorModal && (
-            <PrintingColorModal
-              open={colorModal}
-              onClose={handleCloseColor}
-              selectedComponent={selectedComponent}
-              onSubmit={handleSaveColor}
-              value={selectedColor[selectedComponent]}
-            />
-          )}
-
-          {varnishModal && (
-            <VarnishModal
-              open={varnishModal}
-              onClose={handleCloseVarnish}
-              selectedComponent={selectedComponent}
-              onSubmit={handleSaveVarnish}
-              value={selectedVarnish[selectedComponent]}
-            />
-          )}
-        </Suspense>
       </Box>
     </Box>
   );

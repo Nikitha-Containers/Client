@@ -61,18 +61,18 @@ const Planning = () => {
   // Filter Planning For Dashboard
   const filterDesigns = useMemo(() => {
     if (getStatus === "all") {
-      return (designs || []).filter((d) => d.printingmanager_status === 2);
+      return (designs || []).filter((d) => d.flim_plate_status === 2);
     }
 
     if (getStatus === "pending") {
       return (designs || []).filter(
-        (d) => d.printingmanager_status === 2 && d.planning_status === 1,
+        (d) => d.flim_plate_status === 2 && d.planning_status === 1,
       );
     }
 
     if (getStatus === "completed") {
       return (designs || []).filter(
-        (d) => d.printingmanager_status === 2 && d.planning_status === 2,
+        (d) => d.flim_plate_status === 2 && d.planning_status === 2,
       );
     }
     return [];
