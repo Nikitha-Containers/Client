@@ -80,18 +80,18 @@ const Planning = () => {
 
   // Count for Cards
   const allCount = useMemo(() => {
-    return (designs || []).filter((d) => d.printingmanager_status === 2).length;
+    return (designs || []).filter((d) => d.flim_plate_status === 2).length;
   }, [designs]);
 
   const pendingCount = useMemo(() => {
     return (designs || []).filter(
-      (d) => d.printingmanager_status === 2 && d.planning_status === 1,
+      (d) => d.flim_plate_status === 2 && d.planning_status === 1,
     ).length;
   }, [designs]);
 
   const completedCount = useMemo(() => {
     return (designs || []).filter(
-      (d) => d.printingmanager_status === 2 && d.planning_status === 2,
+      (d) => d.flim_plate_status === 2 && d.planning_status === 2,
     ).length;
   }, [designs]);
 

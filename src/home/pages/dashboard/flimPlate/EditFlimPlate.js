@@ -40,7 +40,6 @@ const ComponentRow = ({
   onViewFile,
   onViewPMDetails,
   totalQty,
-  isFieldModified,
   onChangeField,
 }) => {
   const originalSheets =
@@ -95,9 +94,6 @@ const ComponentRow = ({
               "& .MuiInputLabel-root.Mui-focused": {
                 color: "green",
               },
-              ...(isFieldModified(name, "sheets") && {
-                backgroundColor: "#fff9c4",
-              }),
             }}
             disabled
           />
@@ -140,7 +136,7 @@ const ComponentRow = ({
           <ToggleButtonGroup
             exclusive
             size="small"
-            value={component?.filmAvailable || ""}
+            value={component?.filmAvailable || "No"}
             onChange={(e, value) => {
               onChangeField(name, "filmAvailable", value);
 
@@ -270,7 +266,7 @@ function EditFlimPlate() {
           ups: "",
           sheets: "",
           file: null,
-          filmAvailable: "",
+          filmAvailable: "No",
           filmPlateNo: "",
         },
       ]),
@@ -283,7 +279,13 @@ function EditFlimPlate() {
     const updatedComponents = { ...initialComponentsState };
 
     Object.entries(design?.components).forEach(([name, comp]) => {
-      if (updatedComponents[name]) updatedComponents[name] = { ...comp };
+      if (updatedComponents[name]) {
+        updatedComponents[name] = {
+          ...comp,
+          filmAvailable: comp?.filmAvailable || "No",
+          filmPlateNo: comp?.filmPlateNo || "",
+        };
+      }
     });
 
     setComponents(updatedComponents);
@@ -376,8 +378,15 @@ function EditFlimPlate() {
 
       if (!original?.selected) return;
 
-      // Validate Film Plate
-      if (comp.filmAvailable === "Yes" && !comp.filmPlateNo) {
+      if (type === "FINAL" && comp.filmAvailable === "No") {
+        missingFilmPlate.push(name);
+        return;
+      }
+      if (
+        type === "FINAL" &&
+        comp.filmAvailable === "Yes" &&
+        !comp.filmPlateNo?.trim()
+      ) {
         missingFilmPlate.push(name);
         return;
       }
@@ -390,7 +399,15 @@ function EditFlimPlate() {
     });
 
     if (missingFilmPlate.length) {
-      toast.error(`Enter Film Plate No for: ${missingFilmPlate.join(", ")}`);
+      if (type === "FINAL") {
+        toast.error(
+          `Film Plate not available for: ${missingFilmPlate.join(
+            ", ",
+          )}. Move this to Pending.`,
+        );
+      } else {
+        toast.error(`Enter Film Plate No for: ${missingFilmPlate.join(", ")}`);
+      }
       return;
     }
 
@@ -429,9 +446,6 @@ function EditFlimPlate() {
     navigate("/flimplate_dashboard");
   };
 
-  const isFieldModified = (name, field) => {
-    return initialComponents?.[name]?.[field] !== components?.[name]?.[field];
-  };
 
   const modalStyle = {
     position: "absolute",
@@ -625,7 +639,6 @@ function EditFlimPlate() {
                   onChangeField={handleComponentChange}
                   onViewPMDetails={handleViewPMDetails}
                   totalQty={design?.item_quantity}
-                  isFieldModified={isFieldModified}
                 />
               ))}
           </Grid>
