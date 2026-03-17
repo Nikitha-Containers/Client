@@ -53,6 +53,18 @@ function MachineCalendar() {
         },
       ],
     },
+    {
+      id: "varnish",
+      title: "VARNISH MACHINES",
+      children: [
+        {
+          id: "Varnish Crab Tree", // ✅ match EXACT value
+          title: "Varnish Crab Tree",
+          eventColor: "#8e24aa",
+          labelColor: "#8e24aa",
+        },
+      ],
+    },
   ];
 
   const events = useMemo(() => {
@@ -94,6 +106,24 @@ function MachineCalendar() {
             extendedProps: {
               customer: d.customer_name,
               process: "Printing",
+            },
+          });
+        });
+      }
+
+      const varnish = d?.planning_work_details?.varnish_machine_plan;
+
+      if (varnish?.bookings?.length) {
+        varnish.bookings.forEach((b, index) => {
+          events.push({
+            id: `${d.saleorder_no}-Varnish-${index}`,
+            resourceId: b.machine,
+            title: `${d.saleorder_no} (Varnish)`,
+            start: b.shift_from_dt,
+            end: b.shift_to_dt,
+            extendedProps: {
+              customer: d.customer_name,
+              process: "Varnish",
             },
           });
         });

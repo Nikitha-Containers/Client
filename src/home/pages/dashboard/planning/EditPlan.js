@@ -64,6 +64,13 @@ const MACHINE_CONFIG = {
       "RTCPL-DC": 2500,
     },
   },
+  varnish: {
+    title: "Varnish Machine",
+    machines: ["Varnish Crab Tree"],
+    sheetsPerHour: {
+      "Varnish Crab Tree": 3500,
+    },
+  },
 };
 
 const formatDateLocal = (date) => {
@@ -114,43 +121,58 @@ const ComponentRow = ({
     return dates;
   }, [currentRow]);
 
+  const extractKeysWithSequence = (obj) => {
+    if (!obj || typeof obj !== "object") return [];
+
+    return Object.entries(obj).flatMap(([key, value]) => {
+      // Handle "Other"
+      if (key === "Other" && value?.name) {
+        const count = value.count || 1;
+
+        return Array.from({ length: count }, (_, i) => {
+          return `${value.name} ${i + 1}`;
+        });
+      }
+
+      // Normal keys
+      if (typeof value === "number") {
+        return Array.from({ length: value }, (_, i) => {
+          return `${key} ${i + 1}`;
+        });
+      }
+
+      return [];
+    });
+  };
   useEffect(() => {
     let processes = [];
 
     if (processType === "coating") {
       const c = component?.coating || {};
 
-      const toArr = (v) =>
-        typeof v === "string" && v.trim()
-          ? v.split(",").map((i) => i.trim())
-          : [];
-
       processes = [
-        ...toArr(c.sizing),
-        ...toArr(c.insideColor),
-        ...toArr(c.varnish),
-        ...(c.coatingColor
-          ? Array.from(
-              { length: c.coatingCount || 1 },
-              (_, i) => `${c.coatingColor} - ${i + 1}`,
-            )
-          : []),
+        ...extractKeysWithSequence(c.insideColor),
+        ...extractKeysWithSequence(c.outsideColor),
       ];
     }
 
     if (processType === "printing") {
       const p = component?.printingColor || {};
 
-      const toArr = (v) =>
-        Array.isArray(v)
-          ? v
-          : typeof v === "string" && v.trim()
-            ? v.split(",").map((i) => i.trim())
-            : [];
-
-      processes = [...toArr(p.normalColor), ...toArr(p.splColor)];
+      processes = [
+        ...extractKeysWithSequence(p.normalColor),
+        ...extractKeysWithSequence(p.splColor),
+      ];
 
       if (processes.length === 0) processes = ["Printing"];
+    }
+
+    if (processType === "varnish") {
+      const v = component?.varnish?.varnish || {};
+
+      processes = extractKeysWithSequence(v);
+
+      if (processes.length === 0) processes = ["Varnish"];
     }
 
     const rows = processes.map((process) => {
@@ -1050,6 +1072,7 @@ function EditPlan() {
   const [planningData, setPlanningData] = useState({
     coating: {},
     printing: {},
+    varnish: {},
   });
   const coatingBookings = useMemo(() => {
     return design?.planning_work_details?.coating_machine_plan?.bookings ?? [];
@@ -1057,6 +1080,10 @@ function EditPlan() {
 
   const printingBookings = useMemo(() => {
     return design?.planning_work_details?.printing_machine_plan?.bookings ?? [];
+  }, [design]);
+
+  const varnishBookings = useMemo(() => {
+    return design?.planning_work_details?.varnish_machine_plan?.bookings ?? [];
   }, [design]);
 
   //Pending Dialog
@@ -1153,9 +1180,14 @@ function EditPlan() {
       design.planning_work_details.printing_machine_plan?.bookings || [],
     );
 
+    const varnishSection = buildPlanningSection(
+      design.planning_work_details.varnish_machine_plan?.bookings || [],
+    );
+
     setPlanningData({
       coating: coatingSection,
       printing: printingSection,
+      varnish: varnishSection,
     });
   }, [design]);
 
@@ -1212,6 +1244,7 @@ function EditPlan() {
     // from UI planning
     addFromPlanningData(planningData.coating);
     addFromPlanningData(planningData.printing);
+    addFromPlanningData(planningData.varnish);
 
     // from backend existing bookings
     addFromExistingBookings(
@@ -1220,6 +1253,10 @@ function EditPlan() {
 
     addFromExistingBookings(
       design?.planning_work_details?.printing_machine_plan?.bookings,
+    );
+
+    addFromExistingBookings(
+      design?.planning_work_details?.varnish_machine_plan?.bookings,
     );
 
     return map;
@@ -1308,11 +1345,16 @@ function EditPlan() {
 
       const printingBookings = generateBookings(planningData.printing);
 
-      if (!coatingBookings.length && !printingBookings.length) {
+      const varnishBookings = generateBookings(planningData.varnish);
+
+      if (
+        !coatingBookings.length &&
+        !printingBookings.length &&
+        !varnishBookings.length
+      ) {
         toast.error("Please plan at least one machine shift");
         return;
       }
-
       const payload = {
         saleorder_no: formData.saleorder_no,
 
@@ -1326,6 +1368,7 @@ function EditPlan() {
           printing_machine_plan: {
             bookings: printingBookings,
           },
+          varnish_machine_plan: { bookings: varnishBookings },
         },
       };
 
@@ -1411,7 +1454,6 @@ function EditPlan() {
                   disabled
                 />
               </FormGroup>
-              
             </Grid>
             <Grid size={2}>
               <FormGroup>
@@ -1575,6 +1617,7 @@ function EditPlan() {
           </Grid>
         </Box>
 
+        {/* Printing Machine Plan */}
         <Box
           sx={{
             background: "#fff",
@@ -1640,6 +1683,81 @@ function EditPlan() {
                       ...prev,
                       printing: {
                         ...prev.printing,
+                        [key]: data,
+                      },
+                    }));
+                  }}
+                />
+              ))}
+          </Grid>
+        </Box>
+
+        {/* Varnish Machine Plan */}
+        <Box
+          sx={{
+            background: "#fff",
+            mt: 3,
+            boxShadow:
+              "rgba(0, 0, 0, 0.02) 0px 1px 3px 0px, rgba(27, 31, 35, 0.15) 0px 0px 0px 1px",
+          }}
+        >
+          <Grid container spacing={0.5}>
+            <Grid size={12}>
+              <div className="Box-table-title">Varnish Machine Plan</div>
+            </Grid>
+
+            {/* Header */}
+            <Grid size={1}>
+              <div className="Box-table-subtitle">Component</div>
+            </Grid>
+            <Grid size={1.5}>
+              <div className="Box-table-subtitle">Sheet Size</div>
+            </Grid>
+            <Grid size={1}>
+              <div className="Box-table-subtitle">No of Sheets</div>
+            </Grid>
+            <Grid size={1}>
+              <div className="Box-table-subtitle">Source File</div>
+            </Grid>
+            <Grid size={1.5}>
+              <div className="Box-table-subtitle">Varnish Type</div>
+            </Grid>
+            <Grid size={1}>
+              <div className="Box-table-subtitle">Machine</div>
+            </Grid>
+            <Grid size={1.5}>
+              <div className="Box-table-subtitle">Start Date</div>
+            </Grid>
+            <Grid size={1.5}>
+              <div className="Box-table-subtitle">End Date</div>
+            </Grid>
+            <Grid size={1}>
+              <div className="Box-table-subtitle">Shift</div>
+            </Grid>
+            <Grid size={1}>
+              <div className="Box-table-subtitle">Info</div>
+            </Grid>
+
+            {/* Printing Render Componnet */}
+            {Object.entries(components)
+              .filter(([key]) =>
+                Object.keys(design?.components || {}).includes(key),
+              )
+              .map(([key, component]) => (
+                <MemoComponentRow
+                  key={`varnish-${key}`}
+                  component={component}
+                  name={key}
+                  onViewFile={handleViewFile}
+                  totalQty={design?.item_quantity}
+                  processType="varnish"
+                  existingBookings={varnishBookings}
+                  usedShiftMap={usedShiftMap}
+                  onPlanningChange={(data) => {
+                    setPlanningData((prev) => ({
+                      ...prev,
+                      varnish: {
+                        ...prev.varnish,
                         [key]: data,
                       },
                     }));
