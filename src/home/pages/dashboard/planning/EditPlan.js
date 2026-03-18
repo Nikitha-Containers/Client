@@ -1074,6 +1074,7 @@ function EditPlan() {
     printing: {},
     varnish: {},
   });
+
   const coatingBookings = useMemo(() => {
     return design?.planning_work_details?.coating_machine_plan?.bookings ?? [];
   }, [design]);
@@ -1089,8 +1090,18 @@ function EditPlan() {
   //Pending Dialog
   const [openPending, setOpenPending] = useState(false);
   const [pendingData, setPendingData] = useState({
-    pending_reason: "",
+    reason: "",
+    otherReason: "",
   });
+
+  // Common Pending Reasons
+  const pendingReasons = [
+    "Material Not Available",
+    "Machine Breakdown - Mechanical",
+    "Machine Breakdown - Electrical",
+    "No Man Power",
+    "Flim Plate Damage",
+  ];
 
   const initialComponentsState = useMemo(() => {
     const compNames = [
@@ -1200,12 +1211,13 @@ function EditPlan() {
   }, [currentImage]);
 
   useEffect(() => {
-    if (design?.coating_pending_details?.pending_reason) {
-      setPendingData((prev) => ({
-        ...prev,
-        pending_reason: design?.coating_pending_details?.pending_reason,
-      }));
-    }
+    const reason = design?.planning_pending_details?.pending_reason;
+    if (!reason) return;
+
+    setPendingData({
+      reason: pendingReasons?.includes(reason) ? reason : "Others",
+      otherReason: pendingReasons?.includes(reason) ? "" : reason,
+    });
   }, [design]);
 
   const usedShiftMap = useMemo(() => {
@@ -1342,21 +1354,38 @@ function EditPlan() {
   const handleSubmit = async (status) => {
     try {
       const coatingBookings = generateBookings(planningData.coating);
-
       const printingBookings = generateBookings(planningData.printing);
-
       const varnishBookings = generateBookings(planningData.varnish);
 
-      if (
-        !coatingBookings.length &&
-        !printingBookings.length &&
-        !varnishBookings.length
-      ) {
-        toast.error("Please plan at least one machine shift");
-        return;
+
+      if (status !== "PENDING") {
+        if (
+          !coatingBookings.length &&
+          !printingBookings.length &&
+          !varnishBookings.length
+        ) {
+          toast.error("Please plan at least one machine shift");
+          return;
+        }
       }
+
+      if (status === "PENDING") {
+        if (!pendingData?.reason) {
+          toast.error("Please Select Pending Reason");
+          return;
+        }
+
+        if (
+          pendingData.reason === "Others" &&
+          !pendingData.otherReason.trim()
+        ) {
+          toast.error("Please Enter Pending Reason");
+          return;
+        }
+      }
+
       const payload = {
-        saleorder_no: formData.saleorder_no,
+        unique_id: design.unique_id,
 
         planning_status: status === "FINAL" ? 2 : status === "PENDING" ? 1 : 0,
 
@@ -1364,23 +1393,41 @@ function EditPlan() {
           coating_machine_plan: {
             bookings: coatingBookings,
           },
-
           printing_machine_plan: {
             bookings: printingBookings,
           },
-          varnish_machine_plan: { bookings: varnishBookings },
+          varnish_machine_plan: {
+            bookings: varnishBookings,
+          },
         },
+
+        planning_pending_details:
+          status === "PENDING"
+            ? {
+                pending_reason:
+                  pendingData.reason === "Others"
+                    ? pendingData.otherReason
+                    : pendingData.reason,
+              }
+            : design?.planning_pending_details || {},
       };
 
       await server.post(`/design/add`, payload);
 
-      toast.success("Planning Saved");
+      if (status === "PENDING") {
+        toast.error("Design moved to Pending");
+      } else {
+        toast.success("Design saved successfully");
+      }
 
       navigate("/planning_dashboard");
     } catch (err) {
-      toast.error("Save Failed");
+      const errorMessage =
+        err.response?.data?.error || err.message || "Something went wrong";
+      toast.error(errorMessage);
     }
   };
+
   const handleCancel = () => {
     navigate("/planning_dashboard");
   };
@@ -1819,33 +1866,53 @@ function EditPlan() {
                 <Select
                   fullWidth
                   size="small"
-                  value={pendingData?.pending_reason ?? ""}
+                  value={pendingData?.reason ?? ""}
                   displayEmpty
                   onChange={(e) =>
                     setPendingData({
                       ...pendingData,
-                      pending_reason: e.target.value,
+                      reason: e.target.value,
                     })
                   }
                 >
                   <MenuItem value="" disabled>
                     Select
                   </MenuItem>
-                  <MenuItem value="Material Not Available">
-                    Material Not Available
-                  </MenuItem>
-                  <MenuItem value="No Man Power">No Man Power</MenuItem>
-                  <MenuItem value="Machine Breakdown - Mechanical">
-                    Machine Breakdown - Mechanical
-                  </MenuItem>
-                  <MenuItem value="Machine Breakdown - Electrical">
-                    Machine Breakdown - Electrical
-                  </MenuItem>
-                  <MenuItem value="Flim Plate Damage">
-                    Flim Plate Damage
-                  </MenuItem>
+
+                  {pendingReasons.map((reason) => (
+                    <MenuItem key={reason} value={reason}>
+                      {reason}
+                    </MenuItem>
+                  ))}
+                  <MenuItem value="Others">Others</MenuItem>
                 </Select>
               </Grid>
+
+              {pendingData.reason === "Others" && (
+                <>
+                  <Grid size={5}>
+                    <Typography>Enter Reason</Typography>
+                  </Grid>
+
+                  <Grid size={7}>
+                    <TextField
+                      autoFocus
+                      fullWidth
+                      size="small"
+                      multiline
+                      rows={3}
+                      placeholder="Enter Pending Reason"
+                      value={pendingData?.otherReason}
+                      onChange={(e) =>
+                        setPendingData({
+                          ...pendingData,
+                          otherReason: e.target.value,
+                        })
+                      }
+                    />
+                  </Grid>
+                </>
+              )}
             </Grid>
           </DialogContent>
 
@@ -1869,10 +1936,19 @@ function EditPlan() {
               variant="contained"
               color="success"
               onClick={() => {
-                if (!pendingData?.pending_reason) {
+                if (!pendingData?.reason) {
                   toast.error("Please Select Pending Reason");
                   return;
                 }
+
+                if (
+                  pendingData.reason === "Others" &&
+                  !pendingData.otherReason.trim()
+                ) {
+                  toast.error("Please Enter Pending Reason");
+                  return;
+                }
+
                 setOpenPending(false);
                 handleSubmit("PENDING");
               }}

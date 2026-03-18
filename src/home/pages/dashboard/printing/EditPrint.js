@@ -350,6 +350,7 @@ function EditPrint() {
     setSelectedVarnish(varnishInit);
   }, [design]);
 
+  // Pending Reason
   useEffect(() => {
     const reason = design?.printingmanager_pending_details?.pending_reason;
     if (!reason) return;

@@ -27,8 +27,6 @@ import PlayCircleFilledWhiteIcon from "@mui/icons-material/PlayCircleFilledWhite
 import StopCircleIcon from "@mui/icons-material/StopCircle";
 import TimerIcon from "@mui/icons-material/Timer";
 import TimerOffIcon from "@mui/icons-material/TimerOff";
-import { Accordion, AccordionSummary, AccordionDetails } from "@mui/material";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 import { toast } from "react-toastify";
 
@@ -200,34 +198,34 @@ const ComponentRow = ({ component, name, onViewFile, totalQty, soNumber }) => {
   };
 
   // Data Handler
-  const listOfCoating = (() => {
-    const c = component?.coating;
-    if (!c) return [];
-    const toArr = (v) => {
-      if (!v) return [];
 
-      if (Array.isArray(v)) return v;
+  const extractKeysWithSequence = (obj) => {
+    if (!obj || typeof obj !== "object") return [];
 
-      if (typeof v === "string") {
-        return v
-          .split(",")
-          .map((item) => item.trim())
-          .filter(Boolean);
+    return Object.entries(obj).flatMap(([key, value]) => {
+      if (key === "Other" && value?.name) {
+        const count = value.count || 1;
+        return Array.from(
+          { length: count },
+          (_, i) => `${value.name} ${i + 1}`,
+        );
+      }
+
+      if (typeof value === "number") {
+        return Array.from({ length: value }, (_, i) => `${key} ${i + 1}`);
       }
 
       return [];
-    };
+    });
+  };
+
+  const listOfCoating = (() => {
+    const c = component?.coating;
+    if (!c) return [];
 
     return [
-      ...toArr(c.sizing),
-      ...toArr(c.insideColor),
-      ...toArr(c.varnish),
-      ...(c.coatingColor && c.coatingCount
-        ? Array.from(
-            { length: c.coatingCount },
-            (_, i) => `${c.coatingColor} - ${i + 1}`,
-          )
-        : []),
+      ...extractKeysWithSequence(c.insideColor),
+      ...extractKeysWithSequence(c.outsideColor),
     ];
   })();
 
@@ -528,8 +526,18 @@ function EditCoating() {
   //Pending Dialog
   const [openPending, setOpenPending] = useState(false);
   const [pendingData, setPendingData] = useState({
-    pending_reason: "",
+    reason: "",
+    otherReason: "",
   });
+
+  // Common Pending Reasons
+  const pendingReasons = [
+    "Material Not Available",
+    "Machine Breakdown - Mechanical",
+    "Machine Breakdown - Electrical",
+    "No Man Power",
+    "Flim Plate Damage",
+  ];
 
   const initialComponentsState = useMemo(() => {
     const compNames = [
@@ -644,12 +652,13 @@ function EditCoating() {
   }, [currentImage]);
 
   useEffect(() => {
-    if (design?.coating_pending_details?.pending_reason) {
-      setPendingData((prev) => ({
-        ...prev,
-        pending_reason: design?.coating_pending_details?.pending_reason,
-      }));
-    }
+    const reason = design?.coating_pending_details?.pending_reason;
+    if (!reason) return;
+
+    setPendingData({
+      reason: pendingReasons?.includes(reason) ? reason : "Others",
+      otherReason: pendingReasons?.includes(reason) ? "" : reason,
+    });
   }, [design]);
 
   // Handler Functions
@@ -718,14 +727,15 @@ function EditCoating() {
         return;
       }
 
+      const coating_status = type === "PENDING" ? 1 : 2;
+
       if (type === "FINAL" && !isAllCoatingCompleted()) {
         toast.warning(
-          "All coating processes must be completed before submitting. Moving to Pending.",
+          "All coating processes must be completed before submitting",
         );
         return;
       }
 
-      const coating_status = type === "PENDING" ? 1 : 2;
       const updatedComponents = {};
 
       Object.entries(components)
@@ -739,31 +749,32 @@ function EditCoating() {
           if (saved) {
             const { timers = {}, statusMap = {} } = JSON.parse(saved);
 
-            const toArr = (v) => {
-              if (!v) return [];
+            const extractKeysWithSequence = (obj) => {
+              if (!obj || typeof obj !== "object") return [];
 
-              if (Array.isArray(v)) return v;
+              return Object.entries(obj).flatMap(([key, value]) => {
+                if (key === "Other" && value?.name) {
+                  const count = value.count || 1;
+                  return Array.from(
+                    { length: count },
+                    (_, i) => `${value.name} ${i + 1}`,
+                  );
+                }
 
-              if (typeof v === "string") {
-                return v
-                  .split(",")
-                  .map((item) => item.trim())
-                  .filter(Boolean);
-              }
+                if (typeof value === "number") {
+                  return Array.from(
+                    { length: value },
+                    (_, i) => `${key} ${i + 1}`,
+                  );
+                }
 
-              return [];
+                return [];
+              });
             };
 
             const coatingList = [
-              ...toArr(comp?.coating?.sizing),
-              ...toArr(comp?.coating?.insideColor),
-              ...toArr(comp?.coating?.varnish),
-              ...(comp?.coating?.coatingColor && comp?.coating?.coatingCount
-                ? Array.from(
-                    { length: comp.coating.coatingCount },
-                    (_, i) => `${comp.coating.coatingColor} - ${i + 1}`,
-                  )
-                : []),
+              ...extractKeysWithSequence(comp?.coating?.insideColor),
+              ...extractKeysWithSequence(comp?.coating?.outsideColor),
             ];
 
             coatingList.forEach((processName, index) => {
@@ -782,7 +793,6 @@ function EditCoating() {
             });
           }
 
-          // ✅ FINAL STRUCTURE
           updatedComponents[compName] = {
             ...comp,
             coating_process,
@@ -795,8 +805,11 @@ function EditCoating() {
         coating_status,
         coating_pending_details:
           type === "PENDING"
-            ? { pending_reason: pendingData?.pending_reason }
+            ? {
+                pending_reason: pendingData.reason || "",
+              }
             : design?.coating_pending_details || {},
+
         components: updatedComponents,
       };
 
@@ -806,14 +819,18 @@ function EditCoating() {
         .filter((k) => k.startsWith(`COATING_${design.saleorder_no}_`))
         .forEach((k) => localStorage.removeItem(k));
 
-      toast.success("Coating Saved Successfully");
+      if (type === "PENDING") {
+        toast.info("Moved to Pending");
+      } else {
+        toast.success("Coating Saved Successfully");
+      }
+
       navigate("/coating_dashboard");
     } catch (error) {
       console.error(error);
       toast.error("Failed to Save Coating");
     }
   };
-
   const handleCancel = () => {
     const soNo = formData.saleorder_no;
 
@@ -1188,12 +1205,12 @@ function EditCoating() {
                 <Select
                   fullWidth
                   size="small"
-                  value={pendingData?.pending_reason ?? ""}
+                  value={pendingData?.reason ?? ""}
                   displayEmpty
                   onChange={(e) =>
                     setPendingData({
                       ...pendingData,
-                      pending_reason: e.target.value,
+                      reason: e.target.value,
                     })
                   }
                 >
@@ -1228,7 +1245,7 @@ function EditCoating() {
               variant="contained"
               color="success"
               onClick={() => {
-                if (!pendingData?.pending_reason) {
+                if (!pendingData?.reason) {
                   toast.error("Please Select Pending Reason");
                   return;
                 }
