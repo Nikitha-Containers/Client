@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
 import {
@@ -41,6 +41,31 @@ const getArtWorkClass = (art) => {
   return "art-badge";
 };
 
+const extractKeysWithSequence = (obj) => {
+  if (!obj || typeof obj !== "object") return [];
+
+  return Object.entries(obj).flatMap(([key, value]) => {
+    if (key === "Other" && value?.name) {
+      const count = value.count || 1;
+      return Array.from(
+        { length: count },
+        (_, i) => `${value.name} - ${i + 1}`,
+      );
+    }
+
+    if (typeof value === "number") {
+      return Array.from({ length: value }, (_, i) => `${key} - ${i + 1}`);
+    }
+
+    return [];
+  });
+};
+
+const getCoatingList = (comp) => [
+  ...extractKeysWithSequence(comp?.coating?.insideColor),
+  ...extractKeysWithSequence(comp?.coating?.outsideColor),
+];
+
 const ComponentRow = ({
   component,
   name,
@@ -76,7 +101,7 @@ const ComponentRow = ({
     }, 1000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [setTimers]);
 
   // Handler Functions
 
@@ -175,37 +200,7 @@ const ComponentRow = ({
     )}:${String(seconds).padStart(2, "0")}`;
   };
 
-  // Data Handler
-
-  const extractKeysWithSequence = (obj) => {
-    if (!obj || typeof obj !== "object") return [];
-
-    return Object.entries(obj).flatMap(([key, value]) => {
-      if (key === "Other" && value?.name) {
-        const count = value.count || 1;
-        return Array.from(
-          { length: count },
-          (_, i) => `${value.name} ${i + 1}`,
-        );
-      }
-
-      if (typeof value === "number") {
-        return Array.from({ length: value }, (_, i) => `${key} ${i + 1}`);
-      }
-
-      return [];
-    });
-  };
-
-  const listOfCoating = (() => {
-    const c = component?.coating;
-    if (!c) return [];
-
-    return [
-      ...extractKeysWithSequence(c.insideColor),
-      ...extractKeysWithSequence(c.outsideColor),
-    ];
-  })();
+  const listOfCoating = getCoatingList(component);
 
   const originalSheets =
     component.ups && totalQty
@@ -254,7 +249,6 @@ const ComponentRow = ({
             <Grid size={1}>
               <div className="Box-table-content">
                 <TextField
-                  id="outlined-size-small"
                   size="small"
                   value={`${component?.length} X ${component?.breadth} X ${component?.thickness}`}
                   disabled
@@ -286,6 +280,7 @@ const ComponentRow = ({
                 />
               </div>
             </Grid>
+
             {/* Source File */}
             <Grid size={1}>
               <Box
@@ -302,15 +297,11 @@ const ComponentRow = ({
                 </div>
               </Box>
             </Grid>
+
             {/* Coating Type */}
             <Grid size={1}>
               <div className="Box-table-content">
-                <TextField
-                  id="outlined-size-small"
-                  size="small"
-                  value={process}
-                  disabled
-                />
+                <TextField size="small" value={process} disabled />
               </div>
             </Grid>
 
@@ -402,14 +393,14 @@ const ComponentRow = ({
               </div>
             </Grid>
 
-            {/*Change Time */}
+            {/* CO Time */}
             <Grid size={1}>
               <div className="Box-table-content">
                 <TextField size="small" value={msToHMS(liveCoMs)} disabled />
               </div>
             </Grid>
 
-            {/*Total Time */}
+            {/* Total Time */}
             <Grid size={1}>
               <div className="Box-table-content">
                 <TextField size="small" value={totalTimeText} disabled />
@@ -469,8 +460,6 @@ const ComponentRow = ({
           </Fragment>
         );
       })}
-
-      {/* First Row end Here  */}
     </>
   );
 };
@@ -480,6 +469,13 @@ function EditCoating() {
   const navigate = useNavigate();
   const location = useLocation();
   const { design } = location?.state || {};
+
+  useEffect(() => {
+    if (!design) {
+      toast.error("No design selected. Redirecting to dashboard.");
+      navigate("/coating_dashboard", { replace: true });
+    }
+  }, [design, navigate]);
 
   const [open, setOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState("");
@@ -542,36 +538,13 @@ function EditCoating() {
     return obj;
   }, []);
 
-  const buildStateFromDB = (componentName, componentData) => {
+  const buildStateFromDB = (componentData) => {
     if (!componentData?.coating_process) return {};
 
     const timers = {};
     const statusMap = {};
 
-    const extractKeysWithSequence = (obj) => {
-      if (!obj || typeof obj !== "object") return [];
-
-      return Object.entries(obj).flatMap(([key, value]) => {
-        if (key === "Other" && value?.name) {
-          const count = value.count || 1;
-          return Array.from(
-            { length: count },
-            (_, i) => `${value.name} ${i + 1}`,
-          );
-        }
-
-        if (typeof value === "number") {
-          return Array.from({ length: value }, (_, i) => `${key} ${i + 1}`);
-        }
-
-        return [];
-      });
-    };
-
-    const coatingList = [
-      ...extractKeysWithSequence(componentData?.coating?.insideColor),
-      ...extractKeysWithSequence(componentData?.coating?.outsideColor),
-    ];
+    const coatingList = getCoatingList(componentData);
 
     coatingList.forEach((processName, index) => {
       const p = componentData.coating_process[processName];
@@ -605,7 +578,7 @@ function EditCoating() {
     Object.entries(design.components).forEach(([name, comp]) => {
       if (updatedComponents[name]) {
         updatedComponents[name] = { ...comp };
-        newCoatingState[name] = buildStateFromDB(name, comp);
+        newCoatingState[name] = buildStateFromDB(comp);
       }
     });
 
@@ -626,8 +599,8 @@ function EditCoating() {
     if (!reason) return;
 
     setPendingData({
-      reason: pendingReasons?.includes(reason) ? reason : "Others",
-      otherReason: pendingReasons?.includes(reason) ? "" : reason,
+      reason: pendingReasons.includes(reason) ? reason : "Others",
+      otherReason: pendingReasons.includes(reason) ? "" : reason,
     });
   }, [design]);
 
@@ -648,6 +621,7 @@ function EditCoating() {
     setCurrentImage(imageUrl);
     setOpen(true);
   };
+
   const handleArtworkView = () => {
     if (!design?.file_name || !design?.file_ext) return;
 
@@ -659,11 +633,10 @@ function EditCoating() {
     setOpen(true);
   };
 
-  const handleOpen = () => setOpen(true);
 
   const handleClose = () => {
     setOpen(false);
-    if (currentImage) URL.revokeObjectURL(currentImage);
+    if (currentImage?.startsWith("blob:")) URL.revokeObjectURL(currentImage);
     setCurrentImage("");
   };
 
@@ -710,33 +683,7 @@ function EditCoating() {
 
           let coating_process = {};
 
-          const extractKeysWithSequence = (obj) => {
-            if (!obj || typeof obj !== "object") return [];
-
-            return Object.entries(obj).flatMap(([key, value]) => {
-              if (key === "Other" && value?.name) {
-                const count = value.count || 1;
-                return Array.from(
-                  { length: count },
-                  (_, i) => `${value.name} ${i + 1}`,
-                );
-              }
-
-              if (typeof value === "number") {
-                return Array.from(
-                  { length: value },
-                  (_, i) => `${key} ${i + 1}`,
-                );
-              }
-
-              return [];
-            });
-          };
-
-          const coatingList = [
-            ...extractKeysWithSequence(comp?.coating?.insideColor),
-            ...extractKeysWithSequence(comp?.coating?.outsideColor),
-          ];
+          const coatingList = getCoatingList(comp);
 
           coatingList.forEach((processName, index) => {
             const t = timers[index];
@@ -806,6 +753,8 @@ function EditCoating() {
     maxHeight: "90vh",
   };
 
+  if (!design) return null;
+
   return (
     <Box className="Dashboard-con">
       <Box className="breadcrump-con">
@@ -830,7 +779,6 @@ function EditCoating() {
               <FormGroup>
                 <Typography mb={1}>Customer Name</Typography>
                 <TextField
-                  id="outlined-size-small"
                   size="small"
                   value={formData?.customer_name}
                   disabled
@@ -842,7 +790,6 @@ function EditCoating() {
               <FormGroup>
                 <Typography mb={1}>SO Number</Typography>
                 <TextField
-                  id="outlined-size-small"
                   size="small"
                   value={formData?.saleorder_no}
                   disabled
@@ -854,7 +801,6 @@ function EditCoating() {
               <FormGroup>
                 <Typography mb={1}>SO Date</Typography>
                 <TextField
-                  id="outlined-size-small"
                   size="small"
                   type="date"
                   value={
@@ -873,8 +819,6 @@ function EditCoating() {
               <FormGroup>
                 <Typography mb={1}>Total Qty</Typography>
                 <TextField
-                  id="outlined-size-small"
-                  name=""
                   size="small"
                   value={formData?.item_quantity}
                   disabled
@@ -886,8 +830,6 @@ function EditCoating() {
               <FormGroup>
                 <Typography mb={1}>Sales Person</Typography>
                 <TextField
-                  id="outlined-size-small"
-                  name=""
                   size="small"
                   value={formData?.sales_employee}
                   disabled
@@ -898,13 +840,7 @@ function EditCoating() {
             <Grid size={2}>
               <FormGroup>
                 <Typography mb={1}>SP Contact No</Typography>
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  value={formData?.telephone}
-                  disabled
-                />
+                <TextField size="small" value={formData?.telephone} disabled />
               </FormGroup>
             </Grid>
 
@@ -964,7 +900,8 @@ function EditCoating() {
                 </button>
               </div>
             </Grid>
-            {/* Header Start Here  */}
+
+            {/* Header */}
             <Grid size={1}>
               <div className="Box-table-subtitle">Component</div>
             </Grid>
@@ -993,12 +930,11 @@ function EditCoating() {
               <div className="Box-table-subtitle">CO Time</div>
             </Grid>
             <Grid size={1}>
-              <div className="Box-table-subtitle">Toatl Time</div>
+              <div className="Box-table-subtitle">Total Time</div>
             </Grid>
             <Grid size={1}>
               <div className="Box-table-subtitle">Status</div>
             </Grid>
-            {/* Header End Here  */}
 
             {/* Render Component Rows */}
             {Object.entries(components)
@@ -1043,7 +979,6 @@ function EditCoating() {
           </Grid>
 
           {/* Action Buttons */}
-
           <Box
             sx={{
               display: "flex",
@@ -1065,13 +1000,7 @@ function EditCoating() {
             <Button
               variant="contained"
               color="primary"
-              onClick={() => {
-                if (validateCoating()) {
-                  toast.info("All coating completed. Please Submit.");
-                  return;
-                }
-                setOpenPending(true);
-              }}
+              onClick={() => setOpenPending(true)}
               sx={{ minWidth: 100 }}
             >
               Pending
@@ -1103,7 +1032,7 @@ function EditCoating() {
           </Box>
         </Modal>
 
-        {/* Pending Dialouge */}
+        {/* Pending Dialog */}
         <Dialog
           open={openPending}
           onClose={() => setOpenPending(false)}
@@ -1189,13 +1118,7 @@ function EditCoating() {
             </Grid>
           </DialogContent>
 
-          <DialogActions
-            sx={{
-              justifyContent: "flex-end",
-              p: 2,
-              gap: 2,
-            }}
-          >
+          <DialogActions sx={{ justifyContent: "flex-end", p: 2, gap: 2 }}>
             <Button
               variant="contained"
               color="error"

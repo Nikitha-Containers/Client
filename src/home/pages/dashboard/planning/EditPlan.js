@@ -156,6 +156,13 @@ function EditPlan() {
   const navigate = useNavigate();
   const { design } = useLocation()?.state || {};
 
+  useEffect(() => {
+    if (!design) {
+      toast.error("No design selected. Redirecting to dashboard.");
+      navigate("/planning_dashboard", { replace: true });
+    }
+  }, [design, navigate]);
+
   const [components, setComponents] = useState({});
   const [open, setOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState("");
@@ -298,7 +305,6 @@ function EditPlan() {
     [components, design],
   );
 
-
   const openImageModal = (url) => {
     setCurrentImage(url);
     setOpen(true);
@@ -325,11 +331,9 @@ function EditPlan() {
 
   const handleClose = () => {
     setOpen(false);
-    if (currentImage) URL.revokeObjectURL(currentImage);
+    if (currentImage?.startsWith("blob:")) URL.revokeObjectURL(currentImage);
     setCurrentImage("");
   };
-
-
 
   const validatePending = () => {
     if (!pendingData?.reason) {
@@ -343,8 +347,7 @@ function EditPlan() {
     return true;
   };
 
-
-// Handle Submit 
+  // Handle Submit
 
   const handleSubmit = async (status) => {
     try {
@@ -418,7 +421,6 @@ function EditPlan() {
     }
   };
 
-
   const renderMachineSection = (
     title,
     processType,
@@ -470,7 +472,7 @@ function EditPlan() {
     </Box>
   );
 
-  // ── Render ────────────────────────────────────
+  if (!design) return null;
 
   return (
     <Box className="Dashboard-con">

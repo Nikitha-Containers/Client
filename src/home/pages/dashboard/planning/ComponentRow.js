@@ -46,8 +46,8 @@ export const MACHINE_CONFIG = {
   },
   varnish: {
     title: "Varnish Machine",
-    machines: ["Varnish Crab Tree"],
-    sheetsPerHour: { "Varnish Crab Tree": 3500 },
+    machines: ["Var Crab Tree"],
+    sheetsPerHour: { "Var Crab Tree": 3500 },
   },
 };
 
@@ -68,11 +68,11 @@ const expandKeysWithSequence = (obj) => {
     if (key === "Other" && value?.name) {
       return Array.from(
         { length: value.count || 1 },
-        (_, i) => `${value.name} ${i + 1}`,
+        (_, i) => `${value.name} - ${i + 1}`,
       );
     }
     if (typeof value === "number") {
-      return Array.from({ length: value }, (_, i) => `${key} ${i + 1}`);
+      return Array.from({ length: value }, (_, i) => `${key} - ${i + 1}`);
     }
     return [];
   });
@@ -81,10 +81,13 @@ const expandKeysWithSequence = (obj) => {
 const getProcessLabels = (component, processType) => {
   if (processType === "coating") {
     const c = component?.coating || {};
-    const labels = [
-      ...expandKeysWithSequence(c.insideColor),
-      ...expandKeysWithSequence(c.outsideColor),
-    ];
+    const insideLabels = expandKeysWithSequence(c.insideColor).map(
+      (label) => `In - ${label}`,
+    );
+    const outsideLabels = expandKeysWithSequence(c.outsideColor).map(
+      (label) => `Out - ${label}`,
+    );
+    const labels = [...insideLabels, ...outsideLabels];
     return labels.length ? labels : [];
   }
   if (processType === "printing") {
@@ -269,8 +272,7 @@ const ComponentRow = ({
   const getRequiredShiftCount = (row) => {
     if (!row?.machine || !component?.sheets) return 0;
     const reqH = getRequiredHours(row.machine);
-    const anyShift = Object.values(row.slots || {}).flatMap(Object.keys)[0];
-    const shiftHours = anyShift ? (SHIFT_CONFIG[anyShift]?.hours ?? 8) : 8;
+    const shiftHours = 8;
     return Math.max(1, Math.ceil(reqH / shiftHours));
   };
 
@@ -362,11 +364,11 @@ const ComponentRow = ({
     };
   };
 
-  //  Auto-plan
-
   const findNextFreeSlot = (machine, startDate, shiftList) => {
     let date = new Date(startDate);
-    while (true) {
+    const MAX_DAYS = 365;
+
+    for (let i = 0; i < MAX_DAYS; i++) {
       const formatted = formatDateLocal(date);
       for (const shift of shiftList) {
         const key = `${machine}_${formatted}_${shift}`;
@@ -377,6 +379,15 @@ const ComponentRow = ({
       }
       date.setDate(date.getDate() + 1);
     }
+
+    console.warn(
+      `[findNextFreeSlot] No free slot found for machine "${machine}" within ${MAX_DAYS} days from ${formatDateLocal(new Date(startDate))}. Returning fallback.`,
+    );
+    return {
+      date: formatDateLocal(new Date(startDate)),
+      shift: shiftList[0],
+      freeHours: 0,
+    };
   };
 
   const autoPlanProduction = (rowIndex, shiftType) => {
@@ -517,7 +528,7 @@ const ComponentRow = ({
                   <TextField
                     size="small"
                     type="number"
-                    label={originalSheets ? `Base: ${originalSheets}` : ""}
+                    label={originalSheets ? `${originalSheets}` : ""}
                     value={component?.sheets}
                     InputLabelProps={{ shrink: true }}
                     sx={{

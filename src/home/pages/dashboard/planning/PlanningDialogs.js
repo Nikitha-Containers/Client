@@ -358,7 +358,8 @@ export const ShiftDialog = ({
         dateRange.map((dateObj, i) => {
           const formatted = formatDateLocal(dateObj);
           const rowShiftsOnDate = currentRow?.slots?.[formatted] || {};
-          const isMaxReached = currentCount >= requiredCount;
+          const isMaxReached =
+            requiredCount > 0 && currentCount >= requiredCount;
 
           return (
             <Box key={i} mb={2}>

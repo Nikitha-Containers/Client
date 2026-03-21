@@ -43,8 +43,8 @@ const MACHINE_LIST = [
     title: "VARNISH MACHINES",
     children: [
       {
-        id: "Varnish Crab Tree",
-        title: "Varnish Crab Tree",
+        id: "Var Crab Tree",
+        title: "Var Crab Tree",
         eventColor: "#a855f7",
         labelColor: "#a855f7",
       },
