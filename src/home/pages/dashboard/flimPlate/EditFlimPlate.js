@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, lazy, Suspense } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
 import {
@@ -390,24 +390,19 @@ function EditFlimPlate() {
         missingFilmPlate.push(name);
         return;
       }
-
       componentsPayload[name] = {
         ...original,
-        filmAvailable: comp.filmAvailable,
-        filmPlateNo: comp.filmPlateNo,
+        filmAvailable: comp.filmAvailable || "No",
+        filmPlateNo: comp.filmPlateNo || "",
       };
     });
 
-    if (missingFilmPlate.length) {
-      if (type === "FINAL") {
-        toast.error(
-          `Film Plate not available for: ${missingFilmPlate.join(
-            ", ",
-          )}. Move this to Pending.`,
-        );
-      } else {
-        toast.error(`Enter Film Plate No for: ${missingFilmPlate.join(", ")}`);
-      }
+    if (type === "FINAL" && missingFilmPlate.length) {
+      toast.error(
+        `Film Plate not available for: ${missingFilmPlate.join(
+          ", ",
+        )}. Move this to Pending.`,
+      );
       return;
     }
 
@@ -445,7 +440,6 @@ function EditFlimPlate() {
   const handleCancel = () => {
     navigate("/flimplate_dashboard");
   };
-
 
   const modalStyle = {
     position: "absolute",

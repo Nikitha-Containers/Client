@@ -475,9 +475,11 @@ function EditPrint() {
       const printing = selectedColor[name];
       const varnish = selectedVarnish[name];
 
-      if (!coating || !printing || !varnish) {
-        missingComponents.push(name);
-        return;
+      if (type === "FINAL") {
+        if (!coating || !printing || !varnish) {
+          missingComponents.push(name);
+          return;
+        }
       }
 
       componentsPayload[name] = {
@@ -487,13 +489,13 @@ function EditPrint() {
         thickness: data.thickness,
         ups: data.ups,
         sheets: data.sheets,
-        coating,
-        printingColor: printing,
-        varnish,
+        coating: coating || {},
+        printingColor: printing || {},
+        varnish: varnish || {},
       };
     });
 
-    if (missingComponents.length) {
+    if (type === "FINAL" && missingComponents.length) {
       toast.error(
         `Select coating & printing color for: ${missingComponents.join(", ")}`,
       );

@@ -41,9 +41,16 @@ const getArtWorkClass = (art) => {
   return "art-badge";
 };
 
-const ComponentRow = ({ component, name, onViewFile, totalQty, soNumber }) => {
-  const storageKey = `COATING_${soNumber}_${name}`;
-
+const ComponentRow = ({
+  component,
+  name,
+  onViewFile,
+  totalQty,
+  timers,
+  statusMap,
+  setTimers,
+  setStatusMap,
+}) => {
   const initTimer = () => ({
     status: "IDLE",
     startTime: null,
@@ -53,35 +60,6 @@ const ComponentRow = ({ component, name, onViewFile, totalQty, soNumber }) => {
     coStart: null,
     coTotalMs: 0,
   });
-
-  const isLoaded = useRef(false);
-
-  const [timers, setTimers] = useState({});
-  const [statusMap, setStatusMap] = useState({});
-
-  // Load from localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem(storageKey);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      setTimers(parsed.timers || {});
-      setStatusMap(parsed.statusMap || {});
-    }
-    isLoaded.current = true;
-  }, [storageKey]);
-
-  // Save to localStorage
-  useEffect(() => {
-    if (!isLoaded.current) return;
-
-    localStorage.setItem(
-      storageKey,
-      JSON.stringify({
-        timers,
-        statusMap,
-      }),
-    );
-  }, [timers, statusMap, storageKey]);
 
   // Live timer update
   useEffect(() => {
@@ -237,7 +215,7 @@ const ComponentRow = ({ component, name, onViewFile, totalQty, soNumber }) => {
   return (
     <>
       {listOfCoating.map((process, index) => {
-        const timer = timers[index] || initTimer();
+        const timer = timers[index] ?? initTimer();
         const status = statusMap[index] || "No";
 
         const labelStartTime = timer.startTime
@@ -523,6 +501,8 @@ function EditCoating() {
     art_work: design?.art_work || "NA",
   });
 
+  const [coatingState, setCoatingState] = useState({});
+
   //Pending Dialog
   const [openPending, setOpenPending] = useState(false);
   const [pendingData, setPendingData] = useState({
@@ -562,39 +542,35 @@ function EditCoating() {
     return obj;
   }, []);
 
-  const buildLocalStorageFromDB = (componentName, componentData) => {
-    if (!componentData?.coating_process) return;
+  const buildStateFromDB = (componentName, componentData) => {
+    if (!componentData?.coating_process) return {};
 
     const timers = {};
     const statusMap = {};
 
-    const toArr = (v) => {
-      if (!v) return [];
+    const extractKeysWithSequence = (obj) => {
+      if (!obj || typeof obj !== "object") return [];
 
-      if (Array.isArray(v)) return v;
+      return Object.entries(obj).flatMap(([key, value]) => {
+        if (key === "Other" && value?.name) {
+          const count = value.count || 1;
+          return Array.from(
+            { length: count },
+            (_, i) => `${value.name} ${i + 1}`,
+          );
+        }
 
-      if (typeof v === "string") {
-        return v
-          .split(",")
-          .map((item) => item.trim())
-          .filter(Boolean);
-      }
+        if (typeof value === "number") {
+          return Array.from({ length: value }, (_, i) => `${key} ${i + 1}`);
+        }
 
-      return [];
+        return [];
+      });
     };
 
-    // SAME ORDER AS UI
     const coatingList = [
-      ...toArr(componentData?.coating?.sizing),
-      ...toArr(componentData?.coating?.insideColor),
-      ...toArr(componentData?.coating?.varnish),
-      ...(componentData?.coating?.coatingColor &&
-      componentData?.coating?.coatingCount
-        ? Array.from(
-            { length: componentData.coating.coatingCount },
-            (_, i) => `${componentData.coating.coatingColor} - ${i + 1}`,
-          )
-        : []),
+      ...extractKeysWithSequence(componentData?.coating?.insideColor),
+      ...extractKeysWithSequence(componentData?.coating?.outsideColor),
     ];
 
     coatingList.forEach((processName, index) => {
@@ -617,31 +593,25 @@ function EditCoating() {
       statusMap[index] = p.status === 1 ? "Yes" : "No";
     });
 
-    const key = `COATING_${design.saleorder_no}_${componentName}`;
-
-    localStorage.setItem(
-      key,
-      JSON.stringify({
-        timers,
-        statusMap,
-      }),
-    );
+    return { timers, statusMap };
   };
 
   useEffect(() => {
     if (!design?.components) return;
 
     const updatedComponents = { ...initialComponentsState };
+    const newCoatingState = {};
 
     Object.entries(design.components).forEach(([name, comp]) => {
       if (updatedComponents[name]) {
         updatedComponents[name] = { ...comp };
-        buildLocalStorageFromDB(name, comp);
+        newCoatingState[name] = buildStateFromDB(name, comp);
       }
     });
 
     setComponents(updatedComponents);
-  }, [design, initialComponentsState]);
+    setCoatingState(newCoatingState);
+  }, [design]);
 
   useEffect(() => {
     return () => {
@@ -697,22 +667,19 @@ function EditCoating() {
     setCurrentImage("");
   };
 
-  const isAllCoatingCompleted = () => {
+  const validateCoating = (type) => {
+    if (type === "PENDING") return true;
+
     for (const compName of Object.keys(design?.components || {})) {
-      const key = `COATING_${design.saleorder_no}_${compName}`;
-      const saved = localStorage.getItem(key);
-
-      if (!saved) return false;
-
-      const { timers = {}, statusMap = {} } = JSON.parse(saved);
+      const { timers = {}, statusMap = {} } = coatingState[compName] || {};
 
       if (Object.keys(timers).length === 0) return false;
 
       for (const index of Object.keys(timers)) {
         const t = timers[index];
 
-        if (!t || t.status !== "STOPPED") return false;
-
+        if (!t?.startTime) return false;
+        if (!t?.endTime || t.status !== "STOPPED") return false;
         if (statusMap[index] !== "Yes") return false;
       }
     }
@@ -729,10 +696,8 @@ function EditCoating() {
 
       const coating_status = type === "PENDING" ? 1 : 2;
 
-      if (type === "FINAL" && !isAllCoatingCompleted()) {
-        toast.warning(
-          "All coating processes must be completed before submitting",
-        );
+      if (!validateCoating(type)) {
+        toast.warning("Complete all coating processes before submitting");
         return;
       }
 
@@ -741,57 +706,53 @@ function EditCoating() {
       Object.entries(components)
         .filter(([compName]) => design?.components?.[compName])
         .forEach(([compName, comp]) => {
-          const storageKey = `COATING_${design.saleorder_no}_${compName}`;
-          const saved = localStorage.getItem(storageKey);
+          const { timers = {}, statusMap = {} } = coatingState[compName] || {};
 
           let coating_process = {};
 
-          if (saved) {
-            const { timers = {}, statusMap = {} } = JSON.parse(saved);
+          const extractKeysWithSequence = (obj) => {
+            if (!obj || typeof obj !== "object") return [];
 
-            const extractKeysWithSequence = (obj) => {
-              if (!obj || typeof obj !== "object") return [];
+            return Object.entries(obj).flatMap(([key, value]) => {
+              if (key === "Other" && value?.name) {
+                const count = value.count || 1;
+                return Array.from(
+                  { length: count },
+                  (_, i) => `${value.name} ${i + 1}`,
+                );
+              }
 
-              return Object.entries(obj).flatMap(([key, value]) => {
-                if (key === "Other" && value?.name) {
-                  const count = value.count || 1;
-                  return Array.from(
-                    { length: count },
-                    (_, i) => `${value.name} ${i + 1}`,
-                  );
-                }
+              if (typeof value === "number") {
+                return Array.from(
+                  { length: value },
+                  (_, i) => `${key} ${i + 1}`,
+                );
+              }
 
-                if (typeof value === "number") {
-                  return Array.from(
-                    { length: value },
-                    (_, i) => `${key} ${i + 1}`,
-                  );
-                }
-
-                return [];
-              });
-            };
-
-            const coatingList = [
-              ...extractKeysWithSequence(comp?.coating?.insideColor),
-              ...extractKeysWithSequence(comp?.coating?.outsideColor),
-            ];
-
-            coatingList.forEach((processName, index) => {
-              const t = timers[index];
-              if (!t || !t.startTime || !t.endTime) return;
-
-              coating_process[processName] = {
-                start_time: new Date(t.startTime),
-                end_time: new Date(t.endTime),
-                co_time: Math.floor((t.coTotalMs || 0) / 1000),
-                total_time: Math.floor(
-                  (t.endTime - t.startTime - (t.coTotalMs || 0)) / 1000,
-                ),
-                status: statusMap[index] === "Yes" ? 1 : 0,
-              };
+              return [];
             });
-          }
+          };
+
+          const coatingList = [
+            ...extractKeysWithSequence(comp?.coating?.insideColor),
+            ...extractKeysWithSequence(comp?.coating?.outsideColor),
+          ];
+
+          coatingList.forEach((processName, index) => {
+            const t = timers[index];
+
+            if (!t || !t.startTime || !t.endTime) return;
+
+            coating_process[processName] = {
+              start_time: new Date(t.startTime),
+              end_time: new Date(t.endTime),
+              co_time: Math.floor((t.coTotalMs || 0) / 1000),
+              total_time: Math.floor(
+                (t.endTime - t.startTime - (t.coTotalMs || 0)) / 1000,
+              ),
+              status: statusMap[index] === "Yes" ? 1 : 0,
+            };
+          });
 
           updatedComponents[compName] = {
             ...comp,
@@ -806,7 +767,10 @@ function EditCoating() {
         coating_pending_details:
           type === "PENDING"
             ? {
-                pending_reason: pendingData.reason || "",
+                pending_reason:
+                  pendingData.reason === "Others"
+                    ? pendingData.otherReason
+                    : pendingData.reason,
               }
             : design?.coating_pending_details || {},
 
@@ -814,10 +778,6 @@ function EditCoating() {
       };
 
       await server.post("/design/add", payload);
-
-      Object.keys(localStorage)
-        .filter((k) => k.startsWith(`COATING_${design.saleorder_no}_`))
-        .forEach((k) => localStorage.removeItem(k));
 
       if (type === "PENDING") {
         toast.info("Moved to Pending");
@@ -831,20 +791,8 @@ function EditCoating() {
       toast.error("Failed to Save Coating");
     }
   };
+
   const handleCancel = () => {
-    const soNo = formData.saleorder_no;
-
-    Object.keys(localStorage)
-      .filter((key) => key.startsWith(`COATING_${soNo}_`))
-      .forEach((key) => localStorage.removeItem(key));
-
-    setComponents({});
-    setTimeout(() => {
-      setComponents(initialComponentsState);
-    }, 0);
-
-    toast.info("Changes cleared. Initial values restored.");
-
     navigate("/coating_dashboard");
   };
 
@@ -933,45 +881,6 @@ function EditCoating() {
                 />
               </FormGroup>
             </Grid>
-
-            {/* <Grid size={2}>
-              <FormGroup>
-                <Typography mb={1}>Machine</Typography>
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  value={formData?.machine}
-                  disabled
-                />
-              </FormGroup>
-            </Grid> */}
-
-            {/* <Grid size={2}>
-              <FormGroup>
-                <Typography mb={1}>Shift</Typography>
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  value={formData?.shift}
-                  disabled
-                />
-              </FormGroup>
-            </Grid> */}
-
-            {/* <Grid size={2}>
-              <FormGroup>
-                <Typography mb={1}>Fab Site</Typography>
-                <TextField
-                  id="outlined-size-small"
-                  name=""
-                  size="small"
-                  value={formData?.fab_site}
-                  disabled
-                />
-              </FormGroup>
-            </Grid> */}
 
             <Grid size={2}>
               <FormGroup>
@@ -1103,7 +1012,32 @@ function EditCoating() {
                   name={key}
                   onViewFile={handleViewFile}
                   totalQty={design?.item_quantity}
-                  soNumber={design?.saleorder_no}
+                  timers={coatingState[key]?.timers || {}}
+                  statusMap={coatingState[key]?.statusMap || {}}
+                  setTimers={(val) =>
+                    setCoatingState((prev) => ({
+                      ...prev,
+                      [key]: {
+                        ...prev[key],
+                        timers:
+                          typeof val === "function"
+                            ? val(prev[key]?.timers || {})
+                            : val,
+                      },
+                    }))
+                  }
+                  setStatusMap={(val) =>
+                    setCoatingState((prev) => ({
+                      ...prev,
+                      [key]: {
+                        ...prev[key],
+                        statusMap:
+                          typeof val === "function"
+                            ? val(prev[key]?.statusMap || {})
+                            : val,
+                      },
+                    }))
+                  }
                 />
               ))}
           </Grid>
@@ -1132,7 +1066,7 @@ function EditCoating() {
               variant="contained"
               color="primary"
               onClick={() => {
-                if (isAllCoatingCompleted()) {
+                if (validateCoating()) {
                   toast.info("All coating completed. Please Submit.");
                   return;
                 }
@@ -1217,11 +1151,41 @@ function EditCoating() {
                   <MenuItem value="" disabled>
                     Select
                   </MenuItem>
-                  <MenuItem value="Work is Not Completed">
-                    Work is Not Completed
-                  </MenuItem>
+
+                  {pendingReasons.map((reason) => (
+                    <MenuItem key={reason} value={reason}>
+                      {reason}
+                    </MenuItem>
+                  ))}
+                  <MenuItem value="Others">Others</MenuItem>
                 </Select>
               </Grid>
+
+              {pendingData.reason === "Others" && (
+                <>
+                  <Grid size={5}>
+                    <Typography>Enter Reason</Typography>
+                  </Grid>
+
+                  <Grid size={7}>
+                    <TextField
+                      autoFocus
+                      fullWidth
+                      size="small"
+                      multiline
+                      rows={3}
+                      placeholder="Enter Pending Reason"
+                      value={pendingData?.otherReason}
+                      onChange={(e) =>
+                        setPendingData({
+                          ...pendingData,
+                          otherReason: e.target.value,
+                        })
+                      }
+                    />
+                  </Grid>
+                </>
+              )}
             </Grid>
           </DialogContent>
 
@@ -1249,6 +1213,15 @@ function EditCoating() {
                   toast.error("Please Select Pending Reason");
                   return;
                 }
+
+                if (
+                  pendingData.reason === "Others" &&
+                  !pendingData.otherReason.trim()
+                ) {
+                  toast.error("Please Enter Pending Reason");
+                  return;
+                }
+
                 setOpenPending(false);
                 handleSubmit("PENDING");
               }}
