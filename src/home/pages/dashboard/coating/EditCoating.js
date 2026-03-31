@@ -61,10 +61,17 @@ const extractKeysWithSequence = (obj) => {
   });
 };
 
-const getCoatingList = (comp) => [
-  ...extractKeysWithSequence(comp?.coating?.insideColor),
-  ...extractKeysWithSequence(comp?.coating?.outsideColor),
-];
+const getCoatingList = (comp) => {
+  const inside = extractKeysWithSequence(comp?.coating?.insideColor).map(
+    (label) => `In - ${label}`,
+  );
+
+  const outside = extractKeysWithSequence(comp?.coating?.outsideColor).map(
+    (label) => `Out - ${label}`,
+  );
+
+  return [...inside, ...outside];
+};
 
 const ComponentRow = ({
   component,
@@ -239,12 +246,10 @@ const ComponentRow = ({
         return (
           <Fragment key={index}>
             <Grid size={12} sx={{ borderBottom: "1px solid #dcdddd" }}></Grid>
-
             {/* Component Name */}
             <Grid size={1}>
               <div className="Box-table-text">{name} </div>
             </Grid>
-
             {/* Sheet Size */}
             <Grid size={1}>
               <div className="Box-table-content">
@@ -255,7 +260,6 @@ const ComponentRow = ({
                 />
               </div>
             </Grid>
-
             {/* No. of Sheets */}
             <Grid size={1}>
               <div className="Box-table-content">
@@ -280,7 +284,6 @@ const ComponentRow = ({
                 />
               </div>
             </Grid>
-
             {/* Source File */}
             <Grid size={1}>
               <Box
@@ -297,14 +300,12 @@ const ComponentRow = ({
                 </div>
               </Box>
             </Grid>
-
             {/* Coating Type */}
             <Grid size={1}>
               <div className="Box-table-content">
                 <TextField size="small" value={process} disabled />
               </div>
             </Grid>
-
             {/* Time Action Button */}
             <Grid size={1}>
               <div className="Box-table-content">
@@ -372,7 +373,6 @@ const ComponentRow = ({
                 )}
               </div>
             </Grid>
-
             {/* Start Time */}
             <Grid size={1}>
               <div className="Box-table-content">
@@ -385,21 +385,18 @@ const ComponentRow = ({
                 />
               </div>
             </Grid>
-
             {/* End Time */}
             <Grid size={1}>
               <div className="Box-table-content">
                 <TextField size="small" value={endTimeText} disabled />
               </div>
             </Grid>
-
             {/* CO Time */}
             <Grid size={1}>
               <div className="Box-table-content">
                 <TextField size="small" value={msToHMS(liveCoMs)} disabled />
               </div>
             </Grid>
-
             {/* Total Time */}
             <Grid size={1}>
               <div className="Box-table-content">
@@ -407,6 +404,27 @@ const ComponentRow = ({
               </div>
             </Grid>
 
+            {/* Printed Sheets  */}
+            <Grid size={0.5}>
+              <div className="Box-table-content">
+                <TextField
+                  size="small"
+                  value={`${component?.length} X ${component?.breadth} X ${component?.thickness}`}
+                  disabled
+                />
+              </div>
+            </Grid>
+
+            {/* Rejected Sheets */}
+            <Grid size={0.5}>
+              <div className="Box-table-content">
+                <TextField
+                  size="small"
+                  value={`${component?.length} X ${component?.breadth} X ${component?.thickness}`}
+                  disabled
+                />
+              </div>
+            </Grid>
             <Grid size={1}>
               <div className="Box-table-content">
                 <ToggleButtonGroup
@@ -632,7 +650,6 @@ function EditCoating() {
     setCurrentImage(imageUrl);
     setOpen(true);
   };
-
 
   const handleClose = () => {
     setOpen(false);
@@ -900,7 +917,6 @@ function EditCoating() {
                 </button>
               </div>
             </Grid>
-
             {/* Header */}
             <Grid size={1}>
               <div className="Box-table-subtitle">Component</div>
@@ -932,10 +948,15 @@ function EditCoating() {
             <Grid size={1}>
               <div className="Box-table-subtitle">Total Time</div>
             </Grid>
-            <Grid size={1}>
+            <Grid size={0.5}>
+              <div className="Box-table-subtitle">PS</div>
+            </Grid>
+            <Grid size={0.5}>
+              <div className="Box-table-subtitle">RS</div>
+            </Grid>
+            <Grid size={0.5}>
               <div className="Box-table-subtitle">Status</div>
             </Grid>
-
             {/* Render Component Rows */}
             {Object.entries(components)
               .filter(([key]) =>
