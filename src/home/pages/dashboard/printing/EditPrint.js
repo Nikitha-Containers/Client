@@ -476,7 +476,20 @@ function EditPrint() {
       const varnish = selectedVarnish[name];
 
       if (type === "FINAL") {
-        if (!coating || !printing || !varnish) {
+        const isCoatingEmpty =
+          !coating ||
+          (Object.keys(coating.insideColor || {}).length === 0 &&
+            Object.keys(coating.outsideColor || {}).length === 0);
+
+        const isPrintingEmpty =
+          !printing ||
+          (Object.keys(printing.normalColor || {}).length === 0 &&
+            Object.keys(printing.splColor || {}).length === 0);
+
+        const isVarnishEmpty =
+          !varnish || Object.keys(varnish.varnish || {}).length === 0;
+
+        if (isCoatingEmpty && isPrintingEmpty && isVarnishEmpty) {
           missingComponents.push(name);
           return;
         }

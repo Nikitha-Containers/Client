@@ -863,6 +863,31 @@ function EditCoating() {
 
             <Grid size={2}>
               <FormGroup>
+                <Typography mb={1}>Instructor Name</Typography>
+
+                <Select
+                  value={formData.coating_operator_name ?? ""}
+                  size="small"
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      coating_operator_name: e.target.value,
+                    })
+                  }
+                  displayEmpty
+                >
+                  <MenuItem value="" disabled>
+                    Select
+                  </MenuItem>
+                  <MenuItem value="KATHIRAVAN K">KATHIRAVAN K</MenuItem>
+                  <MenuItem value="AMARNATH D">AMARNATH D</MenuItem>
+                  <MenuItem value="SAMAY MARANDI">SAMAY MARANDI</MenuItem>
+                </Select>
+              </FormGroup>
+            </Grid>
+
+            <Grid size={2}>
+              <FormGroup>
                 <Typography mb={1}>Operator Name</Typography>
 
                 <Select

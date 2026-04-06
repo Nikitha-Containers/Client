@@ -2,9 +2,7 @@ import React, { Fragment, useEffect, useMemo, useState } from "react";
 import {
   Box,
   Grid,
-  MenuItem,
   TextField,
-  Select,
   Button,
   Typography,
   Tooltip,
@@ -51,7 +49,7 @@ export const MACHINE_CONFIG = {
   },
 };
 
-// Helper Function
+// Helper Functions
 
 export const formatDateLocal = (date) => {
   const d = new Date(date);
@@ -211,6 +209,7 @@ const ComponentRow = ({
   existingBookings = [],
   usedShiftMap = {},
   currentUniqueId,
+  sectionMachine,
 }) => {
   const navigate = useNavigate();
   const { designs } = useDesign();
@@ -255,10 +254,27 @@ const ComponentRow = ({
         const matched = existingBookings.filter(
           (b) => b.component === name && b.process === process,
         );
-        return buildRowFromBookings(process, matched);
+        const row = buildRowFromBookings(process, matched);
+        if (!row.machine && sectionMachine) row.machine = sectionMachine;
+        return row;
       }),
     );
   }, [component, processType, name, existingBookings]);
+
+  useEffect(() => {
+    if (!sectionMachine) return;
+    setProcessRows((prev) => {
+      const updated = prev.map((row) => ({
+        ...row,
+        machine: sectionMachine,
+        slots: {},
+        startDate: row.startDate,
+        endDate: row.endDate,
+      }));
+      onPlanningChange?.(updated);
+      return updated;
+    });
+  }, [sectionMachine]);
 
   const getCapacity = (machine) =>
     MACHINE_CONFIG[processType]?.sheetsPerHour?.[machine] ?? 0;
@@ -294,7 +310,6 @@ const ComponentRow = ({
     );
 
   // Machine availability check
-
   const checkAndShowAvailability = (machine, date) => {
     if (!machine || !date) return true;
 
@@ -316,7 +331,7 @@ const ComponentRow = ({
     return result.status !== "full";
   };
 
-  //Info panel data
+  // Info panel data
   const calculateInfoData = (row) => {
     if (!row.machine) return null;
 
@@ -380,9 +395,6 @@ const ComponentRow = ({
       date.setDate(date.getDate() + 1);
     }
 
-    console.warn(
-      `[findNextFreeSlot] No free slot found for machine "${machine}" within ${MAX_DAYS} days from ${formatDateLocal(new Date(startDate))}. Returning fallback.`,
-    );
     return {
       date: formatDateLocal(new Date(startDate)),
       shift: shiftList[0],
@@ -566,35 +578,6 @@ const ComponentRow = ({
               </div>
             </Grid>
 
-            {/* Machine */}
-            <Grid size={1}>
-              <div className="Box-table-content">
-                <Select
-                  size="small"
-                  value={row.machine}
-                  displayEmpty
-                  onChange={(e) => {
-                    const machine = e.target.value;
-                    updateRow(index, { machine, slots: {} });
-                    if (machine && row.startDate) {
-                      checkAndShowAvailability(machine, row.startDate);
-                      setSelectedRowIndex(index);
-                      setOpenShiftType(true);
-                    }
-                  }}
-                >
-                  <MenuItem value="" disabled>
-                    Select
-                  </MenuItem>
-                  {MACHINE_CONFIG[processType]?.machines?.map((m) => (
-                    <MenuItem key={m} value={m}>
-                      {m}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </div>
-            </Grid>
-
             {/* Start Date */}
             <Grid size={1.5}>
               <div className="Box-table-content">
@@ -634,9 +617,7 @@ const ComponentRow = ({
               <div className="Box-table-content">
                 <Tooltip
                   title={
-                    summary
-                      ? `Allocated: ${summary}`
-                      : "Select machine and dates first"
+                    summary ? `Allocated: ${summary}` : "Select dates first"
                   }
                   arrow
                   placement="top"
@@ -646,8 +627,14 @@ const ComponentRow = ({
                     size="small"
                     color={slotCount > 0 ? "error" : "inherit"}
                     onClick={() => {
-                      if (!row.machine || !row.startDate || !row.endDate) {
-                        toast.error("Please select Machine and Dates first");
+                      if (!row.machine) {
+                        toast.error(
+                          "Please select a Machine for this section first",
+                        );
+                        return;
+                      }
+                      if (!row.startDate || !row.endDate) {
+                        toast.error("Please select Start and End Dates first");
                         return;
                       }
                       setActiveRowIndex(index);

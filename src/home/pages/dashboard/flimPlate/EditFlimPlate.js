@@ -451,6 +451,35 @@ function EditFlimPlate() {
     maxHeight: "90vh",
   };
 
+  const hasEntries = (obj) => Object.keys(obj || {}).length > 0;
+
+  const renderFields = (data) =>
+    Object.entries(data || {}).map(([key, val]) => (
+      <Grid item xs={6} key={key}>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Typography sx={{ minWidth: 120 }}>
+            {key === "Other" ? val.name : key}
+          </Typography>
+          <TextField
+            size="small"
+            value={key === "Other" ? val.count : val}
+            sx={{ width: 50 }}
+            disabled
+          />
+        </Stack>
+      </Grid>
+    ));
+
+  const insideColor = pmDetails?.coating?.insideColor || {};
+  const outsideColor = pmDetails?.coating?.outsideColor || {};
+  const normalColor = pmDetails?.printingColor?.normalColor || {};
+  const splColor = pmDetails?.printingColor?.splColor || {};
+  const varnishData = pmDetails?.varnish?.varnish || {};
+
+  const hasCoating = hasEntries(insideColor) || hasEntries(outsideColor);
+  const hasPrintingColor = hasEntries(normalColor) || hasEntries(splColor);
+  const hasVarnish = hasEntries(varnishData);
+
   return (
     <Box className="Dashboard-con">
       <Box className="breadcrump-con">
@@ -638,7 +667,6 @@ function EditFlimPlate() {
           </Grid>
 
           {/* Action Buttons */}
-
           <Box
             sx={{
               display: "flex",
@@ -694,7 +722,6 @@ function EditFlimPlate() {
         </Modal>
 
         {/* Printing Manager Modal */}
-
         <Dialog
           open={openPMModal}
           onClose={() => setOpenPMModal(false)}
@@ -721,161 +748,95 @@ function EditFlimPlate() {
           <DialogContent dividers>
             <Stack spacing={2}>
               {/* COATING */}
-              <Typography
-                color="primary"
-                variant="subtitle1"
-                sx={{ fontSize: 18, fontWeight: "bold" }}
-              >
-                Coating
-              </Typography>
+              {hasCoating && (
+                <>
+                  <Typography
+                    color="primary"
+                    variant="subtitle1"
+                    sx={{ fontSize: 18, fontWeight: "bold" }}
+                  >
+                    Coating
+                  </Typography>
 
-              {/* Inside */}
-              <Typography variant="body1" fontWeight="bold">
-                Inside :
-              </Typography>
-
-              <Grid container spacing={2}>
-                {Object.entries(pmDetails?.coating?.insideColor || {}).map(
-                  ([key, val]) => (
-                    <Grid item xs={6} key={key}>
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <Typography sx={{ minWidth: 120 }}>
-                          {key === "Other" ? val.name : key}
-                        </Typography>
-
-                        <TextField
-                          size="small"
-                          value={key === "Other" ? val.count : val}
-                          sx={{ width: 50 }}
-                          disabled
-                        />
-                      </Stack>
-                    </Grid>
-                  ),
-                )}
-              </Grid>
-
-              {/* Outside */}
-              <Typography variant="body1" fontWeight="bold">
-                Outside :
-              </Typography>
-
-              <Grid container spacing={2}>
-                {Object.entries(pmDetails?.coating?.outsideColor || {}).map(
-                  ([key, val]) => (
-                    <Grid item xs={6} key={key}>
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <Typography sx={{ minWidth: 120 }}>
-                          {key === "Other" ? val.name : key}
-                        </Typography>
-
-                        <TextField
-                          size="small"
-                          value={key === "Other" ? val.count : val}
-                          sx={{ width: 50 }}
-                          disabled
-                        />
-                      </Stack>
-                    </Grid>
-                  ),
-                )}
-              </Grid>
-
-              {/* PRINTING */}
-              <Typography
-                color="primary"
-                variant="subtitle1"
-                sx={{ fontSize: 18, fontWeight: "bold" }}
-              >
-                Printing Color
-              </Typography>
-
-              {/* Normal */}
-              <Typography variant="body1" fontWeight="bold">
-                Normal :
-              </Typography>
-
-              <Grid container spacing={2}>
-                {Object.entries(
-                  pmDetails?.printingColor?.normalColor || {},
-                ).map(([key, val]) => (
-                  <Grid item xs={6} key={key}>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <Typography sx={{ minWidth: 120 }}>
-                        {key === "Other" ? val.name : key}
+                  {hasEntries(insideColor) && (
+                    <>
+                      <Typography variant="body1" fontWeight="bold">
+                        Inside :
                       </Typography>
+                      <Grid container spacing={2}>
+                        {renderFields(insideColor)}
+                      </Grid>
+                    </>
+                  )}
 
-                      <TextField
-                        size="small"
-                        value={key === "Other" ? val.count : val}
-                        sx={{ width: 50 }}
-                        disabled
-                      />
-                    </Stack>
-                  </Grid>
-                ))}
-              </Grid>
+                  {hasEntries(outsideColor) && (
+                    <>
+                      <Typography variant="body1" fontWeight="bold">
+                        Outside :
+                      </Typography>
+                      <Grid container spacing={2}>
+                        {renderFields(outsideColor)}
+                      </Grid>
+                    </>
+                  )}
+                </>
+              )}
 
-              {/* Special */}
-              <Typography variant="body1" fontWeight="bold">
-                Special :
-              </Typography>
+              {/* PRINTING COLOR */}
+              {hasPrintingColor && (
+                <>
+                  <Typography
+                    color="primary"
+                    variant="subtitle1"
+                    sx={{ fontSize: 18, fontWeight: "bold" }}
+                  >
+                    Printing Color
+                  </Typography>
 
-              <Grid container spacing={2}>
-                {Object.entries(pmDetails?.printingColor?.splColor || {}).map(
-                  ([key, val]) => (
-                    <Grid item xs={6} key={key}>
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <Typography sx={{ minWidth: 120 }}>
-                          {key === "Other" ? val.name : key}
-                        </Typography>
+                  {hasEntries(normalColor) && (
+                    <>
+                      <Typography variant="body1" fontWeight="bold">
+                        Normal :
+                      </Typography>
+                      <Grid container spacing={2}>
+                        {renderFields(normalColor)}
+                      </Grid>
+                    </>
+                  )}
 
-                        <TextField
-                          size="small"
-                          value={key === "Other" ? val.count : val}
-                          sx={{ width: 50 }}
-                          disabled
-                        />
-                      </Stack>
-                    </Grid>
-                  ),
-                )}
-              </Grid>
+                  {hasEntries(splColor) && (
+                    <>
+                      <Typography variant="body1" fontWeight="bold">
+                        Special :
+                      </Typography>
+                      <Grid container spacing={2}>
+                        {renderFields(splColor)}
+                      </Grid>
+                    </>
+                  )}
+                </>
+              )}
 
               {/* VARNISH */}
-              <Typography
-                color="primary"
-                variant="subtitle1"
-                sx={{ fontSize: 18, fontWeight: "bold" }}
-              >
-                Varnish
-              </Typography>
-
-              <Grid container spacing={2}>
-                {Object.entries(pmDetails?.varnish?.varnish || {}).map(
-                  ([key, val]) => (
-                    <Grid item xs={6} key={key}>
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <Typography sx={{ minWidth: 120 }}>
-                          {key === "Other" ? val.name : key}
-                        </Typography>
-
-                        <TextField
-                          size="small"
-                          value={key === "Other" ? val.count : val}
-                          sx={{ width: 50 }}
-                          disabled
-                        />
-                      </Stack>
-                    </Grid>
-                  ),
-                )}
-              </Grid>
+              {hasVarnish && (
+                <>
+                  <Typography
+                    color="primary"
+                    variant="subtitle1"
+                    sx={{ fontSize: 18, fontWeight: "bold" }}
+                  >
+                    Varnish
+                  </Typography>
+                  <Grid container spacing={2}>
+                    {renderFields(varnishData)}
+                  </Grid>
+                </>
+              )}
             </Stack>
           </DialogContent>
         </Dialog>
 
-        {/* Pending Dialouge */}
+        {/* Pending Dialog */}
         <Dialog
           open={openPending}
           onClose={() => setOpenPending(false)}

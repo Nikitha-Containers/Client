@@ -304,8 +304,8 @@ function EditDesign() {
       Body: createComponent(),
       Bottom: createComponent(),
       "Lid & Body": createComponent(),
-      "Lid & Body & Bottom": createComponent(),
       "Body & Bottom": createComponent(),
+      "Lid & Body & Bottom": createComponent(),
     }),
     [salesOrder?.thickness],
   );
@@ -442,7 +442,6 @@ function EditDesign() {
   };
 
   const handleSubmit = async (type) => {
-    
     if (type === "FINAL") {
       setIsSubmitted(true);
     } else {

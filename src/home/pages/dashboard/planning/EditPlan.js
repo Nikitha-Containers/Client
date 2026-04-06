@@ -8,6 +8,8 @@ import {
   TextField,
   Modal,
   Button,
+  Select,
+  MenuItem,
 } from "@mui/material";
 
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
@@ -24,6 +26,7 @@ import {
   formatDateLocal,
   SHIFT_CONFIG,
   EPSILON,
+  MACHINE_CONFIG,
 } from "./ComponentRow";
 import { PendingDialog } from "./PlanningDialogs";
 
@@ -53,13 +56,13 @@ const FORM_FIELDS = [
   { label: "SP Contact No", key: "telephone" },
 ];
 
+// Machine column removed from TABLE_HEADERS
 const TABLE_HEADERS = [
   { label: "Component", size: 1 },
   { label: "Sheet Size", size: 1.5 },
   { label: "No of Sheets", size: 1 },
   { label: "Source File", size: 1 },
   { label: "Process", size: 1.5 },
-  { label: "Machine", size: 1 },
   { label: "Start Date", size: 1.5 },
   { label: "End Date", size: 1.5 },
   { label: "Shift", size: 1 },
@@ -172,6 +175,12 @@ function EditPlan() {
     otherReason: "",
   });
 
+  const [sectionMachines, setSectionMachines] = useState({
+    coating: "",
+    printing: "",
+    varnish: "",
+  });
+
   // formData is read-only
   const [formData] = useState({
     customer_name: design?.customer_name || "",
@@ -243,6 +252,15 @@ function EditPlan() {
       printing: buildPlanningSection(printingBookings),
       varnish: buildPlanningSection(varnishBookings),
     });
+
+    const getFirstMachine = (bookings) =>
+      bookings.length ? bookings[0].machine : "";
+
+    setSectionMachines({
+      coating: getFirstMachine(coatingBookings),
+      printing: getFirstMachine(printingBookings),
+      varnish: getFirstMachine(varnishBookings),
+    });
   }, [design, coatingBookings, printingBookings, varnishBookings]);
 
   useEffect(() => {
@@ -295,7 +313,7 @@ function EditPlan() {
     return map;
   }, [planningData, coatingBookings, printingBookings, varnishBookings]);
 
-  //Filtered component list
+  // Filtered component list
 
   const filteredComponents = useMemo(
     () =>
@@ -437,8 +455,46 @@ function EditPlan() {
     >
       <Grid container spacing={0.5}>
         {/* Section title */}
-        <Grid size={12}>
-          <div className="Box-table-title">{title}</div>
+        <Grid
+          size={12}
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            p: 2,
+            borderBottom: "1px solid #ddd",
+          }}
+        >
+          <Typography sx={{ fontSize: "18px", color: "#0a85cb" }}>
+            {title}
+          </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Typography>Machine :</Typography>
+
+            <Select
+              size="small"
+              value={sectionMachines[planningKey]}
+              displayEmpty
+              onChange={(e) => {
+                const machine = e.target.value;
+                setSectionMachines((prev) => ({
+                  ...prev,
+                  [planningKey]: machine,
+                }));
+              }}
+              sx={{ minWidth: 180 }}
+            >
+              <MenuItem value="" disabled>
+                Select Machine
+              </MenuItem>
+
+              {MACHINE_CONFIG[processType]?.machines?.map((m) => (
+                <MenuItem key={m} value={m}>
+                  {m}
+                </MenuItem>
+              ))}
+            </Select>
+          </Box>
         </Grid>
 
         {/* Column headers */}
@@ -460,6 +516,7 @@ function EditPlan() {
             existingBookings={existingBookings}
             usedShiftMap={usedShiftMap}
             currentUniqueId={design?.unique_id}
+            sectionMachine={sectionMachines[planningKey]}
             onPlanningChange={(data) =>
               setPlanningData((prev) => ({
                 ...prev,
