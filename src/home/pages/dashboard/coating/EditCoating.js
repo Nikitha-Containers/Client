@@ -33,6 +33,23 @@ import { toast } from "react-toastify";
 import "../../../pages/pagestyle.scss";
 import server from "../../../../server/server";
 
+const COLUMNS = [
+  { label: "Component", w: 100 },
+  { label: "Sheet Size", w: 160 },
+  { label: "No of Sheets", w: 120 },
+  { label: "Source File", w: 110 },
+  { label: "Coating Type", w: 180 },
+  { label: "Plan", w: 160 },
+  { label: "Action", w: 110 },
+  { label: "Start Time", w: 150 },
+  { label: "End Time", w: 130 },
+  { label: "CO Time", w: 110 },
+  { label: "Total Time", w: 120 },
+  { label: "Status", w: 120 },
+];
+
+const TOTAL_WIDTH = COLUMNS.reduce((sum, c) => sum + c.w, 0);
+
 // Helper Function
 const getArtWorkClass = (art) => {
   if (!art || art === "NA") return "art-badge art-blue";
@@ -43,7 +60,6 @@ const getArtWorkClass = (art) => {
 
 const extractKeysWithSequence = (obj) => {
   if (!obj || typeof obj !== "object") return [];
-
   return Object.entries(obj).flatMap(([key, value]) => {
     if (key === "Other" && value?.name) {
       const count = value.count || 1;
@@ -52,11 +68,9 @@ const extractKeysWithSequence = (obj) => {
         (_, i) => `${value.name} - ${i + 1}`,
       );
     }
-
     if (typeof value === "number") {
       return Array.from({ length: value }, (_, i) => `${key} - ${i + 1}`);
     }
-
     return [];
   });
 };
@@ -65,13 +79,51 @@ const getCoatingList = (comp) => {
   const inside = extractKeysWithSequence(comp?.coating?.insideColor).map(
     (label) => `In - ${label}`,
   );
-
   const outside = extractKeysWithSequence(comp?.coating?.outsideColor).map(
     (label) => `Out - ${label}`,
   );
-
   return [...inside, ...outside];
 };
+
+const getPlanningDetails = (design, compName, process) => {
+  const bookings =
+    design?.planning_work_details?.coating_machine_plan?.bookings || [];
+
+  const match = bookings.find(
+    (b) =>
+      b.component === compName &&
+      process.includes(b.process.replace(" - 1", "")),
+  );
+
+  if (!match) return "";
+
+  const date = new Date(match.shift_from_dt);
+
+  const formattedDate = date.toLocaleDateString("en-GB").replace(/\//g, "-");
+
+  const shiftMap = {
+    General: "G",
+    "Shift 1": "S1",
+    "Shift 2": "S2",
+    "Shift 3": "S3",
+  };
+
+  return `${formattedDate} - ${shiftMap[match.shift] || match.shift}`;
+};
+const Cell = ({ colIndex, children, sx = {} }) => (
+  <Box
+    sx={{
+      minWidth: COLUMNS[colIndex].w,
+      width: COLUMNS[colIndex].w,
+      px: 0.75,
+      display: "flex",
+      alignItems: "center",
+      ...sx,
+    }}
+  >
+    {children}
+  </Box>
+);
 
 const ComponentRow = ({
   component,
@@ -82,6 +134,7 @@ const ComponentRow = ({
   statusMap,
   setTimers,
   setStatusMap,
+  design,
 }) => {
   const initTimer = () => ({
     status: "IDLE",
@@ -93,7 +146,7 @@ const ComponentRow = ({
     coTotalMs: 0,
   });
 
-  // Live timer update
+  // Live clock tick
   useEffect(() => {
     const interval = setInterval(() => {
       setTimers((prev) => {
@@ -106,7 +159,6 @@ const ComponentRow = ({
         return updated;
       });
     }, 1000);
-
     return () => clearInterval(interval);
   }, [setTimers]);
 
@@ -114,7 +166,6 @@ const ComponentRow = ({
 
   const handleStart = (index) => {
     const now = Date.now();
-
     setTimers((prev) => ({
       ...prev,
       [index]: {
@@ -128,13 +179,10 @@ const ComponentRow = ({
 
   const handleStop = (index) => {
     const now = Date.now();
-
     setTimers((prev) => {
       const t = prev[index];
       if (!t) return prev;
-
-      let extraCoMs = t.coRunning ? now - t.coStart : 0;
-
+      const extraCoMs = t.coRunning ? now - t.coStart : 0;
       return {
         ...prev,
         [index]: {
@@ -154,16 +202,10 @@ const ComponentRow = ({
     setTimers((prev) => {
       const t = prev[index];
       if (!t) return prev;
-
       const now = Date.now();
-
       if (!t.coRunning) {
-        return {
-          ...prev,
-          [index]: { ...t, coRunning: true, coStart: now },
-        };
+        return { ...prev, [index]: { ...t, coRunning: true, coStart: now } };
       }
-
       return {
         ...prev,
         [index]: {
@@ -178,15 +220,11 @@ const ComponentRow = ({
 
   const handleStatusChange = (index, newValue) => {
     if (newValue !== null) {
-      setStatusMap((prev) => ({
-        ...prev,
-        [index]: newValue,
-      }));
+      setStatusMap((prev) => ({ ...prev, [index]: newValue }));
     }
   };
 
-  // Utils Functions
-
+  // Utils
   const format12Hr = (ms) =>
     new Date(ms).toLocaleTimeString("en-US", {
       hour: "2-digit",
@@ -208,7 +246,6 @@ const ComponentRow = ({
   };
 
   const listOfCoating = getCoatingList(component);
-
   const originalSheets =
     component.ups && totalQty
       ? Math.ceil(Number(totalQty) / Number(component.ups))
@@ -223,259 +260,239 @@ const ComponentRow = ({
         const labelStartTime = timer.startTime
           ? format12Hr(timer.startTime)
           : "Start Time";
-
         const insideLiveTime =
           timer.status === "RUNNING" && timer.currentTime
             ? format12Hr(timer.currentTime)
             : timer.startTime
               ? format12Hr(timer.startTime)
               : "";
-
         const endTimeText = timer.endTime ? format12Hr(timer.endTime) : "";
-
         const totalTimeText =
           timer.startTime && timer.endTime
             ? msToHMS(timer.endTime - timer.startTime - timer.coTotalMs)
             : "";
-
         const liveCoMs =
           timer.coRunning && timer.coStart
             ? timer.coTotalMs + (timer.currentTime - timer.coStart)
             : timer.coTotalMs;
 
         return (
-          <Fragment key={index}>
-            <Grid size={12} sx={{ borderBottom: "1px solid #dcdddd" }}></Grid>
-            {/* Component Name */}
-            <Grid size={1}>
-              <div className="Box-table-text">{name} </div>
-            </Grid>
+          <Box
+            key={index}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              borderBottom: "1px solid #dcdddd",
+              minWidth: TOTAL_WIDTH,
+              py: 0.75,
+              "&:hover": { background: "#fafafa" },
+            }}
+          >
+            {/* Component */}
+            <Cell colIndex={0}>
+              <div className="Box-table-text">{name}</div>
+            </Cell>
             {/* Sheet Size */}
-            <Grid size={1}>
-              <div className="Box-table-content">
-                <TextField
-                  size="small"
-                  value={`${component?.length} X ${component?.breadth} X ${component?.thickness}`}
-                  disabled
-                />
-              </div>
-            </Grid>
-            {/* No. of Sheets */}
-            <Grid size={1}>
-              <div className="Box-table-content">
-                <TextField
-                  size="small"
-                  type="number"
-                  label={originalSheets}
-                  value={component?.sheets}
-                  InputLabelProps={{ shrink: true }}
-                  sx={{
-                    "& .MuiInputLabel-root.Mui-disabled": {
-                      color: "green",
-                    },
-                    "& .MuiInputLabel-root": {
-                      color: "green",
-                    },
-                    "& .MuiInputLabel-root.Mui-focused": {
-                      color: "green",
-                    },
-                  }}
-                  disabled
-                />
-              </div>
-            </Grid>
+            <Cell colIndex={1}>
+              <TextField
+                size="small"
+                fullWidth
+                value={`${component?.length} X ${component?.breadth} X ${component?.thickness}`}
+                sx={{
+                  "& .MuiInputBase-input": {
+                    fontSize: "14px",
+                  },
+                }}
+                disabled
+              />
+            </Cell>
+            {/* No of Sheets */}
+            <Cell colIndex={2}>
+              <TextField
+                size="small"
+                fullWidth
+                type="number"
+                label={originalSheets}
+                value={component?.sheets}
+                InputLabelProps={{ shrink: true }}
+                sx={{
+                  "& .MuiInputLabel-root.Mui-disabled": { color: "green" },
+                  "& .MuiInputLabel-root": { color: "green" },
+                  "& .MuiInputLabel-root.Mui-focused": { color: "green" },
+                }}
+                disabled
+              />
+            </Cell>
             {/* Source File */}
-            <Grid size={1}>
-              <Box
-                sx={{ display: "flex", alignItems: "center", columnGap: 2.5 }}
+            <Cell colIndex={3}>
+              <div
+                className="gray-md-btn"
+                onClick={() => onViewFile(name)}
+                style={{
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                }}
               >
-                <div className="Box-table-content">
-                  <div
-                    className="gray-md-btn"
-                    onClick={() => onViewFile(name)}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <VisibilityIcon /> View
-                  </div>
-                </div>
-              </Box>
-            </Grid>
-            {/* Coating Type */}
-            <Grid size={1}>
-              <div className="Box-table-content">
-                <TextField size="small" value={process} disabled />
+                <VisibilityIcon fontSize="small" /> View
               </div>
-            </Grid>
-            {/* Time Action Button */}
-            <Grid size={1}>
-              <div className="Box-table-content">
-                <PlayCircleFilledWhiteIcon
-                  onClick={
-                    timer.status === "IDLE"
-                      ? () => handleStart(index)
-                      : undefined
-                  }
-                  style={{
-                    cursor: timer.status === "IDLE" ? "pointer" : "not-allowed",
-                    color: "green",
-                    opacity: timer.status === "IDLE" ? 1 : 0.3,
-                    fontSize: "32px",
-                  }}
-                />
-
-                <StopCircleIcon
+            </Cell>
+            {/* Coating Type */}
+            <Cell colIndex={4}>
+              <TextField
+                size="small"
+                fullWidth
+                value={process}
+                sx={{
+                  "& .MuiInputBase-input": {
+                    fontSize: "14px",
+                  },
+                }}
+                disabled
+              />
+            </Cell>
+            {/* Planning Date + Shift */}
+            <Cell colIndex={5}>
+              <TextField
+                size="small"
+                fullWidth
+                value={getPlanningDetails(design, name, process)}
+                disabled
+              />
+            </Cell>
+            {/* Action */}
+            <Cell colIndex={6} sx={{ gap: 0.25 }}>
+              <PlayCircleFilledWhiteIcon
+                onClick={
+                  timer.status === "IDLE" ? () => handleStart(index) : undefined
+                }
+                style={{
+                  cursor: timer.status === "IDLE" ? "pointer" : "not-allowed",
+                  color: "green",
+                  opacity: timer.status === "IDLE" ? 1 : 0.3,
+                  fontSize: "32px",
+                }}
+              />
+              <StopCircleIcon
+                onClick={
+                  timer.status === "RUNNING"
+                    ? () => handleStop(index)
+                    : undefined
+                }
+                style={{
+                  cursor:
+                    timer.status === "RUNNING" ? "pointer" : "not-allowed",
+                  color: "red",
+                  opacity: timer.status === "RUNNING" ? 1 : 0.3,
+                  fontSize: "30px",
+                }}
+              />
+              {timer.coRunning ? (
+                <TimerOffIcon
                   onClick={
                     timer.status === "RUNNING"
-                      ? () => handleStop(index)
+                      ? () => handleCoToggle(index)
                       : undefined
                   }
                   style={{
                     cursor:
                       timer.status === "RUNNING" ? "pointer" : "not-allowed",
-                    color: "red",
+                    color: "#0a85cb",
+                    fontSize: "30px",
+                  }}
+                  titleAccess="Stop CO Time"
+                />
+              ) : (
+                <TimerIcon
+                  onClick={
+                    timer.status === "RUNNING"
+                      ? () => handleCoToggle(index)
+                      : undefined
+                  }
+                  style={{
+                    cursor:
+                      timer.status === "RUNNING" ? "pointer" : "not-allowed",
+                    color: "#0a85cb",
                     opacity: timer.status === "RUNNING" ? 1 : 0.3,
                     fontSize: "30px",
                   }}
+                  titleAccess="Start CO Time"
                 />
-
-                {/* CO Time Toggle */}
-                {timer.coRunning ? (
-                  <TimerOffIcon
-                    onClick={
-                      timer.status === "RUNNING"
-                        ? () => handleCoToggle(index)
-                        : undefined
-                    }
-                    style={{
-                      cursor:
-                        timer.status === "RUNNING" ? "pointer" : "not-allowed",
-                      color: "#0a85cb",
-                      fontSize: "30px",
-                    }}
-                    titleAccess="Stop CO Time"
-                  />
-                ) : (
-                  <TimerIcon
-                    onClick={
-                      timer.status === "RUNNING"
-                        ? () => handleCoToggle(index)
-                        : undefined
-                    }
-                    style={{
-                      cursor:
-                        timer.status === "RUNNING" ? "pointer" : "not-allowed",
-                      color: "#0a85cb",
-                      opacity: timer.status === "RUNNING" ? 1 : 0.3,
-                      fontSize: "30px",
-                    }}
-                    titleAccess="Start CO Time"
-                  />
-                )}
-              </div>
-            </Grid>
+              )}
+            </Cell>
             {/* Start Time */}
-            <Grid size={1}>
-              <div className="Box-table-content">
-                <TextField
-                  size="small"
-                  label={labelStartTime}
-                  value={insideLiveTime}
-                  disabled
-                  InputLabelProps={{ shrink: true }}
-                />
-              </div>
-            </Grid>
+            <Cell colIndex={7}>
+              <TextField
+                size="small"
+                fullWidth
+                label={labelStartTime}
+                value={insideLiveTime}
+                disabled
+                InputLabelProps={{ shrink: true }}
+              />
+            </Cell>
             {/* End Time */}
-            <Grid size={1}>
-              <div className="Box-table-content">
-                <TextField size="small" value={endTimeText} disabled />
-              </div>
-            </Grid>
+            <Cell colIndex={8}>
+              <TextField size="small" fullWidth value={endTimeText} disabled />
+            </Cell>
             {/* CO Time */}
-            <Grid size={1}>
-              <div className="Box-table-content">
-                <TextField size="small" value={msToHMS(liveCoMs)} disabled />
-              </div>
-            </Grid>
+            <Cell colIndex={9}>
+              <TextField
+                size="small"
+                fullWidth
+                value={msToHMS(liveCoMs)}
+                disabled
+              />
+            </Cell>
             {/* Total Time */}
-            <Grid size={1}>
-              <div className="Box-table-content">
-                <TextField size="small" value={totalTimeText} disabled />
-              </div>
-            </Grid>
-
-            {/* Printed Sheets  */}
-            <Grid size={0.5}>
-              <div className="Box-table-content">
-                <TextField
-                  size="small"
-                  value={`${component?.length} X ${component?.breadth} X ${component?.thickness}`}
-                  disabled
-                />
-              </div>
-            </Grid>
-
-            {/* Rejected Sheets */}
-            <Grid size={0.5}>
-              <div className="Box-table-content">
-                <TextField
-                  size="small"
-                  value={`${component?.length} X ${component?.breadth} X ${component?.thickness}`}
-                  disabled
-                />
-              </div>
-            </Grid>
-            <Grid size={1}>
-              <div className="Box-table-content">
-                <ToggleButtonGroup
-                  value={status}
-                  exclusive
-                  onChange={(e, val) => handleStatusChange(index, val)}
-                  size="small"
-                  disabled={timer.status !== "STOPPED"}
+            <Cell colIndex={10}>
+              <TextField
+                size="small"
+                fullWidth
+                value={totalTimeText}
+                disabled
+              />
+            </Cell>
+            {/* Status */}
+            <Cell colIndex={11}>
+              <ToggleButtonGroup
+                value={status}
+                exclusive
+                onChange={(e, val) => handleStatusChange(index, val)}
+                size="small"
+                disabled={timer.status !== "STOPPED"}
+                sx={{ opacity: timer.status !== "STOPPED" ? 0.6 : 1 }}
+              >
+                <ToggleButton
+                  value="Yes"
                   sx={{
-                    opacity: timer.status !== "STOPPED" ? 0.6 : 1,
+                    "&.Mui-selected": {
+                      backgroundColor: "green",
+                      color: "white",
+                    },
+                    "&:hover": { backgroundColor: "#008000db" },
+                    "&.Mui-selected:hover": { backgroundColor: "#008000" },
                   }}
                 >
-                  <ToggleButton
-                    value="Yes"
-                    sx={{
-                      "&.Mui-selected": {
-                        backgroundColor: "green",
-                        color: "white",
-                      },
-                      "&:hover": {
-                        backgroundColor: "#008000db",
-                      },
-                      "&.Mui-selected:hover": {
-                        backgroundColor: "#008000",
-                      },
-                    }}
-                  >
-                    Yes
-                  </ToggleButton>
-
-                  <ToggleButton
-                    value="No"
-                    sx={{
-                      "&.Mui-selected": {
-                        backgroundColor: "red",
-                        color: "white",
-                      },
-                      "&:hover": {
-                        backgroundColor: "#ff0000bf",
-                      },
-                      "&.Mui-selected:hover": {
-                        backgroundColor: "#ff0000",
-                      },
-                    }}
-                  >
-                    No
-                  </ToggleButton>
-                </ToggleButtonGroup>
-              </div>
-            </Grid>
-          </Fragment>
+                  Yes
+                </ToggleButton>
+                <ToggleButton
+                  value="No"
+                  sx={{
+                    "&.Mui-selected": {
+                      backgroundColor: "red",
+                      color: "white",
+                    },
+                    "&:hover": { backgroundColor: "#ff0000bf" },
+                    "&.Mui-selected:hover": { backgroundColor: "#ff0000" },
+                  }}
+                >
+                  No
+                </ToggleButton>
+              </ToggleButtonGroup>
+            </Cell>
+          </Box>
         );
       })}
     </>
@@ -517,7 +534,7 @@ function EditCoating() {
 
   const [coatingState, setCoatingState] = useState({});
 
-  //Pending Dialog
+  // Pending Dialog
   const [openPending, setOpenPending] = useState(false);
   const [pendingData, setPendingData] = useState({
     reason: "",
@@ -558,19 +575,14 @@ function EditCoating() {
 
   const buildStateFromDB = (componentData) => {
     if (!componentData?.coating_process) return {};
-
     const timers = {};
     const statusMap = {};
-
     const coatingList = getCoatingList(componentData);
-
     coatingList.forEach((processName, index) => {
       const p = componentData.coating_process[processName];
       if (!p) return;
-
       const start = new Date(p.start_time).getTime();
       const end = new Date(p.end_time).getTime();
-
       timers[index] = {
         status: "STOPPED",
         startTime: start,
@@ -580,42 +592,34 @@ function EditCoating() {
         coStart: null,
         coTotalMs: (p.co_time || 0) * 1000,
       };
-
       statusMap[index] = p.status === 1 ? "Yes" : "No";
     });
-
     return { timers, statusMap };
   };
 
   useEffect(() => {
     if (!design?.components) return;
-
     const updatedComponents = { ...initialComponentsState };
     const newCoatingState = {};
-
     Object.entries(design.components).forEach(([name, comp]) => {
       if (updatedComponents[name]) {
         updatedComponents[name] = { ...comp };
         newCoatingState[name] = buildStateFromDB(comp);
       }
     });
-
     setComponents(updatedComponents);
     setCoatingState(newCoatingState);
   }, [design]);
 
   useEffect(() => {
     return () => {
-      if (currentImage?.startsWith("blob:")) {
-        URL.revokeObjectURL(currentImage);
-      }
+      if (currentImage?.startsWith("blob:")) URL.revokeObjectURL(currentImage);
     };
   }, [currentImage]);
 
   useEffect(() => {
     const reason = design?.coating_pending_details?.pending_reason;
     if (!reason) return;
-
     setPendingData({
       reason: pendingReasons.includes(reason) ? reason : "Others",
       otherReason: pendingReasons.includes(reason) ? "" : reason,
@@ -623,11 +627,9 @@ function EditCoating() {
   }, [design]);
 
   // Handler Functions
-
   const handleViewFile = (componentName) => {
     const { file } = components[componentName];
     if (!file) return;
-
     let imageUrl;
     if (file instanceof File) {
       imageUrl = URL.createObjectURL(file);
@@ -642,11 +644,7 @@ function EditCoating() {
 
   const handleArtworkView = () => {
     if (!design?.file_name || !design?.file_ext) return;
-
-    const imageUrl = `${server?.defaults?.baseURL}/artworkImages/${encodeURIComponent(
-      design?.file_name,
-    )}.${design?.file_ext}`;
-
+    const imageUrl = `${server?.defaults?.baseURL}/artworkImages/${encodeURIComponent(design?.file_name)}.${design?.file_ext}`;
     setCurrentImage(imageUrl);
     setOpen(true);
   };
@@ -659,21 +657,16 @@ function EditCoating() {
 
   const validateCoating = (type) => {
     if (type === "PENDING") return true;
-
     for (const compName of Object.keys(design?.components || {})) {
       const { timers = {}, statusMap = {} } = coatingState[compName] || {};
-
       if (Object.keys(timers).length === 0) return false;
-
       for (const index of Object.keys(timers)) {
         const t = timers[index];
-
         if (!t?.startTime) return false;
         if (!t?.endTime || t.status !== "STOPPED") return false;
         if (statusMap[index] !== "Yes") return false;
       }
     }
-
     return true;
   };
 
@@ -683,30 +676,21 @@ function EditCoating() {
         toast.info("Please Select Operator");
         return;
       }
-
       const coating_status = type === "PENDING" ? 1 : 2;
-
       if (!validateCoating(type)) {
         toast.warning("Complete all coating processes before submitting");
         return;
       }
-
       const updatedComponents = {};
-
       Object.entries(components)
         .filter(([compName]) => design?.components?.[compName])
         .forEach(([compName, comp]) => {
           const { timers = {}, statusMap = {} } = coatingState[compName] || {};
-
           let coating_process = {};
-
           const coatingList = getCoatingList(comp);
-
           coatingList.forEach((processName, index) => {
             const t = timers[index];
-
             if (!t || !t.startTime || !t.endTime) return;
-
             coating_process[processName] = {
               start_time: new Date(t.startTime),
               end_time: new Date(t.endTime),
@@ -717,15 +701,13 @@ function EditCoating() {
               status: statusMap[index] === "Yes" ? 1 : 0,
             };
           });
-
-          updatedComponents[compName] = {
-            ...comp,
-            coating_process,
-          };
+          updatedComponents[compName] = { ...comp, coating_process };
         });
 
       const payload = {
+        unique_id: design.unique_id,
         saleorder_no: design.saleorder_no,
+        item_line_no: design.item_line_no,
         coating_operator_name: formData.coating_operator_name,
         coating_status,
         coating_pending_details:
@@ -737,18 +719,15 @@ function EditCoating() {
                     : pendingData.reason,
               }
             : design?.coating_pending_details || {},
-
         components: updatedComponents,
       };
 
       await server.post("/design/add", payload);
-
       if (type === "PENDING") {
         toast.info("Moved to Pending");
       } else {
         toast.success("Coating Saved Successfully");
       }
-
       navigate("/coating_dashboard");
     } catch (error) {
       console.error(error);
@@ -756,9 +735,7 @@ function EditCoating() {
     }
   };
 
-  const handleCancel = () => {
-    navigate("/coating_dashboard");
-  };
+  const handleCancel = () => navigate("/coating_dashboard");
 
   const modalStyle = {
     position: "absolute",
@@ -774,6 +751,7 @@ function EditCoating() {
 
   return (
     <Box className="Dashboard-con">
+      {/* Breadcrumb */}
       <Box className="breadcrump-con">
         <Box className="main-title">
           <div className="main-inner-txts">
@@ -790,6 +768,7 @@ function EditCoating() {
       </Box>
 
       <Box className="page-layout" sx={{ marginTop: 1 }}>
+        {/* Top Form Fields */}
         <Box sx={{ flexGrow: 1 }}>
           <Grid container spacing={2.5}>
             <Grid size={2}>
@@ -802,7 +781,6 @@ function EditCoating() {
                 />
               </FormGroup>
             </Grid>
-
             <Grid size={2}>
               <FormGroup>
                 <Typography mb={1}>SO Number</Typography>
@@ -813,7 +791,6 @@ function EditCoating() {
                 />
               </FormGroup>
             </Grid>
-
             <Grid size={2}>
               <FormGroup>
                 <Typography mb={1}>SO Date</Typography>
@@ -831,7 +808,6 @@ function EditCoating() {
                 />
               </FormGroup>
             </Grid>
-
             <Grid size={2}>
               <FormGroup>
                 <Typography mb={1}>Total Qty</Typography>
@@ -842,7 +818,6 @@ function EditCoating() {
                 />
               </FormGroup>
             </Grid>
-
             <Grid size={2}>
               <FormGroup>
                 <Typography mb={1}>Sales Person</Typography>
@@ -853,18 +828,15 @@ function EditCoating() {
                 />
               </FormGroup>
             </Grid>
-
             <Grid size={2}>
               <FormGroup>
                 <Typography mb={1}>SP Contact No</Typography>
                 <TextField size="small" value={formData?.telephone} disabled />
               </FormGroup>
             </Grid>
-
             <Grid size={2}>
               <FormGroup>
                 <Typography mb={1}>Instructor Name</Typography>
-
                 <Select
                   value={formData.coating_operator_name ?? ""}
                   size="small"
@@ -885,11 +857,9 @@ function EditCoating() {
                 </Select>
               </FormGroup>
             </Grid>
-
             <Grid size={2}>
               <FormGroup>
                 <Typography mb={1}>Operator Name</Typography>
-
                 <Select
                   value={formData.coating_operator_name ?? ""}
                   size="small"
@@ -913,76 +883,57 @@ function EditCoating() {
           </Grid>
         </Box>
 
+        {/* Table Section */}
         <Box
           sx={{
             background: "#fff",
             mt: 1,
             boxShadow:
-              "rgba(0, 0, 0, 0.02) 0px 1px 3px 0px, rgba(27, 31, 35, 0.15) 0px 0px 0px 1px",
+              "rgba(0,0,0,0.02) 0px 1px 3px 0px, rgba(27,31,35,0.15) 0px 0px 0px 1px",
           }}
         >
-          <Grid container spacing={0.5}>
-            <Grid size={12}>
-              <div
-                className="Box-table-title"
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <div>
-                  Today's Work - ({new Date().toLocaleDateString()}){" "}
-                  <span className={getArtWorkClass(design?.art_work)}>
-                    {design?.art_work || "NA"}
-                  </span>
-                </div>
-                <button className="gray-md-btn" onClick={handleArtworkView}>
-                  <VisibilityIcon style={{ fontSize: 20 }} /> Artwork Image
-                </button>
-              </div>
-            </Grid>
-            {/* Header */}
-            <Grid size={1}>
-              <div className="Box-table-subtitle">Component</div>
-            </Grid>
-            <Grid size={1}>
-              <div className="Box-table-subtitle">Sheet Size</div>
-            </Grid>
-            <Grid size={1}>
-              <div className="Box-table-subtitle">No of Sheets</div>
-            </Grid>
-            <Grid size={1}>
-              <div className="Box-table-subtitle">Source File</div>
-            </Grid>
-            <Grid size={1}>
-              <div className="Box-table-subtitle">Coating Type</div>
-            </Grid>
-            <Grid size={1}>
-              <div className="Box-table-subtitle">Action</div>
-            </Grid>
-            <Grid size={1}>
-              <div className="Box-table-subtitle">Start Time</div>
-            </Grid>
-            <Grid size={1}>
-              <div className="Box-table-subtitle">End Time</div>
-            </Grid>
-            <Grid size={1}>
-              <div className="Box-table-subtitle">CO Time</div>
-            </Grid>
-            <Grid size={1}>
-              <div className="Box-table-subtitle">Total Time</div>
-            </Grid>
-            <Grid size={0.5}>
-              <div className="Box-table-subtitle">PS</div>
-            </Grid>
-            <Grid size={0.5}>
-              <div className="Box-table-subtitle">RS</div>
-            </Grid>
-            <Grid size={0.5}>
-              <div className="Box-table-subtitle">Status</div>
-            </Grid>
-            {/* Render Component Rows */}
+          {/* Table Title */}
+          <Box
+            className="Box-table-title"
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <div>
+              Today's Work - ({new Date().toLocaleDateString()}){" "}
+              <span className={getArtWorkClass(design?.art_work)}>
+                {design?.art_work || "NA"}
+              </span>
+            </div>
+            <button className="gray-md-btn" onClick={handleArtworkView}>
+              <VisibilityIcon style={{ fontSize: 20 }} /> Artwork Image
+            </button>
+          </Box>
+
+          {/* Scrollable Table */}
+          <Box sx={{ overflowX: "auto", width: "100%" }}>
+            {/* Header Row */}
+            <Box
+              sx={{
+                display: "flex",
+                minWidth: TOTAL_WIDTH,
+                background: "#f5f5f5",
+                borderBottom: "2px solid #dcdddd",
+              }}
+            >
+              {COLUMNS.map(({ label, w }) => (
+                <Box
+                  key={label}
+                  sx={{ minWidth: w, width: w, px: 0.75, py: 1.25 }}
+                >
+                  <div className="Box-table-subtitle">{label}</div>
+                </Box>
+              ))}
+            </Box>
+
+            {/* Data Rows */}
             {Object.entries(components)
               .filter(([key]) =>
                 Object.keys(design?.components || {}).includes(key),
@@ -994,6 +945,7 @@ function EditCoating() {
                   name={key}
                   onViewFile={handleViewFile}
                   totalQty={design?.item_quantity}
+                  design={design}
                   timers={coatingState[key]?.timers || {}}
                   statusMap={coatingState[key]?.statusMap || {}}
                   setTimers={(val) =>
@@ -1022,44 +974,138 @@ function EditCoating() {
                   }
                 />
               ))}
-          </Grid>
+          </Box>
+        </Box>
 
-          {/* Action Buttons */}
+        {/* Component Output Section */}
+        <Box
+          sx={{
+            background: "#fff",
+            mt: 3,
+            boxShadow:
+              "rgba(0,0,0,0.02) 0px 1px 3px 0px, rgba(27,31,35,0.15) 0px 0px 0px 1px",
+          }}
+        >
+          {/* Title */}
           <Box
             sx={{
               display: "flex",
-              justifyContent: "flex-end",
+              justifyContent: "space-between",
+              alignItems: "center",
               p: 2,
-              mt: 2,
-              gap: 2,
+              borderBottom: "1px solid #ddd",
             }}
           >
-            <Button
-              variant="contained"
-              color="error"
-              onClick={handleCancel}
-              sx={{ minWidth: 100 }}
-            >
-              Cancel
-            </Button>
-
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={() => setOpenPending(true)}
-              sx={{ minWidth: 100 }}
-            >
-              Pending
-            </Button>
-
-            <Button
-              variant="contained"
-              color="success"
-              onClick={() => handleSubmit("FINAL")}
-            >
-              Submit
-            </Button>
+            <Typography sx={{ fontSize: "18px", color: "#0a85cb" }}>
+              Component Output
+            </Typography>
           </Box>
+
+          {/* Header Row */}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              px: 2,
+              py: 1,
+              background: "#f5f5f5",
+              borderBottom: "2px solid #dcdddd",
+            }}
+          >
+            <Box sx={{ width: 180 }}>
+              <div className="Box-table-subtitle">Component</div>
+            </Box>
+            <Box sx={{ width: 180 }}>
+              <div className="Box-table-subtitle">Printed Sheets</div>
+            </Box>
+            <Box sx={{ width: 180 }}>
+              <div className="Box-table-subtitle">Rejected Sheets</div>
+            </Box>
+          </Box>
+
+          {/* Data Rows */}
+          <Box sx={{ p: 2 }}>
+            {Object.entries(components)
+              .filter(([key]) =>
+                Object.keys(design?.components || {}).includes(key),
+              )
+              .map(([name, comp]) => (
+                <Box
+                  key={name}
+                  sx={{ display: "flex", alignItems: "center", mb: 2 }}
+                >
+                  {/* Component Name */}
+                  <Typography sx={{ width: 180 }}>{name}</Typography>
+
+                  {/* Printed */}
+                  <Box sx={{ width: 180, pr: 2 }}>
+                    <TextField
+                      size="small"
+                      fullWidth
+                      type="number"
+                      value={comp.printed || ""}
+                      onChange={(e) =>
+                        setComponents((prev) => ({
+                          ...prev,
+                          [name]: { ...prev[name], printed: e.target.value },
+                        }))
+                      }
+                    />
+                  </Box>
+
+                  {/* Rejected */}
+                  <Box sx={{ width: 180, pr: 2 }}>
+                    <TextField
+                      size="small"
+                      fullWidth
+                      type="number"
+                      value={comp.rejected || ""}
+                      onChange={(e) =>
+                        setComponents((prev) => ({
+                          ...prev,
+                          [name]: { ...prev[name], rejected: e.target.value },
+                        }))
+                      }
+                    />
+                  </Box>
+                </Box>
+              ))}
+          </Box>
+        </Box>
+
+        {/* Action Buttons */}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "flex-end",
+            p: 2,
+            mt: 2,
+            gap: 2,
+          }}
+        >
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleCancel}
+            sx={{ minWidth: 100 }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => setOpenPending(true)}
+            sx={{ minWidth: 100 }}
+          >
+            Pending
+          </Button>
+          <Button
+            variant="contained"
+            color="success"
+            onClick={() => handleSubmit("FINAL")}
+          >
+            Submit
+          </Button>
         </Box>
 
         {/* File Preview Modal */}
@@ -1087,15 +1133,11 @@ function EditCoating() {
           PaperProps={{ sx: { borderRadius: "16px" } }}
         >
           <DialogTitle
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-            }}
+            sx={{ display: "flex", justifyContent: "space-between" }}
           >
             <Typography variant="h6" fontWeight="bold" color="#0a85cb">
               Pending
             </Typography>
-
             <IconButton
               onClick={() => setOpenPending(false)}
               sx={{ color: "#3b3b3b" }}
@@ -1106,7 +1148,6 @@ function EditCoating() {
 
           <DialogContent dividers>
             <Grid container spacing={2}>
-              {/* Reason */}
               <Grid size={5}>
                 <Typography>Reason for Pending</Typography>
               </Grid>
@@ -1117,16 +1158,12 @@ function EditCoating() {
                   value={pendingData?.reason ?? ""}
                   displayEmpty
                   onChange={(e) =>
-                    setPendingData({
-                      ...pendingData,
-                      reason: e.target.value,
-                    })
+                    setPendingData({ ...pendingData, reason: e.target.value })
                   }
                 >
                   <MenuItem value="" disabled>
                     Select
                   </MenuItem>
-
                   {pendingReasons.map((reason) => (
                     <MenuItem key={reason} value={reason}>
                       {reason}
@@ -1141,7 +1178,6 @@ function EditCoating() {
                   <Grid size={5}>
                     <Typography>Enter Reason</Typography>
                   </Grid>
-
                   <Grid size={7}>
                     <TextField
                       autoFocus
@@ -1173,7 +1209,6 @@ function EditCoating() {
             >
               Cancel
             </Button>
-
             <Button
               variant="contained"
               color="success"
@@ -1182,7 +1217,6 @@ function EditCoating() {
                   toast.error("Please Select Pending Reason");
                   return;
                 }
-
                 if (
                   pendingData.reason === "Others" &&
                   !pendingData.otherReason.trim()
@@ -1190,7 +1224,6 @@ function EditCoating() {
                   toast.error("Please Enter Pending Reason");
                   return;
                 }
-
                 setOpenPending(false);
                 handleSubmit("PENDING");
               }}
