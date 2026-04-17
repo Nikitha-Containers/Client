@@ -17,6 +17,8 @@ import {
   IconButton,
   DialogContent,
   DialogActions,
+  FormControl,
+  InputLabel,
 } from "@mui/material";
 
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
@@ -38,6 +40,7 @@ const COLUMNS = [
   { label: "Sheet Size", w: 160 },
   { label: "No of Sheets", w: 120 },
   { label: "Source File", w: 110 },
+  { label: "Machine", w: 120 },
   { label: "Coating Type", w: 180 },
   { label: "Plan", w: 160 },
   { label: "Action", w: 110 },
@@ -110,6 +113,29 @@ const getPlanningDetails = (design, compName, process) => {
 
   return `${formattedDate} - ${shiftMap[match.shift] || match.shift}`;
 };
+
+const getPlanningDatesWithShifts = (design) => {
+  const bookings =
+    design?.planning_work_details?.coating_machine_plan?.bookings || [];
+
+  const map = {};
+
+  bookings.forEach((b) => {
+    const date = new Date(b.shift_from_dt)
+      .toLocaleDateString("en-GB")
+      .replace(/\//g, "-");
+
+    if (!map[date]) map[date] = new Set();
+
+    map[date].add(b.shift);
+  });
+
+  return Object.entries(map).map(([date, shifts]) => ({
+    date,
+    shifts: Array.from(shifts),
+  }));
+};
+
 const Cell = ({ colIndex, children, sx = {} }) => (
   <Box
     sx={{
@@ -338,8 +364,17 @@ const ComponentRow = ({
                 <VisibilityIcon fontSize="small" /> View
               </div>
             </Cell>
-            {/* Coating Type */}
+            {/* Machine */}
             <Cell colIndex={4}>
+              <TextField
+                size="small"
+                fullWidth
+                value={design?.machine || "Crab Tree"}
+                disabled
+              />
+            </Cell>
+            {/* Coating Type */}
+            <Cell colIndex={5}>
               <TextField
                 size="small"
                 fullWidth
@@ -353,7 +388,7 @@ const ComponentRow = ({
               />
             </Cell>
             {/* Planning Date + Shift */}
-            <Cell colIndex={5}>
+            <Cell colIndex={6}>
               <TextField
                 size="small"
                 fullWidth
@@ -362,7 +397,7 @@ const ComponentRow = ({
               />
             </Cell>
             {/* Action */}
-            <Cell colIndex={6} sx={{ gap: 0.25 }}>
+            <Cell colIndex={7} sx={{ gap: 0.25 }}>
               <PlayCircleFilledWhiteIcon
                 onClick={
                   timer.status === "IDLE" ? () => handleStart(index) : undefined
@@ -422,7 +457,7 @@ const ComponentRow = ({
               )}
             </Cell>
             {/* Start Time */}
-            <Cell colIndex={7}>
+            <Cell colIndex={8}>
               <TextField
                 size="small"
                 fullWidth
@@ -433,7 +468,7 @@ const ComponentRow = ({
               />
             </Cell>
             {/* End Time */}
-            <Cell colIndex={8}>
+            <Cell colIndex={9}>
               <TextField size="small" fullWidth value={endTimeText} disabled />
             </Cell>
             {/* CO Time */}
@@ -455,7 +490,7 @@ const ComponentRow = ({
               />
             </Cell>
             {/* Status */}
-            <Cell colIndex={11}>
+            <Cell colIndex={10}>
               <ToggleButtonGroup
                 value={status}
                 exclusive
@@ -533,6 +568,9 @@ function EditCoating() {
   });
 
   const [coatingState, setCoatingState] = useState({});
+  const [operatorAssign, setOperatorAssign] = useState({});
+
+  const planningData = getPlanningDatesWithShifts(design);
 
   // Pending Dialog
   const [openPending, setOpenPending] = useState(false);
@@ -767,7 +805,7 @@ function EditCoating() {
         </Box>
       </Box>
 
-      <Box className="page-layout" sx={{ marginTop: 1 }}>
+      <Box className="page-layout" sx={{ marginTop: 2 }}>
         {/* Top Form Fields */}
         <Box sx={{ flexGrow: 1 }}>
           <Grid container spacing={2.5}>
@@ -834,60 +872,129 @@ function EditCoating() {
                 <TextField size="small" value={formData?.telephone} disabled />
               </FormGroup>
             </Grid>
-            <Grid size={2}>
-              <FormGroup>
-                <Typography mb={1}>Instructor Name</Typography>
-                <Select
-                  value={formData.coating_operator_name ?? ""}
-                  size="small"
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      coating_operator_name: e.target.value,
-                    })
-                  }
-                  displayEmpty
-                >
-                  <MenuItem value="" disabled>
-                    Select
-                  </MenuItem>
-                  <MenuItem value="KATHIRAVAN K">KATHIRAVAN K</MenuItem>
-                  <MenuItem value="AMARNATH D">AMARNATH D</MenuItem>
-                  <MenuItem value="SAMAY MARANDI">SAMAY MARANDI</MenuItem>
-                </Select>
-              </FormGroup>
-            </Grid>
-            <Grid size={2}>
-              <FormGroup>
-                <Typography mb={1}>Operator Name</Typography>
-                <Select
-                  value={formData.coating_operator_name ?? ""}
-                  size="small"
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      coating_operator_name: e.target.value,
-                    })
-                  }
-                  displayEmpty
-                >
-                  <MenuItem value="" disabled>
-                    Select
-                  </MenuItem>
-                  <MenuItem value="KATHIRAVAN K">KATHIRAVAN K</MenuItem>
-                  <MenuItem value="AMARNATH D">AMARNATH D</MenuItem>
-                  <MenuItem value="SAMAY MARANDI">SAMAY MARANDI</MenuItem>
-                </Select>
-              </FormGroup>
-            </Grid>
           </Grid>
+        </Box>
+
+        <Box
+          sx={{
+            background: "#fff",
+            mt: 2,
+            boxShadow:
+              "rgba(0,0,0,0.02) 0px 1px 3px 0px, rgba(27,31,35,0.15) 0px 0px 0px 1px",
+          }}
+        >
+          {/* Title */}
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              p: 2,
+              borderBottom: "1px solid #ddd",
+            }}
+          >
+            <Typography sx={{ fontSize: "18px", color: "#0a85cb" }}>
+              Operator Assign
+            </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <Typography>Instructor Name :</Typography>
+              <Select
+                value={formData.coating_operator_name ?? ""}
+                size="small"
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    coating_operator_name: e.target.value,
+                  })
+                }
+                sx={{ width: "180px", fontSize: "14px" }}
+                displayEmpty
+              >
+                <MenuItem value="" disabled>
+                  Select
+                </MenuItem>
+                <MenuItem value="KATHIRAVAN K">KATHIRAVAN K</MenuItem>
+                <MenuItem value="AMARNATH D">AMARNATH D</MenuItem>
+                <MenuItem value="SAMAY MARANDI">SAMAY MARANDI</MenuItem>
+              </Select>
+            </Box>
+          </Box>
+          <Box sx={{ p: 2 }}>
+            {planningData.map(({ date, shifts }) => {
+              const shiftOrder = ["General", "Shift 1", "Shift 2", "Shift 3"];
+              return (
+                <Box
+                  key={date}
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: "140px repeat(3, 110px 220px)",
+                    alignItems: "center",
+                    mb: 2,
+                    px: 1,
+                    py: 1,
+                    borderRadius: 1,
+                    "&:hover": { background: "#fafafa" },
+                  }}
+                >
+                  {/* Date */}
+                  <Typography>{date}</Typography>
+
+                  {shiftOrder
+                    .slice(shifts.includes("General") ? 0 : 1)
+                    .slice(0, 3)
+                    .map((shift) => {
+                      const hasShift = shifts.includes(shift);
+
+                      if (!hasShift) return null;
+
+                      return (
+                        <Fragment key={shift}>
+                          <Typography>{shift}</Typography>
+
+                          <Box sx={{ pr: 2 }}>
+                            <FormControl size="small" sx={{ width: 180 }}>
+                              <InputLabel>Operator Name</InputLabel>
+
+                              <Select
+                                value={operatorAssign?.[date]?.[shift] || ""}
+                                onChange={(e) =>
+                                  setOperatorAssign((prev) => ({
+                                    ...prev,
+                                    [date]: {
+                                      ...prev[date],
+                                      [shift]: e.target.value,
+                                    },
+                                  }))
+                                }
+                                label="Operator Name"
+                                sx={{ fontSize: "14px", p: 0.5 }}
+                              >
+                                <MenuItem value="KATHIRAVAN K">
+                                  KATHIRAVAN K
+                                </MenuItem>
+                                <MenuItem value="AMARNATH D">
+                                  AMARNATH D
+                                </MenuItem>
+                                <MenuItem value="SAMAY MARANDI">
+                                  SAMAY MARANDI
+                                </MenuItem>
+                              </Select>
+                            </FormControl>
+                          </Box>
+                        </Fragment>
+                      );
+                    })}
+                </Box>
+              );
+            })}
+          </Box>
         </Box>
 
         {/* Table Section */}
         <Box
           sx={{
             background: "#fff",
-            mt: 1,
+            mt: 2,
             boxShadow:
               "rgba(0,0,0,0.02) 0px 1px 3px 0px, rgba(27,31,35,0.15) 0px 0px 0px 1px",
           }}
@@ -981,7 +1088,7 @@ function EditCoating() {
         <Box
           sx={{
             background: "#fff",
-            mt: 3,
+            mt: 2,
             boxShadow:
               "rgba(0,0,0,0.02) 0px 1px 3px 0px, rgba(27,31,35,0.15) 0px 0px 0px 1px",
           }}
