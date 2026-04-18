@@ -894,7 +894,7 @@ function EditCoating() {
             }}
           >
             <Typography sx={{ fontSize: "18px", color: "#0a85cb" }}>
-              Operator Assign
+              Assign Operator
             </Typography>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
               <Typography>Instructor Name :</Typography>

@@ -15,6 +15,7 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
 import { useDesign } from "../../../../API/Design_API";
+import server from "../../../../server/server";
 import {
   ShiftDialog,
   ShiftTypeDialog,
@@ -31,22 +32,38 @@ export const SHIFT_CONFIG = {
   "Shift 3": { from: "22:00", to: "06:00", hours: 8, crossDay: true },
 };
 
-export const MACHINE_CONFIG = {
-  coating: {
-    title: "Coating Machine",
-    machines: ["Crab Tree"],
-    sheetsPerHour: { "Crab Tree": 3500 },
-  },
-  printing: {
-    title: "Printing Machine",
-    machines: ["IGK", "DC", "NIGK", "RTCPL-DC"],
-    sheetsPerHour: { IGK: 1600, DC: 3500, NIGK: 3500, "RTCPL-DC": 2500 },
-  },
-  varnish: {
-    title: "Varnish Machine",
-    machines: ["Var Crab Tree"],
-    sheetsPerHour: { "Var Crab Tree": 3500 },
-  },
+export const useMachineConfig = () => {
+  const [machineConfig, setMachineConfig] = useState({});
+
+  useEffect(() => {
+    const fetchMachines = async () => {
+      try {
+        const res = await server.get("/machine/all");
+        const data = res.data.data || [];
+
+        const config = {};
+        data.forEach(({ machine_name, machine_type, sheets_per_hour }) => {
+          if (!config[machine_type]) {
+            config[machine_type] = {
+              title: `${machine_type.charAt(0).toUpperCase() + machine_type.slice(1)} Machine`,
+              machines: [],
+              sheetsPerHour: {},
+            };
+          }
+          config[machine_type].machines.push(machine_name);
+          config[machine_type].sheetsPerHour[machine_name] = sheets_per_hour;
+        });
+
+        setMachineConfig(config);
+      } catch (err) {
+        console.error("Failed to fetch machines", err);
+      }
+    };
+
+    fetchMachines();
+  }, []);
+
+  return machineConfig;
 };
 
 // Helper Functions
@@ -213,6 +230,7 @@ const ComponentRow = ({
 }) => {
   const navigate = useNavigate();
   const { designs } = useDesign();
+  const machineConfig = useMachineConfig();
 
   const [processRows, setProcessRows] = useState([]);
   const [openShiftDialog, setOpenShiftDialog] = useState(false);
@@ -277,7 +295,7 @@ const ComponentRow = ({
   }, [sectionMachine]);
 
   const getCapacity = (machine) =>
-    MACHINE_CONFIG[processType]?.sheetsPerHour?.[machine] ?? 0;
+    machineConfig[processType]?.sheetsPerHour?.[machine] ?? 0;
 
   const getRequiredHours = (machine) => {
     const cap = getCapacity(machine);

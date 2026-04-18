@@ -26,7 +26,7 @@ import {
   formatDateLocal,
   SHIFT_CONFIG,
   EPSILON,
-  MACHINE_CONFIG,
+  useMachineConfig,
 } from "./ComponentRow";
 import { PendingDialog } from "./PlanningDialogs";
 
@@ -158,6 +158,7 @@ const generateBookings = (planningSection) => {
 function EditPlan() {
   const navigate = useNavigate();
   const { design } = useLocation()?.state || {};
+  const machineConfig = useMachineConfig();
 
   useEffect(() => {
     if (!design) {
@@ -488,7 +489,7 @@ function EditPlan() {
                 Select Machine
               </MenuItem>
 
-              {MACHINE_CONFIG[processType]?.machines?.map((m) => (
+              {machineConfig[processType]?.machines?.map((m) => (
                 <MenuItem key={m} value={m}>
                   {m}
                 </MenuItem>

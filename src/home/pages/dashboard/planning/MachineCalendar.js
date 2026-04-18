@@ -1,71 +1,31 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useDesign } from "../../../../API/Design_API";
 import FullCalendar from "@fullcalendar/react";
 import resourceTimelinePlugin from "@fullcalendar/resource-timeline";
 import interactionPlugin from "@fullcalendar/interaction";
 import dayjs from "dayjs";
+import server from "../../../../server/server";
 
-const MACHINE_LIST = [
-  {
-    id: "coating",
-    title: "COATING MACHINES",
-    children: [
-      {
-        id: "Crab Tree",
-        title: "Crab Tree",
-        eventColor: "#0ea5e9",
-        labelColor: "#0ea5e9",
-      },
-    ],
-  },
-  {
-    id: "printing",
-    title: "PRINTING MACHINES",
-    children: [
-      { id: "IGK", title: "IGK", eventColor: "#f97316", labelColor: "#f97316" },
-      { id: "DC", title: "DC", eventColor: "#ef4444", labelColor: "#ef4444" },
-      {
-        id: "NIGK",
-        title: "NIGK",
-        eventColor: "#6366f1",
-        labelColor: "#6366f1",
-      },
-      {
-        id: "RTCPL-DC",
-        title: "RTCPL-DC",
-        eventColor: "#10b981",
-        labelColor: "#10b981",
-      },
-    ],
-  },
-  {
-    id: "varnish",
-    title: "VARNISH MACHINES",
-    children: [
-      {
-        id: "Var Crab Tree",
-        title: "Var Crab Tree",
-        eventColor: "#a855f7",
-        labelColor: "#a855f7",
-      },
-    ],
-  },
+const MACHINE_COLOR_PALETTE = [
+  "#0ea5e9",
+  "#f97316",
+  "#ef4444",
+  "#6366f1",
+  "#10b981",
+  "#a855f7",
+  "#f59e0b",
+  "#14b8a6",
+  "#ec4899",
+  "#84cc16",
 ];
+
+const MACHINE_TYPE_ORDER = ["coating", "printing", "varnish"];
 
 const PLAN_SECTIONS = [
   { key: "coating_machine_plan", label: "Coating" },
   { key: "printing_machine_plan", label: "Printing" },
   { key: "varnish_machine_plan", label: "Varnish" },
 ];
-
-const MACHINE_COLORS = {
-  "Crab Tree": "#0ea5e9",
-  IGK: "#f97316",
-  DC: "#ef4444",
-  NIGK: "#6366f1",
-  "RTCPL-DC": "#10b981",
-  "Varnish Crab Tree": "#a855f7",
-};
 
 const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap');
@@ -375,6 +335,35 @@ const STYLES = `
   .mc-cal-shell ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
   .mc-cal-shell ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
+  /* Loading skeleton */
+  .mc-skeleton {
+    margin: 0 20px 28px;
+    border-radius: 16px;
+    background: #fff;
+    border: 1.5px solid #e2e8f0;
+    padding: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: #94a3b8;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+
+  .mc-spinner {
+    width: 18px;
+    height: 18px;
+    border: 2.5px solid #e2e8f0;
+    border-top-color: #2563eb;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
   /* Tooltip */
   .mc-tip {
     position: fixed;
@@ -446,10 +435,79 @@ const STYLES = `
   .mc-tip-v.hi { color: #0f172a; font-weight: 700; }
 `;
 
+const buildMachineStructures = (apiData = []) => {
+  const groupMap = {};
+  apiData.forEach(({ machine_name, machine_type }) => {
+    const type = machine_type?.toLowerCase() || "other";
+    if (!groupMap[type]) groupMap[type] = [];
+    groupMap[type].push(machine_name);
+  });
+
+  const machineColors = {};
+  let colorIdx = 0;
+  const orderedTypes = [
+    ...MACHINE_TYPE_ORDER.filter((t) => groupMap[t]),
+    ...Object.keys(groupMap).filter((t) => !MACHINE_TYPE_ORDER.includes(t)),
+  ];
+
+  const machineList = orderedTypes.map((type) => {
+    const machines = groupMap[type] || [];
+    const children = machines.map((machineName) => {
+      const color =
+        MACHINE_COLOR_PALETTE[colorIdx % MACHINE_COLOR_PALETTE.length];
+      colorIdx++;
+      machineColors[machineName] = color;
+      return {
+        id: machineName,
+        title: machineName,
+        eventColor: color,
+        labelColor: color,
+      };
+    });
+
+    return {
+      id: type,
+      title:
+        `${type.charAt(0).toUpperCase() + type.slice(1)} Machines`.toUpperCase(),
+      children,
+    };
+  });
+
+  return { machineList, machineColors };
+};
+
+const useDynamicMachines = () => {
+  const [machineList, setMachineList] = useState([]);
+  const [machineColors, setMachineColors] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMachines = async () => {
+      try {
+        const res = await server.get("/machine/all");
+        const data = res.data.data || [];
+        const { machineList: list, machineColors: colors } =
+          buildMachineStructures(data);
+        setMachineList(list);
+        setMachineColors(colors);
+      } catch (err) {
+        console.error("Failed to fetch machines for calendar", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMachines();
+  }, []);
+
+  return { machineList, machineColors, loading };
+};
+
 function MachineCalendar() {
   const { designs } = useDesign();
   const calRef = useRef(null);
   const [tip, setTip] = useState(null);
+
+  const { machineList, machineColors, loading } = useDynamicMachines();
 
   const events = useMemo(() => {
     if (!designs?.length) return [];
@@ -467,6 +525,7 @@ function MachineCalendar() {
           title: d.saleorder_no,
           start: b.shift_from_dt ?? null,
           end: b.shift_to_dt ?? null,
+          color: machineColors[b.machine] || "#64748b",
           extendedProps: {
             customer: d.customer_name,
             process: label,
@@ -477,7 +536,7 @@ function MachineCalendar() {
         }));
       });
     });
-  }, [designs]);
+  }, [designs, machineColors]);
 
   const stats = useMemo(() => {
     const sos = new Set(),
@@ -499,7 +558,7 @@ function MachineCalendar() {
       process,
       component,
       machine,
-      color: MACHINE_COLORS[machine] || "#64748b",
+      color: machineColors[machine] || "#64748b",
       from: dayjs(info.event.start).format("DD MMM YYYY  HH:mm"),
       to: info.event.end
         ? dayjs(info.event.end).format("DD MMM YYYY  HH:mm")
@@ -548,7 +607,7 @@ function MachineCalendar() {
           </div>
 
           <div className="mc-legend">
-            {Object.entries(MACHINE_COLORS).map(([name, color]) => (
+            {Object.entries(machineColors).map(([name, color]) => (
               <span key={name} className="mc-legend-pill">
                 <span className="mc-legend-dot" style={{ background: color }} />
                 {name}
@@ -592,35 +651,42 @@ function MachineCalendar() {
         </div>
 
         {/* Calendar */}
-        <div className="mc-cal-shell">
-          <FullCalendar
-            ref={calRef}
-            plugins={[resourceTimelinePlugin, interactionPlugin]}
-            schedulerLicenseKey="GPL-My-Project-Is-Open-Source"
-            initialView="resourceTimelineMonth"
-            views={{
-              resourceTimelineDay: { buttonText: "Day" },
-              resourceTimelineWeek: { buttonText: "Week" },
-              resourceTimelineMonth: { buttonText: "Month" },
-              resourceTimelineYear: { buttonText: "Year" },
-            }}
-            headerToolbar={{
-              left: "prev,next today",
-              center: "title",
-              right:
-                "resourceTimelineDay,resourceTimelineWeek,resourceTimelineMonth,resourceTimelineYear",
-            }}
-            nowIndicator={true}
-            resources={MACHINE_LIST}
-            events={events}
-            height="auto"
-            resourceAreaWidth={200}
-            slotMinWidth={46}
-            resourceLabelDidMount={onResourceLabel}
-            eventMouseEnter={onEventEnter}
-            eventMouseLeave={onEventLeave}
-          />
-        </div>
+        {loading ? (
+          <div className="mc-skeleton">
+            <div className="mc-spinner" />
+            Loading machine resources…
+          </div>
+        ) : (
+          <div className="mc-cal-shell">
+            <FullCalendar
+              ref={calRef}
+              plugins={[resourceTimelinePlugin, interactionPlugin]}
+              schedulerLicenseKey="GPL-My-Project-Is-Open-Source"
+              initialView="resourceTimelineMonth"
+              views={{
+                resourceTimelineDay: { buttonText: "Day" },
+                resourceTimelineWeek: { buttonText: "Week" },
+                resourceTimelineMonth: { buttonText: "Month" },
+                resourceTimelineYear: { buttonText: "Year" },
+              }}
+              headerToolbar={{
+                left: "prev,next today",
+                center: "title",
+                right:
+                  "resourceTimelineDay,resourceTimelineWeek,resourceTimelineMonth,resourceTimelineYear",
+              }}
+              nowIndicator={true}
+              resources={machineList}
+              events={events}
+              height="auto"
+              resourceAreaWidth={200}
+              slotMinWidth={46}
+              resourceLabelDidMount={onResourceLabel}
+              eventMouseEnter={onEventEnter}
+              eventMouseLeave={onEventLeave}
+            />
+          </div>
+        )}
       </div>
 
       {/* Tooltip */}
