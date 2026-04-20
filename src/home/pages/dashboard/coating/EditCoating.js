@@ -24,17 +24,17 @@ import {
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import CloseIcon from "@mui/icons-material/Close";
-
 import PlayCircleFilledWhiteIcon from "@mui/icons-material/PlayCircleFilledWhite";
 import StopCircleIcon from "@mui/icons-material/StopCircle";
 import TimerIcon from "@mui/icons-material/Timer";
 import TimerOffIcon from "@mui/icons-material/TimerOff";
 
 import { toast } from "react-toastify";
-
 import "../../../pages/pagestyle.scss";
 import server from "../../../../server/server";
+import { useEmployee } from "../../../../API/Employee_API";
 
+// Constants
 const COLUMNS = [
   { label: "Component", w: 100 },
   { label: "Sheet Size", w: 160 },
@@ -53,7 +53,24 @@ const COLUMNS = [
 
 const TOTAL_WIDTH = COLUMNS.reduce((sum, c) => sum + c.w, 0);
 
-// Helper Function
+const PENDING_REASONS = [
+  "Material Not Available",
+  "Machine Breakdown - Mechanical",
+  "Machine Breakdown - Electrical",
+  "No Man Power",
+  "Flim Plate Damage",
+];
+
+const COMPONENT_NAMES = [
+  "Lid",
+  "Body",
+  "Bottom",
+  "Lid & Body",
+  "Lid & Body & Bottom",
+  "Body & Bottom",
+];
+
+// Helper Functions
 const getArtWorkClass = (art) => {
   if (!art || art === "NA") return "art-badge art-blue";
   if (art.toLowerCase() === "old") return "art-badge art-red";
@@ -65,9 +82,8 @@ const extractKeysWithSequence = (obj) => {
   if (!obj || typeof obj !== "object") return [];
   return Object.entries(obj).flatMap(([key, value]) => {
     if (key === "Other" && value?.name) {
-      const count = value.count || 1;
       return Array.from(
-        { length: count },
+        { length: value.count || 1 },
         (_, i) => `${value.name} - ${i + 1}`,
       );
     }
@@ -91,18 +107,16 @@ const getCoatingList = (comp) => {
 const getPlanningDetails = (design, compName, process) => {
   const bookings =
     design?.planning_work_details?.coating_machine_plan?.bookings || [];
-
   const match = bookings.find(
     (b) =>
       b.component === compName &&
       process.includes(b.process.replace(" - 1", "")),
   );
-
   if (!match) return "";
 
-  const date = new Date(match.shift_from_dt);
-
-  const formattedDate = date.toLocaleDateString("en-GB").replace(/\//g, "-");
+  const formattedDate = new Date(match.shift_from_dt)
+    .toLocaleDateString("en-GB")
+    .replace(/\//g, "-");
 
   const shiftMap = {
     General: "G",
@@ -110,31 +124,27 @@ const getPlanningDetails = (design, compName, process) => {
     "Shift 2": "S2",
     "Shift 3": "S3",
   };
-
   return `${formattedDate} - ${shiftMap[match.shift] || match.shift}`;
 };
 
 const getPlanningDatesWithShifts = (design) => {
   const bookings =
     design?.planning_work_details?.coating_machine_plan?.bookings || [];
-
   const map = {};
-
   bookings.forEach((b) => {
     const date = new Date(b.shift_from_dt)
       .toLocaleDateString("en-GB")
       .replace(/\//g, "-");
-
     if (!map[date]) map[date] = new Set();
-
     map[date].add(b.shift);
   });
-
   return Object.entries(map).map(([date, shifts]) => ({
     date,
     shifts: Array.from(shifts),
   }));
 };
+
+// Cell Component
 
 const Cell = ({ colIndex, children, sx = {} }) => (
   <Box
@@ -151,6 +161,7 @@ const Cell = ({ colIndex, children, sx = {} }) => (
   </Box>
 );
 
+// ComponentRow
 const ComponentRow = ({
   component,
   name,
@@ -189,7 +200,6 @@ const ComponentRow = ({
   }, [setTimers]);
 
   // Handler Functions
-
   const handleStart = (index) => {
     const now = Date.now();
     setTimers((prev) => ({
@@ -318,20 +328,18 @@ const ComponentRow = ({
             <Cell colIndex={0}>
               <div className="Box-table-text">{name}</div>
             </Cell>
+
             {/* Sheet Size */}
             <Cell colIndex={1}>
               <TextField
                 size="small"
                 fullWidth
                 value={`${component?.length} X ${component?.breadth} X ${component?.thickness}`}
-                sx={{
-                  "& .MuiInputBase-input": {
-                    fontSize: "14px",
-                  },
-                }}
+                sx={{ "& .MuiInputBase-input": { fontSize: "14px" } }}
                 disabled
               />
             </Cell>
+
             {/* No of Sheets */}
             <Cell colIndex={2}>
               <TextField
@@ -349,6 +357,7 @@ const ComponentRow = ({
                 disabled
               />
             </Cell>
+
             {/* Source File */}
             <Cell colIndex={3}>
               <div
@@ -364,6 +373,7 @@ const ComponentRow = ({
                 <VisibilityIcon fontSize="small" /> View
               </div>
             </Cell>
+
             {/* Machine */}
             <Cell colIndex={4}>
               <TextField
@@ -373,21 +383,19 @@ const ComponentRow = ({
                 disabled
               />
             </Cell>
+
             {/* Coating Type */}
             <Cell colIndex={5}>
               <TextField
                 size="small"
                 fullWidth
                 value={process}
-                sx={{
-                  "& .MuiInputBase-input": {
-                    fontSize: "14px",
-                  },
-                }}
+                sx={{ "& .MuiInputBase-input": { fontSize: "14px" } }}
                 disabled
               />
             </Cell>
-            {/* Planning Date + Shift */}
+
+            {/* Plan */}
             <Cell colIndex={6}>
               <TextField
                 size="small"
@@ -396,6 +404,7 @@ const ComponentRow = ({
                 disabled
               />
             </Cell>
+
             {/* Action */}
             <Cell colIndex={7} sx={{ gap: 0.25 }}>
               <PlayCircleFilledWhiteIcon
@@ -456,6 +465,7 @@ const ComponentRow = ({
                 />
               )}
             </Cell>
+
             {/* Start Time */}
             <Cell colIndex={8}>
               <TextField
@@ -463,16 +473,18 @@ const ComponentRow = ({
                 fullWidth
                 label={labelStartTime}
                 value={insideLiveTime}
-                disabled
                 InputLabelProps={{ shrink: true }}
+                disabled
               />
             </Cell>
+
             {/* End Time */}
             <Cell colIndex={9}>
               <TextField size="small" fullWidth value={endTimeText} disabled />
             </Cell>
+
             {/* CO Time */}
-            <Cell colIndex={9}>
+            <Cell colIndex={10}>
               <TextField
                 size="small"
                 fullWidth
@@ -480,8 +492,9 @@ const ComponentRow = ({
                 disabled
               />
             </Cell>
+
             {/* Total Time */}
-            <Cell colIndex={10}>
+            <Cell colIndex={11}>
               <TextField
                 size="small"
                 fullWidth
@@ -489,8 +502,9 @@ const ComponentRow = ({
                 disabled
               />
             </Cell>
+
             {/* Status */}
-            <Cell colIndex={10}>
+            <Cell colIndex={12}>
               <ToggleButtonGroup
                 value={status}
                 exclusive
@@ -539,66 +553,43 @@ function EditCoating() {
   const navigate = useNavigate();
   const location = useLocation();
   const { design } = location?.state || {};
+  const { getByType } = useEmployee();
 
-  useEffect(() => {
-    if (!design) {
-      toast.error("No design selected. Redirecting to dashboard.");
-      navigate("/coating_dashboard", { replace: true });
-    }
-  }, [design, navigate]);
+  const coatingInstructors = getByType("instructor", "coating");
+  const coatingOperators = getByType("operator", "coating");
 
+  // State
+  const [instructorName, setInstructorName] = useState("");
+  const [operatorMap, setOperatorMap] = useState({});
+  const [outputMap, setOutputMap] = useState({});
   const [open, setOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState("");
   const [components, setComponents] = useState({});
-
-  const [formData, setFormData] = useState({
-    customer_name: design?.customer_name || "",
-    saleorder_no: design?.saleorder_no || "",
-    posting_date: design?.posting_date
-      ? new Date(design?.posting_date).toISOString().split("T")[0]
-      : "",
-    item_quantity: design?.item_quantity || "",
-    shift: design?.planning_work_details?.shift || "",
-    fab_site: design?.planning_work_details?.fab_site || "",
-    sales_employee: design?.sales_employee || "",
-    telephone: design?.telephone || "",
-    machine: design?.machine,
-    coating_operator_name: design?.coating_operator_name,
-    art_work: design?.art_work || "NA",
-  });
-
   const [coatingState, setCoatingState] = useState({});
-  const [operatorAssign, setOperatorAssign] = useState({});
-
-  const planningData = getPlanningDatesWithShifts(design);
-
-  // Pending Dialog
   const [openPending, setOpenPending] = useState(false);
   const [pendingData, setPendingData] = useState({
     reason: "",
     otherReason: "",
   });
 
-  // Common Pending Reasons
-  const pendingReasons = [
-    "Material Not Available",
-    "Machine Breakdown - Mechanical",
-    "Machine Breakdown - Electrical",
-    "No Man Power",
-    "Flim Plate Damage",
-  ];
+  // Static derived data
+  const formData = {
+    customer_name: design?.customer_name || "",
+    saleorder_no: design?.saleorder_no || "",
+    posting_date: design?.posting_date
+      ? new Date(design.posting_date).toISOString().split("T")[0]
+      : "",
+    item_quantity: design?.item_quantity || "",
+    sales_employee: design?.sales_employee || "",
+    telephone: design?.telephone || "",
+    art_work: design?.art_work || "NA",
+  };
+  const planningData = getPlanningDatesWithShifts(design);
 
+  // ── Initial component structure ──
   const initialComponentsState = useMemo(() => {
-    const compNames = [
-      "Lid",
-      "Body",
-      "Bottom",
-      "Lid & Body",
-      "Lid & Body & Bottom",
-      "Body & Bottom",
-    ];
     const obj = {};
-    compNames.forEach((name) => {
+    COMPONENT_NAMES.forEach((name) => {
       obj[name] = {
         length: "",
         breadth: "",
@@ -611,13 +602,13 @@ function EditCoating() {
     return obj;
   }, []);
 
-  const buildStateFromDB = (componentData) => {
-    if (!componentData?.coating_process) return {};
+  // Build timer/statusMap from saved DB data
+  const buildStateFromDB = (comp, cwdComp) => {
+    if (!cwdComp?.coating_process) return {};
     const timers = {};
     const statusMap = {};
-    const coatingList = getCoatingList(componentData);
-    coatingList.forEach((processName, index) => {
-      const p = componentData.coating_process[processName];
+    getCoatingList(comp).forEach((processName, index) => {
+      const p = cwdComp.coating_process[processName];
       if (!p) return;
       const start = new Date(p.start_time).getTime();
       const end = new Date(p.end_time).getTime();
@@ -635,54 +626,90 @@ function EditCoating() {
     return { timers, statusMap };
   };
 
+  // Effects
+
+  // Redirect if no design
+  useEffect(() => {
+    if (!design) {
+      toast.error("No design selected. Redirecting to dashboard.");
+      navigate("/coating_dashboard", { replace: true });
+    }
+  }, [design, navigate]);
+
+  // Load components + coating timers
   useEffect(() => {
     if (!design?.components) return;
     const updatedComponents = { ...initialComponentsState };
     const newCoatingState = {};
+    const cwdComponents = design?.coating_work_details?.components || {};
+
     Object.entries(design.components).forEach(([name, comp]) => {
-      if (updatedComponents[name]) {
+      if (updatedComponents[name] !== undefined) {
         updatedComponents[name] = { ...comp };
-        newCoatingState[name] = buildStateFromDB(comp);
+        newCoatingState[name] = buildStateFromDB(comp, cwdComponents[name]);
       }
     });
+
     setComponents(updatedComponents);
     setCoatingState(newCoatingState);
   }, [design]);
 
+  // Load instructor + operator map
+  useEffect(() => {
+    if (!design?.coating_work_details) return;
+    const cwd = design.coating_work_details;
+    setInstructorName(cwd?.instructor_name || "");
+    setOperatorMap(cwd?.operator_map || {});
+  }, [design]);
+
+  // Load printed/rejected per component
+  useEffect(() => {
+    if (!design?.components) return;
+    const cwd = design?.coating_work_details?.components || {};
+    const map = {};
+    Object.keys(design.components).forEach((name) => {
+      map[name] = {
+        printed: cwd[name]?.printed_sheets || "",
+        rejected: cwd[name]?.rejected_sheets || "",
+      };
+    });
+    setOutputMap(map);
+  }, [design]);
+
+  // Load pending reason
+  useEffect(() => {
+    const reason = design?.coating_pending_details?.pending_reason;
+    if (!reason) return;
+    setPendingData({
+      reason: PENDING_REASONS.includes(reason) ? reason : "Others",
+      otherReason: PENDING_REASONS.includes(reason) ? "" : reason,
+    });
+  }, [design]);
+
+  // Cleanup blob URL
   useEffect(() => {
     return () => {
       if (currentImage?.startsWith("blob:")) URL.revokeObjectURL(currentImage);
     };
   }, [currentImage]);
 
-  useEffect(() => {
-    const reason = design?.coating_pending_details?.pending_reason;
-    if (!reason) return;
-    setPendingData({
-      reason: pendingReasons.includes(reason) ? reason : "Others",
-      otherReason: pendingReasons.includes(reason) ? "" : reason,
-    });
-  }, [design]);
-
   // Handler Functions
   const handleViewFile = (componentName) => {
     const { file } = components[componentName];
     if (!file) return;
-    let imageUrl;
-    if (file instanceof File) {
-      imageUrl = URL.createObjectURL(file);
-    } else if (typeof file === "string") {
-      imageUrl = file.startsWith("http")
-        ? file
-        : `${server?.defaults?.baseURL}/uploads/${file}`;
-    }
+    const imageUrl =
+      file instanceof File
+        ? URL.createObjectURL(file)
+        : file.startsWith("http")
+          ? file
+          : `${server?.defaults?.baseURL}/uploads/${file}`;
     setCurrentImage(imageUrl);
     setOpen(true);
   };
 
   const handleArtworkView = () => {
     if (!design?.file_name || !design?.file_ext) return;
-    const imageUrl = `${server?.defaults?.baseURL}/artworkImages/${encodeURIComponent(design?.file_name)}.${design?.file_ext}`;
+    const imageUrl = `${server?.defaults?.baseURL}/artworkImages/${encodeURIComponent(design.file_name)}.${design.file_ext}`;
     setCurrentImage(imageUrl);
     setOpen(true);
   };
@@ -710,23 +737,20 @@ function EditCoating() {
 
   const handleSubmit = async (type) => {
     try {
-      if (!formData?.coating_operator_name) {
-        toast.info("Please Select Operator");
-        return;
-      }
-      const coating_status = type === "PENDING" ? 1 : 2;
       if (!validateCoating(type)) {
         toast.warning("Complete all coating processes before submitting");
         return;
       }
-      const updatedComponents = {};
+
+      // Build coating_work_details.components
+      const cwdComponents = {};
       Object.entries(components)
         .filter(([compName]) => design?.components?.[compName])
         .forEach(([compName, comp]) => {
           const { timers = {}, statusMap = {} } = coatingState[compName] || {};
-          let coating_process = {};
-          const coatingList = getCoatingList(comp);
-          coatingList.forEach((processName, index) => {
+          const coating_process = {};
+
+          getCoatingList(comp).forEach((processName, index) => {
             const t = timers[index];
             if (!t || !t.startTime || !t.endTime) return;
             coating_process[processName] = {
@@ -739,16 +763,20 @@ function EditCoating() {
               status: statusMap[index] === "Yes" ? 1 : 0,
             };
           });
-          updatedComponents[compName] = { ...comp, coating_process };
+
+          cwdComponents[compName] = {
+            coating_process,
+            printed_sheets: outputMap[compName]?.printed || "",
+            rejected_sheets: outputMap[compName]?.rejected || "",
+          };
         });
 
       const payload = {
         unique_id: design.unique_id,
         saleorder_no: design.saleorder_no,
         item_line_no: design.item_line_no,
-        coating_operator_name: formData.coating_operator_name,
-        coating_status,
-        coating_pending_details:
+        coating_status: type === "PENDING" ? 1 : 2,
+        coating_pending_details: JSON.stringify(
           type === "PENDING"
             ? {
                 pending_reason:
@@ -757,15 +785,18 @@ function EditCoating() {
                     : pendingData.reason,
               }
             : design?.coating_pending_details || {},
-        components: updatedComponents,
+        ),
+        coating_work_details: JSON.stringify({
+          instructor_name: instructorName,
+          operator_map: operatorMap,
+          components: cwdComponents,
+        }),
       };
 
       await server.post("/design/add", payload);
-      if (type === "PENDING") {
-        toast.info("Moved to Pending");
-      } else {
-        toast.success("Coating Saved Successfully");
-      }
+      toast[type === "PENDING" ? "info" : "success"](
+        type === "PENDING" ? "Moved to Pending" : "Coating Saved Successfully",
+      );
       navigate("/coating_dashboard");
     } catch (error) {
       console.error(error);
@@ -774,16 +805,6 @@ function EditCoating() {
   };
 
   const handleCancel = () => navigate("/coating_dashboard");
-
-  const modalStyle = {
-    position: "absolute",
-    top: "50%",
-    left: "50%",
-    transform: "translate(-50%, -50%)",
-    outline: 0,
-    maxWidth: "90vw",
-    maxHeight: "90vh",
-  };
 
   if (!design) return null;
 
@@ -795,7 +816,7 @@ function EditCoating() {
           <div className="main-inner-txts">
             <Link
               style={{ color: "#0a85cb", textDecoration: "none" }}
-              to={"/coating_dashboard"}
+              to="/coating_dashboard"
             >
               Coating Dashboard
             </Link>
@@ -809,72 +830,35 @@ function EditCoating() {
         {/* Top Form Fields */}
         <Box sx={{ flexGrow: 1 }}>
           <Grid container spacing={2.5}>
-            <Grid size={2}>
-              <FormGroup>
-                <Typography mb={1}>Customer Name</Typography>
-                <TextField
-                  size="small"
-                  value={formData?.customer_name}
-                  disabled
-                />
-              </FormGroup>
-            </Grid>
-            <Grid size={2}>
-              <FormGroup>
-                <Typography mb={1}>SO Number</Typography>
-                <TextField
-                  size="small"
-                  value={formData?.saleorder_no}
-                  disabled
-                />
-              </FormGroup>
-            </Grid>
+            {[
+              { label: "Customer Name", value: formData.customer_name },
+              { label: "SO Number", value: formData.saleorder_no },
+              { label: "Total Qty", value: formData.item_quantity },
+              { label: "Sales Person", value: formData.sales_employee },
+              { label: "SP Contact No", value: formData.telephone },
+            ].map(({ label, value }) => (
+              <Grid size={2} key={label}>
+                <FormGroup>
+                  <Typography mb={1}>{label}</Typography>
+                  <TextField size="small" value={value} disabled />
+                </FormGroup>
+              </Grid>
+            ))}
             <Grid size={2}>
               <FormGroup>
                 <Typography mb={1}>SO Date</Typography>
                 <TextField
                   size="small"
                   type="date"
-                  value={
-                    formData?.posting_date
-                      ? new Date(formData?.posting_date)
-                          .toISOString()
-                          .split("T")[0]
-                      : ""
-                  }
+                  value={formData.posting_date}
                   disabled
                 />
-              </FormGroup>
-            </Grid>
-            <Grid size={2}>
-              <FormGroup>
-                <Typography mb={1}>Total Qty</Typography>
-                <TextField
-                  size="small"
-                  value={formData?.item_quantity}
-                  disabled
-                />
-              </FormGroup>
-            </Grid>
-            <Grid size={2}>
-              <FormGroup>
-                <Typography mb={1}>Sales Person</Typography>
-                <TextField
-                  size="small"
-                  value={formData?.sales_employee}
-                  disabled
-                />
-              </FormGroup>
-            </Grid>
-            <Grid size={2}>
-              <FormGroup>
-                <Typography mb={1}>SP Contact No</Typography>
-                <TextField size="small" value={formData?.telephone} disabled />
               </FormGroup>
             </Grid>
           </Grid>
         </Box>
 
+        {/*  Assign Operator  */}
         <Box
           sx={{
             background: "#fff",
@@ -899,26 +883,24 @@ function EditCoating() {
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
               <Typography>Instructor Name :</Typography>
               <Select
-                value={formData.coating_operator_name ?? ""}
+                value={instructorName}
+                onChange={(e) => setInstructorName(e.target.value)}
                 size="small"
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    coating_operator_name: e.target.value,
-                  })
-                }
                 sx={{ width: "180px", fontSize: "14px" }}
                 displayEmpty
               >
                 <MenuItem value="" disabled>
                   Select
                 </MenuItem>
-                <MenuItem value="KATHIRAVAN K">KATHIRAVAN K</MenuItem>
-                <MenuItem value="AMARNATH D">AMARNATH D</MenuItem>
-                <MenuItem value="SAMAY MARANDI">SAMAY MARANDI</MenuItem>
+                {coatingInstructors.map((emp) => (
+                  <MenuItem key={emp._id} value={emp.emp_id}>
+                    {emp.name}
+                  </MenuItem>
+                ))}
               </Select>
             </Box>
           </Box>
+
           <Box sx={{ p: 2 }}>
             {planningData.map(({ date, shifts }) => {
               const shiftOrder = ["General", "Shift 1", "Shift 2", "Shift 3"];
@@ -938,46 +920,36 @@ function EditCoating() {
                 >
                   {/* Date */}
                   <Typography>{date}</Typography>
-
                   {shiftOrder
                     .slice(shifts.includes("General") ? 0 : 1)
                     .slice(0, 3)
                     .map((shift) => {
-                      const hasShift = shifts.includes(shift);
-
-                      if (!hasShift) return null;
-
+                      if (!shifts.includes(shift)) return null;
                       return (
                         <Fragment key={shift}>
                           <Typography>{shift}</Typography>
-
                           <Box sx={{ pr: 2 }}>
                             <FormControl size="small" sx={{ width: 180 }}>
                               <InputLabel>Operator Name</InputLabel>
-
                               <Select
-                                value={operatorAssign?.[date]?.[shift] || ""}
+                                value={operatorMap[`${date}_${shift}`] || ""}
                                 onChange={(e) =>
-                                  setOperatorAssign((prev) => ({
+                                  setOperatorMap((prev) => ({
                                     ...prev,
-                                    [date]: {
-                                      ...prev[date],
-                                      [shift]: e.target.value,
-                                    },
+                                    [`${date}_${shift}`]: e.target.value,
                                   }))
                                 }
                                 label="Operator Name"
                                 sx={{ fontSize: "14px", p: 0.5 }}
                               >
-                                <MenuItem value="KATHIRAVAN K">
-                                  KATHIRAVAN K
+                                <MenuItem value="" disabled>
+                                  Select
                                 </MenuItem>
-                                <MenuItem value="AMARNATH D">
-                                  AMARNATH D
-                                </MenuItem>
-                                <MenuItem value="SAMAY MARANDI">
-                                  SAMAY MARANDI
-                                </MenuItem>
+                                {coatingOperators.map((emp) => (
+                                  <MenuItem key={emp._id} value={emp.emp_id}>
+                                    {emp.name}
+                                  </MenuItem>
+                                ))}
                               </Select>
                             </FormControl>
                           </Box>
@@ -990,7 +962,7 @@ function EditCoating() {
           </Box>
         </Box>
 
-        {/* Table Section */}
+        {/*  Today's Work Table */}
         <Box
           sx={{
             background: "#fff",
@@ -1093,16 +1065,7 @@ function EditCoating() {
               "rgba(0,0,0,0.02) 0px 1px 3px 0px, rgba(27,31,35,0.15) 0px 0px 0px 1px",
           }}
         >
-          {/* Title */}
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              p: 2,
-              borderBottom: "1px solid #ddd",
-            }}
-          >
+          <Box sx={{ p: 2, borderBottom: "1px solid #ddd" }}>
             <Typography sx={{ fontSize: "18px", color: "#0a85cb" }}>
               Component Output
             </Typography>
@@ -1112,71 +1075,57 @@ function EditCoating() {
           <Box
             sx={{
               display: "flex",
-              alignItems: "center",
               px: 2,
               py: 1,
               background: "#f5f5f5",
               borderBottom: "2px solid #dcdddd",
             }}
           >
-            <Box sx={{ width: 180 }}>
-              <div className="Box-table-subtitle">Component</div>
-            </Box>
-            <Box sx={{ width: 180 }}>
-              <div className="Box-table-subtitle">Printed Sheets</div>
-            </Box>
-            <Box sx={{ width: 180 }}>
-              <div className="Box-table-subtitle">Rejected Sheets</div>
-            </Box>
+            {["Component", "Printed Sheets", "Rejected Sheets"].map((h) => (
+              <Box key={h} sx={{ width: 180 }}>
+                <div className="Box-table-subtitle">{h}</div>
+              </Box>
+            ))}
           </Box>
 
-          {/* Data Rows */}
+          {/* Rows */}
           <Box sx={{ p: 2 }}>
-            {Object.entries(components)
-              .filter(([key]) =>
-                Object.keys(design?.components || {}).includes(key),
-              )
-              .map(([name, comp]) => (
-                <Box
-                  key={name}
-                  sx={{ display: "flex", alignItems: "center", mb: 2 }}
-                >
-                  {/* Component Name */}
-                  <Typography sx={{ width: 180 }}>{name}</Typography>
-
-                  {/* Printed */}
-                  <Box sx={{ width: 180, pr: 2 }}>
-                    <TextField
-                      size="small"
-                      fullWidth
-                      type="number"
-                      value={comp.printed || ""}
-                      onChange={(e) =>
-                        setComponents((prev) => ({
-                          ...prev,
-                          [name]: { ...prev[name], printed: e.target.value },
-                        }))
-                      }
-                    />
-                  </Box>
-
-                  {/* Rejected */}
-                  <Box sx={{ width: 180, pr: 2 }}>
-                    <TextField
-                      size="small"
-                      fullWidth
-                      type="number"
-                      value={comp.rejected || ""}
-                      onChange={(e) =>
-                        setComponents((prev) => ({
-                          ...prev,
-                          [name]: { ...prev[name], rejected: e.target.value },
-                        }))
-                      }
-                    />
-                  </Box>
+            {Object.keys(design?.components || {}).map((name) => (
+              <Box
+                key={name}
+                sx={{ display: "flex", alignItems: "center", mb: 2 }}
+              >
+                <Typography sx={{ width: 180 }}>{name}</Typography>
+                <Box sx={{ width: 180, pr: 2 }}>
+                  <TextField
+                    size="small"
+                    fullWidth
+                    type="number"
+                    value={outputMap[name]?.printed || ""}
+                    onChange={(e) =>
+                      setOutputMap((prev) => ({
+                        ...prev,
+                        [name]: { ...prev[name], printed: e.target.value },
+                      }))
+                    }
+                  />
                 </Box>
-              ))}
+                <Box sx={{ width: 180, pr: 2 }}>
+                  <TextField
+                    size="small"
+                    fullWidth
+                    type="number"
+                    value={outputMap[name]?.rejected || ""}
+                    onChange={(e) =>
+                      setOutputMap((prev) => ({
+                        ...prev,
+                        [name]: { ...prev[name], rejected: e.target.value },
+                      }))
+                    }
+                  />
+                </Box>
+              </Box>
+            ))}
           </Box>
         </Box>
 
@@ -1217,7 +1166,17 @@ function EditCoating() {
 
         {/* File Preview Modal */}
         <Modal open={open} onClose={handleClose}>
-          <Box sx={modalStyle}>
+          <Box
+            sx={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              outline: 0,
+              maxWidth: "90vw",
+              maxHeight: "90vh",
+            }}
+          >
             <img
               src={currentImage}
               alt="preview"
@@ -1271,7 +1230,7 @@ function EditCoating() {
                   <MenuItem value="" disabled>
                     Select
                   </MenuItem>
-                  {pendingReasons.map((reason) => (
+                  {PENDING_REASONS.map((reason) => (
                     <MenuItem key={reason} value={reason}>
                       {reason}
                     </MenuItem>

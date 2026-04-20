@@ -1,5 +1,4 @@
-// EmployeeConfig.jsx
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import server from "../../../server/server";
 import Box from "@mui/material/Box";
@@ -22,13 +21,14 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CloseIcon from "@mui/icons-material/Close";
 import { MaterialReactTable } from "material-react-table";
+import { useEmployee } from "../../../API/Employee_API";
 import "../../pages/pagestyle.scss";
 
 function EmployeeConfig() {
-  const [employees, setEmployees] = useState([]);
+  const { employees, loading, refetch } = useEmployee();
+
   const [openDialog, setOpenDialog] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
-
   const [deleteDialog, setDeleteDialog] = useState({
     open: false,
     employee: null,
@@ -48,22 +48,8 @@ function EmployeeConfig() {
     severity: "success",
   });
 
-  useEffect(() => {
-    fetchEmployees();
-  }, []);
-
-  const fetchEmployees = async () => {
-    try {
-      const res = await server.get("/employee/all");
-      setEmployees(res.data.data || []);
-    } catch {
-      showSnackbar("Failed to fetch employees", "error");
-    }
-  };
-
-  const showSnackbar = (message, severity = "success") => {
+  const showSnackbar = (message, severity = "success") =>
     setSnackbar({ open: true, message, severity });
-  };
 
   const handleOpen = () => {
     setIsEdit(false);
@@ -123,7 +109,7 @@ function EmployeeConfig() {
         await server.post("/employee/create", payload);
         showSnackbar("Employee created successfully");
       }
-      fetchEmployees();
+      refetch();
       handleClose();
     } catch (error) {
       showSnackbar(
@@ -149,7 +135,7 @@ function EmployeeConfig() {
     try {
       await server.delete(`/employee/${deleteDialog.employee._id}`);
       showSnackbar("Employee deleted successfully");
-      fetchEmployees();
+      refetch();
       setDeleteDialog({ open: false, employee: null });
     } catch {
       showSnackbar("Delete failed", "error");
@@ -218,13 +204,17 @@ function EmployeeConfig() {
       </Box>
 
       <Box className="page-layout">
-        <MaterialReactTable columns={columns} data={employees} />
+        <MaterialReactTable
+          columns={columns}
+          data={employees}
+          state={{ isLoading: loading }}
+        />
       </Box>
 
       {/* Add/Edit Dialog */}
       <Dialog open={openDialog} onClose={handleClose} fullWidth maxWidth="sm">
         <DialogTitle sx={{ display: "flex", justifyContent: "space-between" }}>
-          <Typography fontWeight="bold">
+          <Typography variant="h6" fontWeight="bold" color="#0a85cb">
             {isEdit ? "Edit Employee" : "Add Employee"}
           </Typography>
           <IconButton onClick={handleClose}>
@@ -244,7 +234,7 @@ function EmployeeConfig() {
                 name="emp_id"
                 value={formValues.emp_id}
                 onChange={handleChange}
-                disabled={isEdit} // emp_id shouldn't change on edit
+                disabled={isEdit}
               />
             </Grid>
 
@@ -272,7 +262,11 @@ function EmployeeConfig() {
                 name="emp_type"
                 value={formValues.emp_type}
                 onChange={handleChange}
+                SelectProps={{ displayEmpty: true }}
               >
+                <MenuItem value="" disabled>
+                  Select
+                </MenuItem>
                 <MenuItem value="instructor">Instructor</MenuItem>
                 <MenuItem value="operator">Operator</MenuItem>
               </TextField>
@@ -289,7 +283,11 @@ function EmployeeConfig() {
                 name="machine_type"
                 value={formValues.machine_type}
                 onChange={handleChange}
+                SelectProps={{ displayEmpty: true }}
               >
+                <MenuItem value="" disabled>
+                  Select
+                </MenuItem>
                 <MenuItem value="coating">Coating</MenuItem>
                 <MenuItem value="printing">Printing</MenuItem>
                 <MenuItem value="varnish">Varnish</MenuItem>

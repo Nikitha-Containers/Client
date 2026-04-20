@@ -232,11 +232,11 @@ function MachineConfig() {
             justifyContent: "space-between",
           }}
         >
-          <Typography fontWeight="bold">
+          <Typography variant="h6" fontWeight="bold" color="#0a85cb">
             {isEdit ? "Edit Machine" : "Add Machine"}
           </Typography>
 
-          <IconButton onClick={handleClose}>
+          <IconButton onClick={handleClose} sx={{ color: "#3b3b3b" }}>
             <CloseIcon />
           </IconButton>
         </DialogTitle>
@@ -254,6 +254,7 @@ function MachineConfig() {
                 name="machine_name"
                 value={formValues.machine_name}
                 onChange={handleChange}
+                placeholder="Enter Machine Name..."
               />
             </Grid>
 
@@ -269,7 +270,11 @@ function MachineConfig() {
                 name="machine_type"
                 value={formValues.machine_type}
                 onChange={handleChange}
+                SelectProps={{ displayEmpty: true }}
               >
+                <MenuItem value="" disabled>
+                  Select
+                </MenuItem>
                 <MenuItem value="coating">Coating</MenuItem>
                 <MenuItem value="printing">Printing</MenuItem>
                 <MenuItem value="varnish">Varnish</MenuItem>

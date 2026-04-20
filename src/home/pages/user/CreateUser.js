@@ -167,18 +167,25 @@ const UserDialog = React.memo(
                 fullWidth
                 name="department"
                 value={formValues.department || ""}
+                displayEmpty
                 onChange={(e) => {
-                  let val = e.target.value;
-                  setFormValues((prev) => ({ ...prev, department: val }));
-                  setFormValues((prev) => ({ ...prev, pages: [] }));
+                  setFormValues((prev) => ({
+                    ...prev,
+                    department: e.target.value,
+                    pages: [],
+                  }));
                 }}
               >
+                <MenuItem value="" disabled>
+                  Select
+                </MenuItem>
                 <MenuItem value={"Designing"}>Designing</MenuItem>
                 <MenuItem value={"Printing Manager"}>Printing Manager</MenuItem>
                 <MenuItem value={"Flim Plate"}>Flim Plate</MenuItem>
                 <MenuItem value={"Planning"}>Planning</MenuItem>
                 <MenuItem value={"Coating"}>Coating</MenuItem>
                 <MenuItem value={"Printing"}>Printing</MenuItem>
+                <MenuItem value={"Varnish"}>Varnish</MenuItem>
                 <MenuItem value={"Fabrication"}>Fabrication</MenuItem>
                 <MenuItem value={"Stores"}>Stores</MenuItem>
               </Select>
@@ -194,14 +201,14 @@ const UserDialog = React.memo(
                 fullWidth
                 multiple
                 name="pages"
-                value={formValues.pages}
+                value={formValues.pages || []}
+                displayEmpty
                 input={<OutlinedInput />}
                 renderValue={(selected) => {
-                  if (selected.length === 0) {
-                    return <em>Select pages</em>;
-                  } else {
-                    return selected.join(",");
+                  if (!selected || selected.length === 0) {
+                    return <em>Select</em>;
                   }
+                  return selected.join(", ");
                 }}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -212,7 +219,7 @@ const UserDialog = React.memo(
                 }}
                 MenuProps={MenuProps}
               >
-                {(pages?.[formValues.department] || [])?.map((val) => (
+                {(pages[formValues.department] || []).map((val) => (
                   <MenuItem key={val} value={val}>
                     <Checkbox checked={formValues?.pages?.includes(val)} />
                     <ListItemText primary={val} />
@@ -333,6 +340,18 @@ const MenuProps = {
   },
 };
 
+const pageConfig = {
+  Designing: ["Dashboard", "Sheet Taken", "Sync With SO"],
+  "Printing Manager": ["Dashboard", "Sheet Taken"],
+  "Flim Plate": ["Dashboard", "Sheet Taken"],
+  Planning: ["Dashboard", "Sync With SO", "Sheet Taken", "Machine Calendar"],
+  Coating: ["Dashboard", "Sheet Taken"],
+  Printing: ["Dashboard", "Sheet Taken"],
+  Varnish: ["Dashboard", "Sheet Taken"],
+  Fabrication: ["Dashboard", "Sheet Taken"],
+  Stores: ["Dashboard", "Sheet Taken"],
+};
+
 // CreateUser Component
 function CreateUser() {
   const [users, setUsers] = useState([]);
@@ -340,7 +359,7 @@ function CreateUser() {
   const [isEdit, setIsEdit] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
-  const [getPages, setPages] = useState([]);
+
   const [deleteDialog, setDeleteDialog] = useState({
     open: false,
     user: null,
@@ -421,7 +440,15 @@ function CreateUser() {
   };
 
   const handleClose = () => {
-    setFormValues({});
+    setFormValues({
+      empID: "",
+      empName: "",
+      email: "",
+      password: "",
+      department: "",
+      ipAddress: "",
+      pages: [],
+    });
     setOpenDialog(false);
     setIsEdit(false);
     setShowPassword(false);
@@ -469,17 +496,6 @@ function CreateUser() {
     }
 
     return true;
-  };
-
-  const pageConfig = {
-    Designing: ["Dashboard", "Sheet Taken", "Sync With SO"],
-    "Printing Manager": ["Dashboard", "Sheet Taken"],
-    "Flim Plate": ["Dashboard", "Sheet Taken"],
-    Planning: ["Dashboard", "Sync With SO", "Sheet Taken", "Machine Calendar"],
-    Coating: ["Dashboard", "Sheet Taken"],
-    Printing: ["Dashboard", "Sheet Taken"],
-    Fabrication: ["Dashboard", "Sheet Taken"],
-    Stores: ["Dashboard", "Sheet Taken"],
   };
 
   // Save handler
@@ -797,8 +813,6 @@ function CreateUser() {
         pages={pageConfig}
         theme={theme}
         isEdit={isEdit}
-        getPages={getPages}
-        setPages={setPages}
         MenuProps={MenuProps}
         handleSave={handleSave}
         formValues={formValues}
