@@ -46,7 +46,7 @@ const COLUMNS = [
   { label: "Action", w: 110 },
   { label: "Start Time", w: 150 },
   { label: "End Time", w: 130 },
-  { label: "CO Time", w: 110 },
+  { label: "Idle Time", w: 110 },
   { label: "Total Time", w: 120 },
   { label: "Status", w: 120 },
 ];
@@ -558,6 +558,8 @@ function EditCoating() {
   const coatingInstructors = getByType("instructor", "coating");
   const coatingOperators = getByType("operator", "coating");
 
+  const draftKey = `coating_draft_${design?.unique_id}`;
+
   // State
   const [instructorName, setInstructorName] = useState("");
   const [operatorMap, setOperatorMap] = useState({});
@@ -686,6 +688,38 @@ function EditCoating() {
     });
   }, [design]);
 
+  useEffect(() => {
+    if (!design?.unique_id) return;
+
+    const savedDraft = sessionStorage.getItem(draftKey);
+
+    if (savedDraft) {
+      try {
+        const parsed = JSON.parse(savedDraft);
+
+        setInstructorName(parsed?.instructorName || "");
+        setOperatorMap(parsed?.operatorMap || {});
+        setOutputMap(parsed?.outputMap || {});
+        setCoatingState(parsed?.coatingState || {});
+      } catch (error) {
+        console.error("Session restore failed", error);
+      }
+    }
+  }, [design]);
+
+  useEffect(() => {
+    if (!design?.unique_id) return;
+
+    const saveData = {
+      instructorName,
+      operatorMap,
+      outputMap,
+      coatingState,
+    };
+
+    sessionStorage.setItem(draftKey, JSON.stringify(saveData));
+  }, [instructorName, operatorMap, outputMap, coatingState, design]);
+
   // Cleanup blob URL
   useEffect(() => {
     return () => {
@@ -794,6 +828,7 @@ function EditCoating() {
       };
 
       await server.post("/design/add", payload);
+      sessionStorage.removeItem(draftKey);
       toast[type === "PENDING" ? "info" : "success"](
         type === "PENDING" ? "Moved to Pending" : "Coating Saved Successfully",
       );
@@ -804,7 +839,10 @@ function EditCoating() {
     }
   };
 
-  const handleCancel = () => navigate("/coating_dashboard");
+  const handleCancel = () => {
+    sessionStorage.removeItem(draftKey);
+    navigate("/coating_dashboard");
+  };
 
   if (!design) return null;
 
