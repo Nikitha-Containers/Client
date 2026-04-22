@@ -3,7 +3,7 @@ import { styled } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Grid from "@mui/material/Grid";
-import { IconButton, Tooltip } from "@mui/material";
+import { IconButton } from "@mui/material";
 import Completed from "../../../../assets/icons/circle-check-solid.svg";
 import Pending from "../../../../assets/icons/hourglass-half-solid.svg";
 import Todaywork from "../../../../assets/icons/list-check-solid.svg";
@@ -32,16 +32,42 @@ const Fabrication = () => {
 
   const [getStatus, setStatus] = useState("all");
 
-  // Helper Function
-  const formatDate = (value) => {
-    if (!value) return "-";
+  // Filter Fabrication Team For Dashboard
+  const filterDesigns = useMemo(() => {
+    if (getStatus === "all") {
+      return (designs || []).filter((d) => d.varnish_status === 2);
+    }
 
-    const date = new Date(value?.$date || value);
-    if (isNaN(date)) return "-";
+    if (getStatus === "pending") {
+      return (designs || []).filter(
+        (d) => d.varnish_status === 2 && d.fabrication_status === 1,
+      );
+    }
 
-    const [y, m, d] = date.toISOString().split("T")[0].split("-");
-    return `${d}/${m}/${y}`;
-  };
+    if (getStatus === "completed") {
+      return (designs || []).filter(
+        (d) => d.varnish_status === 2 && d.fabrication_status === 2,
+      );
+    }
+    return [];
+  }, [getStatus, designs]);
+
+  // Count for Cards
+  const allCount = useMemo(() => {
+    return (designs || []).filter((d) => d.varnish_status === 2).length;
+  }, [designs]);
+
+  const pendingCount = useMemo(() => {
+    return (designs || []).filter(
+      (d) => d.varnish_status === 2 && d.fabrication_status === 1,
+    ).length;
+  }, [designs]);
+
+  const completedCount = useMemo(() => {
+    return (designs || []).filter(
+      (d) => d.varnish_status === 2 && d.fabrication_status === 2,
+    ).length;
+  }, [designs]);
 
   // Table Title
   const tableTitle = {
@@ -51,52 +77,21 @@ const Fabrication = () => {
   };
 
   const getStatusText = (row) => {
-    if (row.flim_plate_status === 2) return "COMPLETED";
-    if (row.flim_plate_status === 1) return "PENDING";
-    if (row.printingmanager_status === 2) return "NEW";
+    if (row.fabrication_status === 2) return "COMPLETED";
+    if (row.fabrication_status === 1) return "PENDING";
+    if (row.varnish_status === 2) return "NEW";
 
     return "NEW";
   };
 
-  // Filter PrintingManager For Dashboard
-  const filterDesigns = useMemo(() => {
-    if (getStatus === "all") {
-      return (designs || []).filter((d) => d.printingmanager_status === 2);
-    }
+  const formatDate = (value) => {
+    if (!value) return "-";
 
-    if (getStatus === "pending") {
-      return (designs || []).filter(
-        (d) => d.printingmanager_status === 2 && d.flim_plate_status === 1,
-      );
-    }
+    const date = new Date(value?.$date || value);
+    if (isNaN(date)) return "-";
 
-    if (getStatus === "completed") {
-      return (designs || []).filter(
-        (d) => d.printingmanager_status === 2 && d.flim_plate_status === 2,
-      );
-    }
-    return [];
-  }, [getStatus, designs]);
-
-  // Count for Cards
-  const allCount = useMemo(() => {
-    return (designs || []).filter((d) => d.printingmanager_status === 2).length;
-  }, [designs]);
-
-  const pendingCount = useMemo(() => {
-    return (designs || []).filter(
-      (d) => d.printingmanager_status === 2 && d.flim_plate_status === 1,
-    ).length;
-  }, [designs]);
-
-  const completedCount = useMemo(() => {
-    return (designs || []).filter(
-      (d) => d.printingmanager_status === 2 && d.flim_plate_status === 2,
-    ).length;
-  }, [designs]);
-
-  const getPendingReason = (row) => {
-    return row?.flimplate_pending_reason?.pending_reason || "";
+    const [y, m, d] = date.toISOString().split("T")[0].split("-");
+    return `${d}/${m}/${y}`;
   };
 
   const columns = useMemo(
@@ -156,33 +151,7 @@ const Fabrication = () => {
         id: 8,
         header: "Status",
         size: 20,
-        Cell: ({ row }) => {
-          const status = getStatusText(row.original);
-          const reason = getPendingReason(row.original);
-
-          if (status === "PENDING" && reason) {
-            return (
-              <Tooltip
-                title={reason}
-                arrow
-                slotProps={{
-                  tooltip: {
-                    sx: {
-                      fontSize: "15px",
-                      padding: "8px 12px",
-                    },
-                  },
-                }}
-              >
-                <span>
-                  <StatusChip status={status} />
-                </span>
-              </Tooltip>
-            );
-          }
-
-          return <StatusChip status={status} />;
-        },
+        Cell: ({ row }) => <StatusChip status={getStatusText(row.original)} />,
       },
       // {
       //   id: 9,
@@ -208,14 +177,14 @@ const Fabrication = () => {
       //   ),
       // },
     ],
-    [],
+    [navigate],
   );
 
   return (
     <Box className="Dashboard-con">
       <Box className="breadcrump-con">
         <Box className="main-title">
-          <div>Fabrication</div>
+          <div>Fabrication Dashboard</div>
         </Box>
       </Box>
 
@@ -307,10 +276,7 @@ const Fabrication = () => {
             muiTableBodyRowProps={({ row }) => ({
               onClick: () => {
                 navigate(`/edit_fabrication`, {
-                  state: {
-                    design: row.original,
-                    unique_id: row.original.unique_id,
-                  },
+                  state: { design: row.original },
                 });
               },
               sx: {

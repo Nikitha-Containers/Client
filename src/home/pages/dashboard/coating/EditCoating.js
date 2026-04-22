@@ -105,15 +105,14 @@ const getCoatingList = (comp) => {
   return [...inside, ...outside];
 };
 
-const getPlanningDetails = (design, compName, process) => {
-  const bookings =
-    design?.planning_work_details?.coating_machine_plan?.bookings || [];
+const getPlanningDetails = (design, compName, process, planKey) => {
+  const bookings = design?.planning_work_details?.[planKey]?.bookings || [];
   const match = bookings.find(
     (b) =>
       b.component === compName &&
       process.includes(b.process.replace(" - 1", "")),
   );
-  if (!match) return "";
+  if (!match) return { machine: "", plan: "" };
 
   const formattedDate = new Date(match.shift_from_dt)
     .toLocaleDateString("en-GB")
@@ -125,7 +124,11 @@ const getPlanningDetails = (design, compName, process) => {
     "Shift 2": "S2",
     "Shift 3": "S3",
   };
-  return `${formattedDate} - ${shiftMap[match.shift] || match.shift}`;
+
+  return {
+    machine: match.machine || "",
+    plan: `${formattedDate} - ${shiftMap[match.shift] || match.shift}`,
+  };
 };
 
 const getPlanningDatesWithShifts = (design) => {
@@ -378,7 +381,14 @@ const ComponentRow = ({
               <TextField
                 size="small"
                 fullWidth
-                value={design?.machine || "Crab Tree"}
+                value={
+                  getPlanningDetails(
+                    design,
+                    name,
+                    process,
+                    "coating_machine_plan",
+                  ).machine
+                }
                 disabled
               />
             </Cell>
@@ -399,7 +409,14 @@ const ComponentRow = ({
               <TextField
                 size="small"
                 fullWidth
-                value={getPlanningDetails(design, name, process)}
+                value={
+                  getPlanningDetails(
+                    design,
+                    name,
+                    process,
+                    "coating_machine_plan",
+                  ).plan
+                }
                 disabled
               />
             </Cell>
@@ -757,7 +774,7 @@ function EditCoating() {
     setCurrentImage("");
   };
 
-  // Validation 
+  // Validation
   const validateAssignOperator = () => {
     let hasError = false;
 

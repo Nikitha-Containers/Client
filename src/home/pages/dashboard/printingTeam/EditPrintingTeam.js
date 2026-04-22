@@ -96,24 +96,23 @@ const extractKeysWithSequence = (obj) => {
 };
 
 const getPrintingList = (comp) => {
-  const inside = extractKeysWithSequence(comp?.printing?.insideColor).map(
-    (label) => `In - ${label}`,
+  const normal = extractKeysWithSequence(comp?.printingColor?.normalColor).map(
+    (label) => `Normal - ${label}`,
   );
-  const outside = extractKeysWithSequence(comp?.printing?.outsideColor).map(
-    (label) => `Out - ${label}`,
+  const special = extractKeysWithSequence(comp?.printingColor?.splColor).map(
+    (label) => `Special - ${label}`,
   );
-  return [...inside, ...outside];
+  return [...normal, ...special];
 };
 
-const getPlanningDetails = (design, compName, process) => {
-  const bookings =
-    design?.planning_work_details?.printing_machine_plan?.bookings || [];
+const getPlanningDetails = (design, compName, process, planKey) => {
+  const bookings = design?.planning_work_details?.[planKey]?.bookings || [];
   const match = bookings.find(
     (b) =>
       b.component === compName &&
       process.includes(b.process.replace(" - 1", "")),
   );
-  if (!match) return "";
+  if (!match) return { machine: "", plan: "" };
 
   const formattedDate = new Date(match.shift_from_dt)
     .toLocaleDateString("en-GB")
@@ -125,7 +124,11 @@ const getPlanningDetails = (design, compName, process) => {
     "Shift 2": "S2",
     "Shift 3": "S3",
   };
-  return `${formattedDate} - ${shiftMap[match.shift] || match.shift}`;
+
+  return {
+    machine: match.machine || "",
+    plan: `${formattedDate} - ${shiftMap[match.shift] || match.shift}`,
+  };
 };
 
 const getPlanningDatesWithShifts = (design) => {
@@ -287,6 +290,9 @@ const ComponentRow = ({
       ? Math.ceil(Number(totalQty) / Number(component.ups))
       : "";
 
+  const coatingPrintedSheets =
+    design?.coating_work_details?.components?.[name]?.printed_sheets || "";
+
   return (
     <>
       {listOfPrinting.map((process, index) => {
@@ -347,7 +353,7 @@ const ComponentRow = ({
                 fullWidth
                 type="number"
                 label={originalSheets}
-                value={component?.sheets}
+                value={coatingPrintedSheets}
                 InputLabelProps={{ shrink: true }}
                 sx={{
                   "& .MuiInputLabel-root.Mui-disabled": { color: "green" },
@@ -379,7 +385,14 @@ const ComponentRow = ({
               <TextField
                 size="small"
                 fullWidth
-                value={design?.machine}
+                value={
+                  getPlanningDetails(
+                    design,
+                    name,
+                    process,
+                    "printing_machine_plan",
+                  ).machine
+                }
                 disabled
               />
             </Cell>
@@ -400,7 +413,14 @@ const ComponentRow = ({
               <TextField
                 size="small"
                 fullWidth
-                value={getPlanningDetails(design, name, process)}
+                value={
+                  getPlanningDetails(
+                    design,
+                    name,
+                    process,
+                    "printing_machine_plan",
+                  ).plan
+                }
                 disabled
               />
             </Cell>
@@ -558,7 +578,7 @@ function EditPrintingTeam() {
   const printingInstructors = getByType("instructor", "printing");
   const printingOperators = getByType("operator", "printing");
 
-  const draftKey = `priting_draft_${design?.unique_id}`;
+  const draftKey = `printing_draft_${design?.unique_id}`;
 
   // State
   const [instructorName, setInstructorName] = useState("");
@@ -611,11 +631,11 @@ function EditPrintingTeam() {
 
   // Build timer/statusMap from saved DB data
   const buildStateFromDB = (comp, cwdComp) => {
-    if (!cwdComp?.printing_process) return {};
+    if (!cwdComp?.printingteam_process) return {};
     const timers = {};
     const statusMap = {};
     getPrintingList(comp).forEach((processName, index) => {
-      const p = cwdComp.printing_process[processName];
+      const p = cwdComp.printingteam_process[processName];
       if (!p) return;
       const start = new Date(p.start_time).getTime();
       const end = new Date(p.end_time).getTime();
@@ -648,7 +668,7 @@ function EditPrintingTeam() {
     if (!design?.components) return;
     const updatedComponents = { ...initialComponentsState };
     const newPrintingState = {};
-    const cwdComponents = design?.printing_work_details?.components || {};
+    const cwdComponents = design?.printingteam_work_details?.components || {};
 
     Object.entries(design.components).forEach(([name, comp]) => {
       if (updatedComponents[name] !== undefined) {
@@ -662,9 +682,10 @@ function EditPrintingTeam() {
   }, [design]);
 
   // Load instructor + operator map
+  // FIX
   useEffect(() => {
-    if (!design?.printing_work_details) return;
-    const cwd = design.printing_work_details;
+    if (!design?.printingteam_work_details) return;
+    const cwd = design.printingteam_work_details;
     setInstructorName(cwd?.instructor_name || "");
     setOperatorMap(cwd?.operator_map || {});
   }, [design]);
@@ -672,7 +693,8 @@ function EditPrintingTeam() {
   // Load printed/rejected per component
   useEffect(() => {
     if (!design?.components) return;
-    const cwd = design?.printing_work_details?.components || {};
+    // FIX
+    const cwd = design?.printingteam_work_details?.components || {};
     const map = {};
     Object.keys(design.components).forEach((name) => {
       map[name] = {
@@ -685,7 +707,7 @@ function EditPrintingTeam() {
 
   // Load pending reason
   useEffect(() => {
-    const reason = design?.printing_pending_details?.pending_reason;
+    const reason = design?.printingteam_pending_details?.pending_reason;
     if (!reason) return;
     setPendingData({
       reason: PENDING_REASONS.includes(reason) ? reason : "Others",
@@ -842,12 +864,12 @@ function EditPrintingTeam() {
         .filter(([compName]) => design?.components?.[compName])
         .forEach(([compName, comp]) => {
           const { timers = {}, statusMap = {} } = printingState[compName] || {};
-          const printing_process = {};
+          const printingteam_process = {};
 
           getPrintingList(comp).forEach((processName, index) => {
             const t = timers[index];
             if (!t || !t.startTime || !t.endTime) return;
-            printing_process[processName] = {
+            printingteam_process[processName] = {
               start_time: new Date(t.startTime),
               end_time: new Date(t.endTime),
               co_time: Math.floor((t.coTotalMs || 0) / 1000),
@@ -859,7 +881,7 @@ function EditPrintingTeam() {
           });
 
           cwdComponents[compName] = {
-            printing_process,
+            printingteam_process,
             printed_sheets: outputMap[compName]?.printed || "",
             rejected_sheets: outputMap[compName]?.rejected || "",
           };
@@ -869,8 +891,8 @@ function EditPrintingTeam() {
         unique_id: design.unique_id,
         saleorder_no: design.saleorder_no,
         item_line_no: design.item_line_no,
-        printing_status: type === "PENDING" ? 1 : 2,
-        printing_pending_details: JSON.stringify(
+        printingteam_status: type === "PENDING" ? 1 : 2,
+        printingteam_pending_details: JSON.stringify(
           type === "PENDING"
             ? {
                 pending_reason:
@@ -878,9 +900,9 @@ function EditPrintingTeam() {
                     ? pendingData.otherReason
                     : pendingData.reason,
               }
-            : design?.printing_pending_details || {},
+            : design?.printingteam_pending_details || {},
         ),
-        printing_work_details: JSON.stringify({
+        printingteam_work_details: JSON.stringify({
           instructor_name: instructorName,
           operator_map: operatorMap,
           components: cwdComponents,

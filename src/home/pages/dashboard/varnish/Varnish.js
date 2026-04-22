@@ -32,7 +32,7 @@ const Varnish = () => {
 
   const [getStatus, setStatus] = useState("all");
 
-  // Filter Printing Team For Dashboard
+  // Filter Varnish Team For Dashboard
   const filterDesigns = useMemo(() => {
     if (getStatus === "all") {
       return (designs || []).filter((d) => d.printingteam_status === 2);
