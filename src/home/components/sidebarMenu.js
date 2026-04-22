@@ -120,6 +120,22 @@ export const SIDEBAR_MENU = {
     },
   ],
 
+  Varnish: [
+    {
+      label: "Varnish Dashboard",
+      path: "/varnish_dashboard",
+      icon: FormatPaintIcon,
+      key: "Dashboard",
+      matchRoutes: ["/varnish_dashboard", "/edit_varnish"],
+    },
+    {
+      label: "Sheet Store",
+      path: "/upload_sheet",
+      icon: DashboardIcon,
+      key: "Sheet Taken",
+    },
+  ],
+
   Fabrication: [
     {
       label: "Fabrication",
@@ -135,7 +151,7 @@ export const SIDEBAR_MENU = {
       key: "Sheet Taken",
     },
   ],
-  
+
   Stores: [
     {
       label: "Store Dashboard",
@@ -170,7 +186,7 @@ export const SIDEBAR_MENU = {
       icon: PersonAddIcon,
       key: "All",
     },
-      {
+    {
       label: "Add Employee",
       path: "/employee_config",
       icon: PersonAddIcon,

@@ -20,6 +20,8 @@ import Fabrication from "./pages/dashboard/fabrication/Fabrication";
 import EditFabrication from "./pages/dashboard/fabrication/EditFabrication";
 import MachineConfig from "./pages/machine/MachineConfig";
 import EmployeeConfig from "./pages/user/EmployeeConfig";
+import Varnish from "./pages/dashboard/varnish/Varnish";
+import EditVarnish from "./pages/dashboard/varnish/EditVarnish";
 
 export const ROUTE_CONFIG = {
   Designing: [
@@ -84,6 +86,20 @@ export const ROUTE_CONFIG = {
     {
       path: "/edit_printingteam",
       component: EditPrintingTeam,
+      key: "Dashboard",
+    },
+    { path: "/upload_sheet", component: Uploadsheet, key: "Sheet Taken" },
+  ],
+
+  Varnish: [
+    {
+      path: "/varnish_dashboard",
+      component: Varnish,
+      key: "Dashboard",
+    },
+    {
+      path: "/edit_varnish",
+      component: EditVarnish,
       key: "Dashboard",
     },
     { path: "/upload_sheet", component: Uploadsheet, key: "Sheet Taken" },

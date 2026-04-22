@@ -19,6 +19,7 @@ import {
   DialogActions,
   FormControl,
   InputLabel,
+  FormHelperText,
 } from "@mui/material";
 
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
@@ -145,7 +146,6 @@ const getPlanningDatesWithShifts = (design) => {
 };
 
 // Cell Component
-
 const Cell = ({ colIndex, children, sx = {} }) => (
   <Box
     sx={{
@@ -274,7 +274,6 @@ const ComponentRow = ({
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
-
     return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
       2,
       "0",
@@ -574,6 +573,11 @@ function EditCoating() {
     otherReason: "",
   });
 
+  // Validation Error State
+  const [instructorError, setInstructorError] = useState(false);
+  const [operatorErrors, setOperatorErrors] = useState({});
+  const [outputErrors, setOutputErrors] = useState({});
+
   // Static derived data
   const formData = {
     customer_name: design?.customer_name || "",
@@ -588,7 +592,7 @@ function EditCoating() {
   };
   const planningData = getPlanningDatesWithShifts(design);
 
-  // ── Initial component structure ──
+  // Initial component structure
   const initialComponentsState = useMemo(() => {
     const obj = {};
     COMPONENT_NAMES.forEach((name) => {
@@ -688,15 +692,13 @@ function EditCoating() {
     });
   }, [design]);
 
+  // Restore session draft
   useEffect(() => {
     if (!design?.unique_id) return;
-
     const savedDraft = sessionStorage.getItem(draftKey);
-
     if (savedDraft) {
       try {
         const parsed = JSON.parse(savedDraft);
-
         setInstructorName(parsed?.instructorName || "");
         setOperatorMap(parsed?.operatorMap || {});
         setOutputMap(parsed?.outputMap || {});
@@ -707,16 +709,15 @@ function EditCoating() {
     }
   }, [design]);
 
+  // Save session draft
   useEffect(() => {
     if (!design?.unique_id) return;
-
     const saveData = {
       instructorName,
       operatorMap,
       outputMap,
       coatingState,
     };
-
     sessionStorage.setItem(draftKey, JSON.stringify(saveData));
   }, [instructorName, operatorMap, outputMap, coatingState, design]);
 
@@ -743,7 +744,9 @@ function EditCoating() {
 
   const handleArtworkView = () => {
     if (!design?.file_name || !design?.file_ext) return;
-    const imageUrl = `${server?.defaults?.baseURL}/artworkImages/${encodeURIComponent(design.file_name)}.${design.file_ext}`;
+    const imageUrl = `${server?.defaults?.baseURL}/artworkImages/${encodeURIComponent(
+      design.file_name,
+    )}.${design.file_ext}`;
     setCurrentImage(imageUrl);
     setOpen(true);
   };
@@ -752,6 +755,54 @@ function EditCoating() {
     setOpen(false);
     if (currentImage?.startsWith("blob:")) URL.revokeObjectURL(currentImage);
     setCurrentImage("");
+  };
+
+  // Validation 
+  const validateAssignOperator = () => {
+    let hasError = false;
+
+    if (!instructorName) {
+      setInstructorError(true);
+      hasError = true;
+    } else {
+      setInstructorError(false);
+    }
+
+    const newOperatorErrors = {};
+    planningData.forEach(({ date, shifts }) => {
+      shifts.forEach((shift) => {
+        const key = `${date}_${shift}`;
+        if (!operatorMap[key]) {
+          newOperatorErrors[key] = true;
+          hasError = true;
+        }
+      });
+    });
+    setOperatorErrors(newOperatorErrors);
+
+    return !hasError;
+  };
+
+  const validateComponentOutput = () => {
+    let hasError = false;
+    const newOutputErrors = {};
+
+    Object.keys(design?.components || {}).forEach((name) => {
+      const printed = outputMap[name]?.printed;
+      const rejected = outputMap[name]?.rejected;
+
+      if (printed === "" || printed === undefined || printed === null) {
+        newOutputErrors[`${name}_printed`] = true;
+        hasError = true;
+      }
+      if (rejected === "" || rejected === undefined || rejected === null) {
+        newOutputErrors[`${name}_rejected`] = true;
+        hasError = true;
+      }
+    });
+
+    setOutputErrors(newOutputErrors);
+    return !hasError;
   };
 
   const validateCoating = (type) => {
@@ -771,6 +822,14 @@ function EditCoating() {
 
   const handleSubmit = async (type) => {
     try {
+      const operatorValid = validateAssignOperator();
+      const outputValid = validateComponentOutput();
+
+      if (!operatorValid || !outputValid) {
+        toast.warning("Please fill all required fields");
+        return;
+      }
+
       if (!validateCoating(type)) {
         toast.warning("Complete all coating processes before submitting");
         return;
@@ -918,27 +977,55 @@ function EditCoating() {
             <Typography sx={{ fontSize: "18px", color: "#0a85cb" }}>
               Assign Operator
             </Typography>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <Typography>Instructor Name :</Typography>
-              <Select
-                value={instructorName}
-                onChange={(e) => setInstructorName(e.target.value)}
-                size="small"
-                sx={{ width: "180px", fontSize: "14px" }}
-                displayEmpty
-              >
-                <MenuItem value="" disabled>
-                  Select
-                </MenuItem>
-                {coatingInstructors.map((emp) => (
-                  <MenuItem key={emp._id} value={emp.emp_id}>
-                    {emp.name}
+
+            {/* Instructor Name */}
+            <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
+              <Typography sx={{ mt: 1 }}>Instructor Name :</Typography>
+              <Box>
+                <Select
+                  value={instructorName}
+                  onChange={(e) => {
+                    setInstructorName(e.target.value);
+                    setInstructorError(false);
+                  }}
+                  size="small"
+                  sx={{
+                    width: "180px",
+                    fontSize: "14px",
+                    ...(instructorError && {
+                      "& .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "#d32f2f",
+                      },
+                      "&:hover .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "#d32f2f",
+                      },
+                      "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "#d32f2f",
+                      },
+                    }),
+                  }}
+                  displayEmpty
+                  error={instructorError}
+                >
+                  <MenuItem value="" disabled>
+                    Select
                   </MenuItem>
-                ))}
-              </Select>
+                  {coatingInstructors.map((emp) => (
+                    <MenuItem key={emp._id} value={emp.emp_id}>
+                      {emp.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {instructorError && (
+                  <FormHelperText sx={{ color: "#d32f2f", mx: "14px" }}>
+                    Required
+                  </FormHelperText>
+                )}
+              </Box>
             </Box>
           </Box>
 
+          {/* Operator Rows */}
           <Box sx={{ p: 2 }}>
             {planningData.map(({ date, shifts }) => {
               const shiftOrder = ["General", "Shift 1", "Shift 2", "Shift 3"];
@@ -948,7 +1035,7 @@ function EditCoating() {
                   sx={{
                     display: "grid",
                     gridTemplateColumns: "140px repeat(3, 110px 220px)",
-                    alignItems: "center",
+                    alignItems: "start",
                     mb: 2,
                     px: 1,
                     py: 1,
@@ -957,26 +1044,37 @@ function EditCoating() {
                   }}
                 >
                   {/* Date */}
-                  <Typography>{date}</Typography>
+                  <Typography sx={{ mt: 1 }}>{date}</Typography>
+
                   {shiftOrder
                     .slice(shifts.includes("General") ? 0 : 1)
                     .slice(0, 3)
                     .map((shift) => {
                       if (!shifts.includes(shift)) return null;
+                      const operatorKey = `${date}_${shift}`;
+                      const hasOperatorError = !!operatorErrors[operatorKey];
                       return (
                         <Fragment key={shift}>
-                          <Typography>{shift}</Typography>
+                          <Typography sx={{ mt: 1 }}>{shift}</Typography>
                           <Box sx={{ pr: 2 }}>
-                            <FormControl size="small" sx={{ width: 180 }}>
+                            <FormControl
+                              size="small"
+                              sx={{ width: 180 }}
+                              error={hasOperatorError}
+                            >
                               <InputLabel>Operator Name</InputLabel>
                               <Select
-                                value={operatorMap[`${date}_${shift}`] || ""}
-                                onChange={(e) =>
+                                value={operatorMap[operatorKey] || ""}
+                                onChange={(e) => {
                                   setOperatorMap((prev) => ({
                                     ...prev,
-                                    [`${date}_${shift}`]: e.target.value,
-                                  }))
-                                }
+                                    [operatorKey]: e.target.value,
+                                  }));
+                                  setOperatorErrors((prev) => ({
+                                    ...prev,
+                                    [operatorKey]: false,
+                                  }));
+                                }}
                                 label="Operator Name"
                                 sx={{ fontSize: "14px", p: 0.5 }}
                               >
@@ -989,6 +1087,9 @@ function EditCoating() {
                                   </MenuItem>
                                 ))}
                               </Select>
+                              {hasOperatorError && (
+                                <FormHelperText>Required</FormHelperText>
+                              )}
                             </FormControl>
                           </Box>
                         </Fragment>
@@ -1128,42 +1229,67 @@ function EditCoating() {
 
           {/* Rows */}
           <Box sx={{ p: 2 }}>
-            {Object.keys(design?.components || {}).map((name) => (
-              <Box
-                key={name}
-                sx={{ display: "flex", alignItems: "center", mb: 2 }}
-              >
-                <Typography sx={{ width: 180 }}>{name}</Typography>
-                <Box sx={{ width: 180, pr: 2 }}>
-                  <TextField
-                    size="small"
-                    fullWidth
-                    type="number"
-                    value={outputMap[name]?.printed || ""}
-                    onChange={(e) =>
-                      setOutputMap((prev) => ({
-                        ...prev,
-                        [name]: { ...prev[name], printed: e.target.value },
-                      }))
-                    }
-                  />
+            {Object.keys(design?.components || {}).map((name) => {
+              const printedError = !!outputErrors[`${name}_printed`];
+              const rejectedError = !!outputErrors[`${name}_rejected`];
+              return (
+                <Box
+                  key={name}
+                  sx={{ display: "flex", alignItems: "flex-start", mb: 2 }}
+                >
+                  {/* Component Name */}
+                  <Typography sx={{ width: 180, mt: 1 }}>{name}</Typography>
+
+                  {/* Printed Sheets */}
+                  <Box sx={{ width: 180, pr: 2 }}>
+                    <TextField
+                      size="small"
+                      fullWidth
+                      type="number"
+                      value={outputMap[name]?.printed || ""}
+                      error={printedError}
+                      helperText={printedError ? "Required" : ""}
+                      onChange={(e) => {
+                        setOutputMap((prev) => ({
+                          ...prev,
+                          [name]: { ...prev[name], printed: e.target.value },
+                        }));
+                        if (e.target.value !== "") {
+                          setOutputErrors((prev) => ({
+                            ...prev,
+                            [`${name}_printed`]: false,
+                          }));
+                        }
+                      }}
+                    />
+                  </Box>
+
+                  {/* Rejected Sheets */}
+                  <Box sx={{ width: 180, pr: 2 }}>
+                    <TextField
+                      size="small"
+                      fullWidth
+                      type="number"
+                      value={outputMap[name]?.rejected || ""}
+                      error={rejectedError}
+                      helperText={rejectedError ? "Required" : ""}
+                      onChange={(e) => {
+                        setOutputMap((prev) => ({
+                          ...prev,
+                          [name]: { ...prev[name], rejected: e.target.value },
+                        }));
+                        if (e.target.value !== "") {
+                          setOutputErrors((prev) => ({
+                            ...prev,
+                            [`${name}_rejected`]: false,
+                          }));
+                        }
+                      }}
+                    />
+                  </Box>
                 </Box>
-                <Box sx={{ width: 180, pr: 2 }}>
-                  <TextField
-                    size="small"
-                    fullWidth
-                    type="number"
-                    value={outputMap[name]?.rejected || ""}
-                    onChange={(e) =>
-                      setOutputMap((prev) => ({
-                        ...prev,
-                        [name]: { ...prev[name], rejected: e.target.value },
-                      }))
-                    }
-                  />
-                </Box>
-              </Box>
-            ))}
+              );
+            })}
           </Box>
         </Box>
 
