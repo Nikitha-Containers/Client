@@ -88,7 +88,7 @@ export default function GoogleAuth() {
       .replace(/\D/g, "")
       .slice(0, OTP_LENGTH);
     const arr = Array.from({ length: OTP_LENGTH }).map(
-      (_, i) => pasted[i] || ""
+      (_, i) => pasted[i] || "",
     );
     setOtp(arr);
     inputsRef.current[Math.min(pasted.length, OTP_LENGTH - 1)]?.focus();
@@ -119,7 +119,7 @@ export default function GoogleAuth() {
       } else {
         showSnackbar(
           res.data.message || "Invalid OTP. Please try again.",
-          "error"
+          "error",
         );
         setOtp(Array(OTP_LENGTH).fill(""));
         inputsRef.current[0]?.focus();
@@ -129,7 +129,7 @@ export default function GoogleAuth() {
       showSnackbar(
         error.response?.data?.message ||
           "OTP verification failed. Please try again.",
-        "error"
+        "error",
       );
       setOtp(Array(OTP_LENGTH).fill(""));
       inputsRef.current[0]?.focus();

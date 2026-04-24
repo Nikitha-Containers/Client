@@ -85,8 +85,8 @@ const StepIconRoot = styled("div")(({ ownerState }) => {
     border: active
       ? "3px solid #f44336"
       : completed
-      ? "3px solid #2196f3"
-      : "3px solid #d5d6d6",
+        ? "3px solid #2196f3"
+        : "3px solid #d5d6d6",
   };
 });
 
@@ -112,7 +112,6 @@ function EditPlan() {
   const navigate = useNavigate();
   const location = useLocation();
   const design = location.state?.design;
-
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -480,8 +479,8 @@ function EditPlan() {
                         color: isCompleted
                           ? "#2196f3"
                           : isActive
-                          ? "#f44336"
-                          : "#858485",
+                            ? "#f44336"
+                            : "#858485",
                       }}
                     >
                       {step.label}
