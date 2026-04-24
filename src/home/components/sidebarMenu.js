@@ -152,6 +152,22 @@ export const SIDEBAR_MENU = {
     },
   ],
 
+  Dispatch: [
+    {
+      label: "Dispatch",
+      path: "/dispatch_dashboard",
+      icon: DesignServicesIcon,
+      key: "Dashboard",
+      matchRoutes: ["/dispatch_dashboard", "/edit_editdispatch"],
+    },
+    {
+      label: "Sheet Store",
+      path: "/upload_sheet",
+      icon: DashboardIcon,
+      key: "Sheet Taken",
+    },
+  ],
+
   Stores: [
     {
       label: "Store Dashboard",
