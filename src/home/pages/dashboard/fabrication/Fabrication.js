@@ -3,7 +3,13 @@ import { styled } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Grid from "@mui/material/Grid";
-import { IconButton } from "@mui/material";
+import {
+  FormControl,
+  IconButton,
+  MenuItem,
+  Select,
+  Tooltip,
+} from "@mui/material";
 import Completed from "../../../../assets/icons/circle-check-solid.svg";
 import Pending from "../../../../assets/icons/hourglass-half-solid.svg";
 import Todaywork from "../../../../assets/icons/list-check-solid.svg";
@@ -31,6 +37,32 @@ const Fabrication = () => {
   const { designs } = useDesign();
 
   const [getStatus, setStatus] = useState("all");
+
+  // Helper Function
+  const formatDate = (value) => {
+    if (!value) return "-";
+
+    const date = new Date(value?.$date || value);
+    if (isNaN(date)) return "-";
+
+    const [y, m, d] = date.toISOString().split("T")[0].split("-");
+    return `${d}/${m}/${y}`;
+  };
+
+  // Table Title
+  const tableTitle = {
+    all: "All Process",
+    pending: "Pending Process",
+    completed: "Completed Process",
+  };
+
+  const getStatusText = (row) => {
+    if (row.fabrication_status === 2) return "COMPLETED";
+    if (row.fabrication_status === 1) return "PENDING";
+    if (row.varnish_status === 2) return "NEW";
+
+    return "NEW";
+  };
 
   // Filter Fabrication Team For Dashboard
   const filterDesigns = useMemo(() => {
@@ -69,29 +101,8 @@ const Fabrication = () => {
     ).length;
   }, [designs]);
 
-  // Table Title
-  const tableTitle = {
-    all: "All Process",
-    pending: "Pending Process",
-    completed: "Completed Process",
-  };
-
-  const getStatusText = (row) => {
-    if (row.fabrication_status === 2) return "COMPLETED";
-    if (row.fabrication_status === 1) return "PENDING";
-    if (row.varnish_status === 2) return "NEW";
-
-    return "NEW";
-  };
-
-  const formatDate = (value) => {
-    if (!value) return "-";
-
-    const date = new Date(value?.$date || value);
-    if (isNaN(date)) return "-";
-
-    const [y, m, d] = date.toISOString().split("T")[0].split("-");
-    return `${d}/${m}/${y}`;
+  const getPendingReason = (row) => {
+    return row?.fabrication_pending_details?.pending_reason || "";
   };
 
   const columns = useMemo(
@@ -151,7 +162,33 @@ const Fabrication = () => {
         id: 8,
         header: "Status",
         size: 20,
-        Cell: ({ row }) => <StatusChip status={getStatusText(row.original)} />,
+        Cell: ({ row }) => {
+          const status = getStatusText(row.original);
+          const reason = getPendingReason(row.original);
+
+          if (status === "PENDING" && reason) {
+            return (
+              <Tooltip
+                title={reason}
+                arrow
+                slotProps={{
+                  tooltip: {
+                    sx: {
+                      fontSize: "15px",
+                      padding: "8px 12px",
+                    },
+                  },
+                }}
+              >
+                <span>
+                  <StatusChip status={status} />
+                </span>
+              </Tooltip>
+            );
+          }
+
+          return <StatusChip status={status} />;
+        },
       },
       // {
       //   id: 9,
@@ -293,14 +330,14 @@ const Fabrication = () => {
                 fontWeight: 500,
               },
             }}
-            renderTopToolbarCustomActions={({ table }) => (
+            renderTopToolbarCustomActions={() => (
               <Box
                 sx={{
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
                   width: "65%",
-                  padding: "0px 0px 0px 0px",
+                  padding: "0px",
                 }}
               >
                 <div className="table-title">{tableTitle[getStatus]}</div>
