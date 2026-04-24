@@ -9,8 +9,6 @@ import {
   TextField,
   Select,
   Modal,
-  ToggleButton,
-  ToggleButtonGroup,
   Button,
   Dialog,
   DialogTitle,
@@ -35,7 +33,6 @@ const COLUMNS = [
   { label: "Source File", w: 120 },
   { label: "Printed Sheets", w: 160 },
   { label: "Rejected Sheets", w: 160 },
-  { label: "Status", w: 130 },
 ];
 
 const TOTAL_WIDTH = COLUMNS.reduce((sum, c) => sum + c.w, 0);
@@ -82,37 +79,17 @@ const Cell = ({ colIndex, children, sx = {} }) => (
 );
 
 // ComponentRow
-const ComponentRow = ({
-  component,
-  name,
-  onViewFile,
-  totalQty,
-  statusMap,
-  setStatusMap,
-  outputMap,
-  setOutputMap,
-  outputErrors,
-  setOutputErrors,
-  design,
-}) => {
-  const handleStatusChange = (newValue) => {
-    if (newValue !== null) {
-      setStatusMap((prev) => ({ ...prev, [name]: newValue }));
-    }
-  };
-
-  // No of Sheets = varnish printed sheets (after varnish)
-  const varnishPrintedSheets =
-    design?.varnish_work_details?.components?.[name]?.printed_sheets || "";
-
-  const originalSheets =
+const ComponentRow = ({ component, name, onViewFile, totalQty, design }) => {
+  const designSheets = component.sheets || "";
+  const calculatedSheets =
     component.ups && totalQty
       ? Math.ceil(Number(totalQty) / Number(component.ups))
       : "";
 
-  const status = statusMap[name] || "No";
-  const printedError = !!outputErrors[`${name}_printed`];
-  const rejectedError = !!outputErrors[`${name}_rejected`];
+  // Printed & Rejected Sheets from fabrication (final process)
+  const fabComp = design?.fabrication_work_details?.components?.[name] || {};
+  const printedSheets = fabComp.printed_sheets || "";
+  const rejectedSheets = fabComp.rejected_sheets || "";
 
   return (
     <Box
@@ -141,14 +118,14 @@ const ComponentRow = ({
         />
       </Cell>
 
-      {/* No of Sheets — shows varnish printed sheets */}
+      {/* No of Sheets — value = design initial sheets, label = calculated qty/ups */}
       <Cell colIndex={2}>
         <TextField
           size="small"
           fullWidth
           type="number"
-          label={originalSheets ? String(originalSheets) : ""}
-          value={varnishPrintedSheets}
+          label={calculatedSheets ? String(calculatedSheets) : ""}
+          value={designSheets}
           InputLabelProps={{ shrink: true }}
           sx={{
             "& .MuiInputLabel-root.Mui-disabled": { color: "green" },
@@ -175,83 +152,26 @@ const ComponentRow = ({
         </div>
       </Cell>
 
-      {/* Printed Sheets */}
+      {/* Total Printed Sheets */}
       <Cell colIndex={4}>
         <TextField
           size="small"
           fullWidth
           type="number"
-          value={outputMap[name]?.printed || ""}
-          error={printedError}
-          helperText={printedError ? "Required" : ""}
-          onChange={(e) => {
-            setOutputMap((prev) => ({
-              ...prev,
-              [name]: { ...prev[name], printed: e.target.value },
-            }));
-            if (e.target.value !== "") {
-              setOutputErrors((prev) => ({
-                ...prev,
-                [`${name}_printed`]: false,
-              }));
-            }
-          }}
+          value={printedSheets}
+          disabled
         />
       </Cell>
 
-      {/* Rejected Sheets */}
+      {/* Total Rejected Sheets */}
       <Cell colIndex={5}>
         <TextField
           size="small"
           fullWidth
           type="number"
-          value={outputMap[name]?.rejected || ""}
-          error={rejectedError}
-          helperText={rejectedError ? "Required" : ""}
-          onChange={(e) => {
-            setOutputMap((prev) => ({
-              ...prev,
-              [name]: { ...prev[name], rejected: e.target.value },
-            }));
-            if (e.target.value !== "") {
-              setOutputErrors((prev) => ({
-                ...prev,
-                [`${name}_rejected`]: false,
-              }));
-            }
-          }}
+          value={rejectedSheets}
+          disabled
         />
-      </Cell>
-
-      {/* Status */}
-      <Cell colIndex={6}>
-        <ToggleButtonGroup
-          value={status}
-          exclusive
-          onChange={(e, val) => handleStatusChange(val)}
-          size="small"
-        >
-          <ToggleButton
-            value="Yes"
-            sx={{
-              "&.Mui-selected": { backgroundColor: "green", color: "white" },
-              "&:hover": { backgroundColor: "#008000db" },
-              "&.Mui-selected:hover": { backgroundColor: "#008000" },
-            }}
-          >
-            Yes
-          </ToggleButton>
-          <ToggleButton
-            value="No"
-            sx={{
-              "&.Mui-selected": { backgroundColor: "red", color: "white" },
-              "&:hover": { backgroundColor: "#ff0000bf" },
-              "&.Mui-selected:hover": { backgroundColor: "#ff0000" },
-            }}
-          >
-            No
-          </ToggleButton>
-        </ToggleButtonGroup>
       </Cell>
     </Box>
   );
@@ -269,7 +189,6 @@ function EditDispatch() {
   const [open, setOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState("");
   const [components, setComponents] = useState({});
-  const [statusMap, setStatusMap] = useState({});
   const [outputMap, setOutputMap] = useState({});
   const [openPending, setOpenPending] = useState(false);
   const [pendingData, setPendingData] = useState({
@@ -345,17 +264,6 @@ function EditDispatch() {
     setOutputMap(map);
   }, [design]);
 
-  // Load status map
-  useEffect(() => {
-    if (!design?.components) return;
-    const cwd = design?.dispatch_work_details?.components || {};
-    const map = {};
-    Object.keys(design.components).forEach((name) => {
-      map[name] = cwd[name]?.status === 1 ? "Yes" : "No";
-    });
-    setStatusMap(map);
-  }, [design]);
-
   // Load pending reason
   useEffect(() => {
     const reason = design?.dispatch_pending_details?.pending_reason;
@@ -374,7 +282,6 @@ function EditDispatch() {
       try {
         const parsed = JSON.parse(savedDraft);
         setOutputMap(parsed?.outputMap || {});
-        setStatusMap(parsed?.statusMap || {});
       } catch (error) {
         console.error("Session restore failed", error);
       }
@@ -384,9 +291,9 @@ function EditDispatch() {
   // Save session draft
   useEffect(() => {
     if (!design?.unique_id) return;
-    const saveData = { outputMap, statusMap };
+    const saveData = { outputMap };
     sessionStorage.setItem(draftKey, JSON.stringify(saveData));
-  }, [outputMap, statusMap, design]);
+  }, [outputMap, design]);
 
   // Cleanup blob URL
   useEffect(() => {
@@ -425,58 +332,14 @@ function EditDispatch() {
     setCurrentImage("");
   };
 
-  // Validation
-  const validateComponentOutput = () => {
-    let hasError = false;
-    const newOutputErrors = {};
-
-    Object.keys(design?.components || {}).forEach((name) => {
-      const printed = outputMap[name]?.printed;
-      const rejected = outputMap[name]?.rejected;
-
-      if (printed === "" || printed === undefined || printed === null) {
-        newOutputErrors[`${name}_printed`] = true;
-        hasError = true;
-      }
-      if (rejected === "" || rejected === undefined || rejected === null) {
-        newOutputErrors[`${name}_rejected`] = true;
-        hasError = true;
-      }
-    });
-
-    setOutputErrors(newOutputErrors);
-    return !hasError;
-  };
-
-  const validateDispatch = (type) => {
-    if (type === "PENDING") return true;
-    for (const compName of Object.keys(design?.components || {})) {
-      if (statusMap[compName] !== "Yes") return false;
-    }
-    return true;
-  };
-
   const handleSubmit = async (type) => {
     try {
-      const outputValid = validateComponentOutput();
-
-      if (!outputValid) {
-        toast.warning("Please fill all required fields");
-        return;
-      }
-
-      if (!validateDispatch(type)) {
-        toast.warning("Complete all dispatch processes before submitting");
-        return;
-      }
-
-      // Build dispatch_work_details.components
+      const fabComponents = design?.fabrication_work_details?.components || {};
       const cwdComponents = {};
       Object.keys(design?.components || {}).forEach((compName) => {
         cwdComponents[compName] = {
-          printed_sheets: outputMap[compName]?.printed || "",
-          rejected_sheets: outputMap[compName]?.rejected || "",
-          status: statusMap[compName] === "Yes" ? 1 : 0,
+          printed_sheets: fabComponents[compName]?.printed_sheets || "",
+          rejected_sheets: fabComponents[compName]?.rejected_sheets || "",
         };
       });
 
@@ -503,9 +366,7 @@ function EditDispatch() {
       await server.post("/design/add", payload);
       sessionStorage.removeItem(draftKey);
       toast[type === "PENDING" ? "info" : "success"](
-        type === "PENDING"
-          ? "Moved to Pending"
-          : "Dispatch Saved Successfully",
+        type === "PENDING" ? "Moved to Pending" : "Dispatch Saved Successfully",
       );
       navigate("/dispatch_dashboard");
     } catch (error) {
@@ -634,12 +495,6 @@ function EditDispatch() {
                   onViewFile={handleViewFile}
                   totalQty={design?.item_quantity}
                   design={design}
-                  statusMap={statusMap}
-                  setStatusMap={setStatusMap}
-                  outputMap={outputMap}
-                  setOutputMap={setOutputMap}
-                  outputErrors={outputErrors}
-                  setOutputErrors={setOutputErrors}
                 />
               ))}
           </Box>

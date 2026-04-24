@@ -177,7 +177,7 @@ const Varnish = () => {
       //   ),
       // },
     ],
-    [navigate],
+    [],
   );
 
   return (

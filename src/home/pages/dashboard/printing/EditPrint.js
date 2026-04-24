@@ -391,7 +391,7 @@ function EditPrint() {
 
   const handleClose = () => {
     setOpen(false);
-    if (currentImage) URL.revokeObjectURL(currentImage);
+    if (currentImage?.startsWith("blob:")) URL.revokeObjectURL(currentImage);
     setCurrentImage("");
   };
 

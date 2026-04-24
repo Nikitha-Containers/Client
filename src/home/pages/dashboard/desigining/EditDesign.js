@@ -365,7 +365,7 @@ function EditDesign() {
 
   useEffect(() => {
     return () => {
-      if (currentImage) URL.revokeObjectURL(currentImage);
+      if (currentImage?.startsWith("blob:")) URL.revokeObjectURL(currentImage);
     };
   }, [currentImage]);
 

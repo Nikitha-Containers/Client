@@ -177,7 +177,7 @@ const Fabrication = () => {
       //   ),
       // },
     ],
-    [navigate],
+    [],
   );
 
   return (

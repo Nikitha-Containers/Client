@@ -177,7 +177,7 @@ const PrintingTeamDashboard = () => {
       //   ),
       // },
     ],
-    [navigate],
+    [],
   );
 
   return (
