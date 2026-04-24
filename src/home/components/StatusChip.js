@@ -16,7 +16,6 @@ const STATUS_CONFIG = {
   },
 
   // For Sales Order Dashboard
-
   ACTIVE: {
     label: "Active",
     color: "success",

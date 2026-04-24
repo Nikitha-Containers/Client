@@ -112,7 +112,7 @@ const Sidebar = ({ isCollapsed }) => {
             const Icon = menu.icon;
             const isActive = menu.matchRoutes
               ? menu.matchRoutes.some((route) =>
-                  location.pathname.startsWith(route)
+                  location.pathname.startsWith(route),
                 )
               : location.pathname === menu.path;
 
