@@ -6,13 +6,13 @@ import { MaterialReactTable } from "material-react-table";
 import "../../../pages/pagestyle.scss";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { SalesOrder } from "../../../../API/Salesorder";
+import { SalesOrderAll } from "../../../../API/Salesorder";
 import server from "../../../../server/server";
 import StatusChip from "../../../components/StatusChip";
 
 function SyncWithSO() {
   const { salesOrders, sync, lastSync, syncProgress, isSyncing, refetch } =
-    SalesOrder();
+    SalesOrderAll();
 
   const formatDate = (value) => {
     if (!value) return "-";
@@ -131,8 +131,13 @@ function SyncWithSO() {
             </IconButton>
             <IconButton
               onClick={() => handleDeleteSO(row?.original?.unique_id)}
+              disabled={row?.original?.status === 0}
             >
-              <DeleteIcon color="error" title="Delete SO" size="small" />
+              <DeleteIcon
+                color={row?.original?.status === 0 ? "disabled" : "error"}
+                title="Cancel SO"
+                size="small"
+              />
             </IconButton>
           </Box>
         ),
