@@ -29,6 +29,7 @@ import {
   useMachineConfig,
 } from "./ComponentRow";
 import { PendingDialog } from "./PlanningDialogs";
+import { useDesign } from "../../../../API/Design_API";
 
 const COMPONENT_NAMES = [
   "Lid",
@@ -56,7 +57,6 @@ const FORM_FIELDS = [
   { label: "SP Contact No", key: "telephone" },
 ];
 
-// Machine column removed from TABLE_HEADERS
 const TABLE_HEADERS = [
   { label: "Component", size: 1 },
   { label: "Sheet Size", size: 1.5 },
@@ -69,7 +69,7 @@ const TABLE_HEADERS = [
   { label: "Info", size: 1 },
 ];
 
-// Helper Function
+// Helper Functions
 
 const getBookings = (design, planKey) =>
   design?.planning_work_details?.[planKey]?.bookings ?? [];
@@ -95,6 +95,7 @@ const buildPlanningSection = (bookings = []) => {
     const date = formatDateLocal(b.shift_from_dt);
     const shiftHours = SHIFT_CONFIG[b.shift]?.hours ?? 8;
     const allocH = b.allocated_hours ?? shiftHours;
+    if (allocH <= EPSILON) return;
 
     if (!row.slots[date]) row.slots[date] = {};
     row.slots[date][b.shift] = {
@@ -155,10 +156,45 @@ const generateBookings = (planningSection) => {
   return bookings;
 };
 
+const buildCrossOrderShiftMap = (designs, currentUniqueId) => {
+  const map = {};
+  if (!designs?.length) return map;
+
+  const PLAN_SECTION_KEYS = [
+    "coating_machine_plan",
+    "printing_machine_plan",
+    "varnish_machine_plan",
+  ];
+
+  designs.forEach((d) => {
+    if (d.unique_id === currentUniqueId) return;
+    if (d.planning_status !== 2) return;
+    if (!d.planning_work_details) return;
+
+    PLAN_SECTION_KEYS.forEach((key) => {
+      const bookings = d.planning_work_details?.[key]?.bookings;
+      if (!bookings?.length) return;
+
+      bookings.forEach((b) => {
+        if (!b.machine || !b.shift || !b.shift_from_dt) return;
+        const date = formatDateLocal(b.shift_from_dt);
+        const mapKey = `${b.machine}_${date}_${b.shift}`;
+        const hours = b.allocated_hours ?? SHIFT_CONFIG[b.shift]?.hours ?? 8;
+
+        if (!map[mapKey]) map[mapKey] = { usedHours: 0 };
+        map[mapKey].usedHours += hours;
+      });
+    });
+  });
+
+  return map;
+};
+
 function EditPlan() {
   const navigate = useNavigate();
   const { design } = useLocation()?.state || {};
   const machineConfig = useMachineConfig();
+  const { designs } = useDesign();
 
   useEffect(() => {
     if (!design) {
@@ -212,6 +248,11 @@ function EditPlan() {
   const varnishBookings = useMemo(
     () => getBookings(design, "varnish_machine_plan"),
     [design],
+  );
+
+  const crossOrderShiftMap = useMemo(
+    () => buildCrossOrderShiftMap(designs, design?.unique_id),
+    [designs, design?.unique_id],
   );
 
   // Initial empty component map
@@ -303,19 +344,10 @@ function EditPlan() {
       });
     });
 
-    [...coatingBookings, ...printingBookings, ...varnishBookings].forEach(
-      (b) => {
-        const date = formatDateLocal(b.shift_from_dt);
-        const hours = b.allocated_hours ?? SHIFT_CONFIG[b.shift]?.hours ?? 8;
-        add(b.machine, date, b.shift, hours);
-      },
-    );
-
     return map;
-  }, [planningData, coatingBookings, printingBookings, varnishBookings]);
+  }, [planningData]);
 
   // Filtered component list
-
   const filteredComponents = useMemo(
     () =>
       Object.entries(components).filter(([key]) =>
@@ -395,7 +427,7 @@ function EditPlan() {
       const varnishBk = generateBookings(planningData.varnish);
 
       if (
-        status !== "PENDING" &&
+        status === "FINAL" &&
         !coatingBk.length &&
         !printingBk.length &&
         !varnishBk.length
@@ -406,9 +438,12 @@ function EditPlan() {
 
       if (status === "PENDING" && !validatePending()) return;
 
+      const planningStatus =
+        status === "FINAL" ? 2 : status === "PENDING" ? 1 : 0;
+
       const payload = {
         unique_id: design.unique_id,
-        planning_status: status === "FINAL" ? 2 : status === "PENDING" ? 1 : 0,
+        planning_status: planningStatus,
         planning_work_details: {
           coating_machine_plan: { bookings: coatingBk },
           printing_machine_plan: { bookings: printingBk },
@@ -516,6 +551,7 @@ function EditPlan() {
             processType={processType}
             existingBookings={existingBookings}
             usedShiftMap={usedShiftMap}
+            crossOrderShiftMap={crossOrderShiftMap}
             currentUniqueId={design?.unique_id}
             sectionMachine={sectionMachines[planningKey]}
             onPlanningChange={(data) =>

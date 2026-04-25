@@ -132,6 +132,8 @@ const buildRowFromBookings = (process, matched) => {
     const date = formatDateLocal(b.shift_from_dt);
     const shiftHours = SHIFT_CONFIG[b.shift]?.hours ?? 8;
     const allocatedHours = b.allocated_hours ?? shiftHours;
+    if (allocatedHours <= EPSILON) return;
+
     const plannedSheets = b.planned_sheets ?? null;
 
     if (!slots[date]) slots[date] = {};
@@ -148,8 +150,8 @@ const buildRowFromBookings = (process, matched) => {
   return {
     process,
     machine,
-    startDate: dates[0],
-    endDate: dates[dates.length - 1],
+    startDate: dates[0] ?? "",
+    endDate: dates[dates.length - 1] ?? "",
     slots,
   };
 };
@@ -169,6 +171,7 @@ const buildCrossOrderShiftMap = (designs, currentUniqueId) => {
 
   designs.forEach((d) => {
     if (d.unique_id === currentUniqueId) return;
+    if (d.planning_status !== 2) return;
     if (!d.planning_work_details) return;
 
     PLAN_SECTION_KEYS.forEach((key) => {
@@ -225,11 +228,11 @@ const ComponentRow = ({
   onPlanningChange,
   existingBookings = [],
   usedShiftMap = {},
+  crossOrderShiftMap = {},
   currentUniqueId,
   sectionMachine,
 }) => {
   const navigate = useNavigate();
-  const { designs } = useDesign();
   const machineConfig = useMachineConfig();
 
   const [processRows, setProcessRows] = useState([]);
@@ -239,6 +242,7 @@ const ComponentRow = ({
   const [activeRowIndex, setActiveRowIndex] = useState(null);
   const [selectedRowIndex, setSelectedRowIndex] = useState(null);
   const [infoData, setInfoData] = useState(null);
+  const [selectedShiftType, setSelectedShiftType] = useState("Shift");
 
   const [availabilityDialog, setAvailabilityDialog] = useState({
     open: false,
@@ -247,11 +251,6 @@ const ComponentRow = ({
 
   const currentRow =
     activeRowIndex !== null ? processRows[activeRowIndex] : null;
-
-  const crossOrderShiftMap = useMemo(
-    () => buildCrossOrderShiftMap(designs, currentUniqueId),
-    [designs, currentUniqueId],
-  );
 
   const dateRange = useMemo(() => {
     if (!currentRow?.startDate || !currentRow?.endDate) return [];
@@ -282,12 +281,22 @@ const ComponentRow = ({
   useEffect(() => {
     if (!sectionMachine) return;
     setProcessRows((prev) => {
+      const hasSlots = prev.some(
+        (row) => Object.keys(row.slots || {}).length > 0,
+      );
+
+      if (hasSlots) {
+        const updated = prev.map((row) => ({
+          ...row,
+          machine: sectionMachine,
+        }));
+        onPlanningChange?.(updated);
+        return updated;
+      }
+
       const updated = prev.map((row) => ({
         ...row,
         machine: sectionMachine,
-        slots: {},
-        startDate: row.startDate,
-        endDate: row.endDate,
       }));
       onPlanningChange?.(updated);
       return updated;
@@ -303,10 +312,13 @@ const ComponentRow = ({
     return Number(component.sheets) / cap;
   };
 
-  const getRequiredShiftCount = (row) => {
+  const getShiftHoursForType = (shiftType) =>
+    shiftType === "General" ? SHIFT_CONFIG.General.hours : 8;
+
+  const getRequiredShiftCount = (row, shiftType = selectedShiftType) => {
     if (!row?.machine || !component?.sheets) return 0;
     const reqH = getRequiredHours(row.machine);
-    const shiftHours = 8;
+    const shiftHours = getShiftHoursForType(shiftType);
     return Math.max(1, Math.ceil(reqH / shiftHours));
   };
 
@@ -397,7 +409,7 @@ const ComponentRow = ({
     };
   };
 
-  const findNextFreeSlot = (machine, startDate, shiftList) => {
+  const findNextFreeSlot = (machine, startDate, shiftList, mergedMap) => {
     let date = new Date(startDate);
     const MAX_DAYS = 365;
 
@@ -405,7 +417,7 @@ const ComponentRow = ({
       const formatted = formatDateLocal(date);
       for (const shift of shiftList) {
         const key = `${machine}_${formatted}_${shift}`;
-        const usedH = usedShiftMap[key]?.usedHours || 0;
+        const usedH = mergedMap[key]?.usedHours || 0;
         const freeH = SHIFT_CONFIG[shift].hours - usedH;
         if (freeH > EPSILON)
           return { date: formatted, shift, freeHours: freeH };
@@ -421,6 +433,8 @@ const ComponentRow = ({
   };
 
   const autoPlanProduction = (rowIndex, shiftType) => {
+    setSelectedShiftType(shiftType);
+
     setProcessRows((prev) => {
       const updated = [...prev];
       const row = { ...updated[rowIndex] };
@@ -437,9 +451,18 @@ const ComponentRow = ({
 
       let remainingHours = Number(component?.sheets) / capacity;
       const slots = {};
-      const localUsed = cloneUsedMap(usedShiftMap);
+      const mergedMap = cloneUsedMap(usedShiftMap);
+      Object.entries(crossOrderShiftMap).forEach(([key, val]) => {
+        if (!mergedMap[key]) mergedMap[key] = { usedHours: 0 };
+        mergedMap[key].usedHours += val.usedHours;
+      });
 
-      const first = findNextFreeSlot(row.machine, row.startDate, shiftList);
+      const first = findNextFreeSlot(
+        row.machine,
+        row.startDate,
+        shiftList,
+        mergedMap,
+      );
       let cur = new Date(first.date);
 
       while (remainingHours > EPSILON) {
@@ -449,7 +472,7 @@ const ComponentRow = ({
           if (remainingHours <= EPSILON) break;
 
           const key = `${row.machine}_${formatted}_${shift}`;
-          const usedH = localUsed[key]?.usedHours || 0;
+          const usedH = mergedMap[key]?.usedHours || 0;
           const shiftCap = SHIFT_CONFIG[shift].hours;
           const freeH = shiftCap - usedH;
 
@@ -467,8 +490,8 @@ const ComponentRow = ({
             isManual: false,
           };
 
-          if (!localUsed[key]) localUsed[key] = { usedHours: 0 };
-          localUsed[key].usedHours += toAllocate;
+          if (!mergedMap[key]) mergedMap[key] = { usedHours: 0 };
+          mergedMap[key].usedHours += toAllocate;
           remainingHours -= toAllocate;
         }
 
@@ -605,12 +628,14 @@ const ComponentRow = ({
                   value={row.startDate}
                   onChange={(e) => {
                     const startDate = e.target.value;
-                    updateRow(index, { startDate, slots: {} });
-                    if (startDate && row.machine) {
-                      checkAndShowAvailability(row.machine, startDate);
-                      setSelectedRowIndex(index);
-                      setOpenShiftType(true);
+                    if (!row.machine) {
+                      toast.error("Please select a Machine first");
+                      return;
                     }
+                    updateRow(index, { startDate, slots: {} });
+                    checkAndShowAvailability(row.machine, startDate);
+                    setSelectedRowIndex(index);
+                    setOpenShiftType(true);
                   }}
                 />
               </div>
@@ -619,14 +644,25 @@ const ComponentRow = ({
             {/* End Date */}
             <Grid size={1.5}>
               <div className="Box-table-content">
-                <TextField
-                  type="date"
-                  size="small"
-                  value={row.endDate}
-                  onChange={(e) =>
-                    updateRow(index, { endDate: e.target.value, slots: {} })
-                  }
-                />
+                <Tooltip
+                  title="Changing end date clears existing shifts — re-open Shift dialog to re-plan"
+                  arrow
+                  placement="top"
+                >
+                  <TextField
+                    type="date"
+                    size="small"
+                    value={row.endDate}
+                    onChange={(e) => {
+                      const endDate = e.target.value;
+                      if (row.startDate && endDate < row.startDate) {
+                        toast.error("End date cannot be before start date");
+                        return;
+                      }
+                      updateRow(index, { endDate, slots: {} });
+                    }}
+                  />
+                </Tooltip>
               </div>
             </Grid>
 
@@ -697,8 +733,11 @@ const ComponentRow = ({
         currentRow={currentRow}
         dateRange={dateRange}
         usedShiftMap={usedShiftMap}
+        crossOrderShiftMap={crossOrderShiftMap}
         activeRowIndex={activeRowIndex}
-        getRequiredShiftCount={getRequiredShiftCount}
+        getRequiredShiftCount={(row) =>
+          getRequiredShiftCount(row, selectedShiftType)
+        }
         getCurrentShiftCount={getCurrentShiftCount}
         requiredHours={
           currentRow?.machine ? getRequiredHours(currentRow.machine) : undefined
