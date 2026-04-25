@@ -4,13 +4,19 @@ import DesignServicesIcon from "@mui/icons-material/DesignServices";
 import FormatPaintIcon from "@mui/icons-material/FormatPaint";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import PrintRoundedIcon from "@mui/icons-material/PrintRounded";
+import EngineeringRoundedIcon from "@mui/icons-material/EngineeringRounded";
+import DashboardCustomizeRoundedIcon from "@mui/icons-material/DashboardCustomizeRounded";
+import StoreRoundedIcon from "@mui/icons-material/StoreRounded";
+import AutoStoriesRoundedIcon from "@mui/icons-material/AutoStoriesRounded";
+import EditCalendarRoundedIcon from "@mui/icons-material/EditCalendarRounded";
 
 export const SIDEBAR_MENU = {
   Designing: [
     {
       label: "Designing Dashboard",
       path: "/designing_dashboard",
-      icon: DashboardIcon,
+      icon: DashboardCustomizeRoundedIcon,
       key: "Dashboard",
       matchRoutes: ["/designing_dashboard", "/edit_design"],
     },
@@ -23,7 +29,7 @@ export const SIDEBAR_MENU = {
     {
       label: "Sheet Store",
       path: "/upload_sheet",
-      icon: DashboardIcon,
+      icon: AutoStoriesRoundedIcon,
       key: "Sheet Taken",
     },
   ],
@@ -32,14 +38,14 @@ export const SIDEBAR_MENU = {
     {
       label: "Printing Manager",
       path: "/printingmanager_dashboard",
-      icon: DesignServicesIcon,
+      icon: DashboardCustomizeRoundedIcon,
       key: "Dashboard",
       matchRoutes: ["/printingmanager_dashboard", "/edit_print"],
     },
     {
       label: "Sheet Store",
       path: "/upload_sheet",
-      icon: DashboardIcon,
+      icon: AutoStoriesRoundedIcon,
       key: "Sheet Taken",
     },
   ],
@@ -48,14 +54,14 @@ export const SIDEBAR_MENU = {
     {
       label: "Flim Plate",
       path: "/flimplate_dashboard",
-      icon: DesignServicesIcon,
+      icon: DashboardCustomizeRoundedIcon,
       key: "Dashboard",
       matchRoutes: ["/flimplate_dashboard", "/edit_flimplate"],
     },
     {
       label: "Sheet Store",
       path: "/upload_sheet",
-      icon: DashboardIcon,
+      icon: AutoStoriesRoundedIcon,
       key: "Sheet Taken",
     },
   ],
@@ -64,7 +70,7 @@ export const SIDEBAR_MENU = {
     {
       label: "Planning Dashboard",
       path: "/planning_dashboard",
-      icon: DashboardIcon,
+      icon: DashboardCustomizeRoundedIcon,
       key: "Dashboard",
       matchRoutes: ["/planning_dashboard", "/edit_plan"],
     },
@@ -77,13 +83,13 @@ export const SIDEBAR_MENU = {
     {
       label: "Sheet Store",
       path: "/upload_sheet",
-      icon: DashboardIcon,
+      icon: AutoStoriesRoundedIcon,
       key: "Sheet Taken",
     },
     {
       label: "Machine Calendar",
       path: "/machine_calendar",
-      icon: DashboardIcon,
+      icon: EditCalendarRoundedIcon,
       key: "Machine Calendar",
     },
   ],
@@ -92,14 +98,14 @@ export const SIDEBAR_MENU = {
     {
       label: "Coating Dashboard",
       path: "/coating_dashboard",
-      icon: FormatPaintIcon,
+      icon: DashboardCustomizeRoundedIcon,
       key: "Dashboard",
       matchRoutes: ["/coating_dashboard", "/edit_coating"],
     },
     {
       label: "Sheet Store",
       path: "/upload_sheet",
-      icon: DashboardIcon,
+      icon: AutoStoriesRoundedIcon,
       key: "Sheet Taken",
     },
   ],
@@ -108,14 +114,14 @@ export const SIDEBAR_MENU = {
     {
       label: "Printing Dashboard",
       path: "/printingteam_dashboard",
-      icon: FormatPaintIcon,
+      icon: DashboardCustomizeRoundedIcon,
       key: "Dashboard",
       matchRoutes: ["/printingteam_dashboard", "/edit_printingteam"],
     },
     {
       label: "Sheet Store",
       path: "/upload_sheet",
-      icon: DashboardIcon,
+      icon: AutoStoriesRoundedIcon,
       key: "Sheet Taken",
     },
   ],
@@ -124,14 +130,14 @@ export const SIDEBAR_MENU = {
     {
       label: "Varnish Dashboard",
       path: "/varnish_dashboard",
-      icon: FormatPaintIcon,
+      icon: DashboardCustomizeRoundedIcon,
       key: "Dashboard",
       matchRoutes: ["/varnish_dashboard", "/edit_varnish"],
     },
     {
       label: "Sheet Store",
       path: "/upload_sheet",
-      icon: DashboardIcon,
+      icon: AutoStoriesRoundedIcon,
       key: "Sheet Taken",
     },
   ],
@@ -140,14 +146,14 @@ export const SIDEBAR_MENU = {
     {
       label: "Fabrication",
       path: "/fabrication_dashboard",
-      icon: DesignServicesIcon,
+      icon: DashboardCustomizeRoundedIcon,
       key: "Dashboard",
       matchRoutes: ["/fabrication_dashboard", "/edit_fabrication"],
     },
     {
       label: "Sheet Store",
       path: "/upload_sheet",
-      icon: DashboardIcon,
+      icon: AutoStoriesRoundedIcon,
       key: "Sheet Taken",
     },
   ],
@@ -156,14 +162,14 @@ export const SIDEBAR_MENU = {
     {
       label: "Dispatch",
       path: "/dispatch_dashboard",
-      icon: DesignServicesIcon,
+      icon: DashboardCustomizeRoundedIcon,
       key: "Dashboard",
       matchRoutes: ["/dispatch_dashboard", "/edit_editdispatch"],
     },
     {
       label: "Sheet Store",
       path: "/upload_sheet",
-      icon: DashboardIcon,
+      icon: AutoStoriesRoundedIcon,
       key: "Sheet Taken",
     },
   ],
@@ -172,13 +178,13 @@ export const SIDEBAR_MENU = {
     {
       label: "Store Dashboard",
       path: "/store_dashboard",
-      icon: DashboardIcon,
+      icon: StoreRoundedIcon,
       key: "Dashboard",
     },
     {
       label: "Sheet Store",
       path: "/upload_sheet",
-      icon: DashboardIcon,
+      icon: AutoStoriesRoundedIcon,
       key: "Sheet Taken",
     },
   ],
@@ -199,13 +205,13 @@ export const SIDEBAR_MENU = {
     {
       label: "Machine Config",
       path: "/machine_config",
-      icon: PersonAddIcon,
+      icon: PrintRoundedIcon,
       key: "All",
     },
     {
       label: "Add Employee",
       path: "/employee_config",
-      icon: PersonAddIcon,
+      icon: EngineeringRoundedIcon,
       key: "All",
     },
   ],
