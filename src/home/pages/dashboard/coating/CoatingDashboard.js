@@ -3,7 +3,13 @@ import { styled } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Grid from "@mui/material/Grid";
-import { FormControl, IconButton, MenuItem, Select, Tooltip } from "@mui/material";
+import {
+  FormControl,
+  IconButton,
+  MenuItem,
+  Select,
+  Tooltip,
+} from "@mui/material";
 import Completed from "../../../../assets/icons/circle-check-solid.svg";
 import Pending from "../../../../assets/icons/hourglass-half-solid.svg";
 import Todaywork from "../../../../assets/icons/list-check-solid.svg";
@@ -50,29 +56,43 @@ const CoatingDashboard = () => {
     completed: "Completed Process",
   };
 
+  // Check if a design has coating process
+  const hasCoating = (d) => {
+    if (!d?.components) return false;
+    return Object.values(d.components).some((comp) => {
+      const c = comp?.coating || {};
+      const inside = Object.values(c.insideColor || {}).some((v) =>
+        typeof v === "number" ? v > 0 : v?.count > 0,
+      );
+      const outside = Object.values(c.outsideColor || {}).some((v) =>
+        typeof v === "number" ? v > 0 : v?.count > 0,
+      );
+      return inside || outside;
+    });
+  };
+
+  // Coating dashboard: show only orders that have coating AND planning is complete
+  const isReadyForCoating = (d) => hasCoating(d) && d.planning_status === 2;
+
   const getStatusText = (row) => {
     if (row.coating_status === 2) return "COMPLETED";
     if (row.coating_status === 1) return "PENDING";
-    if (row.planning_status === 2 && !row.coating_status) return "NEW";
-
     return "NEW";
   };
 
   // Filter Coating For Dashboard
   const filterDesigns = useMemo(() => {
     if (getStatus === "all") {
-      return (designs || []).filter((d) => d.planning_status === 2);
+      return (designs || []).filter((d) => isReadyForCoating(d));
     }
-
     if (getStatus === "pending") {
       return (designs || []).filter(
-        (d) => d.planning_status === 2 && d.coating_status === 1,
+        (d) => isReadyForCoating(d) && d.coating_status === 1,
       );
     }
-
     if (getStatus === "completed") {
       return (designs || []).filter(
-        (d) => d.planning_status === 2 && d.coating_status === 2,
+        (d) => isReadyForCoating(d) && d.coating_status === 2,
       );
     }
     return [];
@@ -80,18 +100,18 @@ const CoatingDashboard = () => {
 
   // Count for Cards
   const allCount = useMemo(() => {
-    return (designs || []).filter((d) => d.planning_status === 2).length;
+    return (designs || []).filter((d) => isReadyForCoating(d)).length;
   }, [designs]);
 
   const pendingCount = useMemo(() => {
     return (designs || []).filter(
-      (d) => d.planning_status === 2 && d.coating_status === 1,
+      (d) => isReadyForCoating(d) && d.coating_status === 1,
     ).length;
   }, [designs]);
 
   const completedCount = useMemo(() => {
     return (designs || []).filter(
-      (d) => d.planning_status === 2 && d.coating_status === 2,
+      (d) => isReadyForCoating(d) && d.coating_status === 2,
     ).length;
   }, [designs]);
 

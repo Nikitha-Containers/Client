@@ -190,6 +190,40 @@ const buildCrossOrderShiftMap = (designs, currentUniqueId) => {
   return map;
 };
 
+// Check if a design has a specific process
+const designHasProcess = (design, processType) => {
+  if (!design?.components) return false;
+  return Object.values(design.components).some((comp) => {
+    if (processType === "coating") {
+      const c = comp?.coating || {};
+      const inside = Object.values(c.insideColor || {}).some((v) =>
+        typeof v === "number" ? v > 0 : v?.count > 0,
+      );
+      const outside = Object.values(c.outsideColor || {}).some((v) =>
+        typeof v === "number" ? v > 0 : v?.count > 0,
+      );
+      return inside || outside;
+    }
+    if (processType === "printing") {
+      const p = comp?.printingColor || {};
+      const normal = Object.values(p.normalColor || {}).some((v) =>
+        typeof v === "number" ? v > 0 : v?.count > 0,
+      );
+      const spl = Object.values(p.splColor || {}).some((v) =>
+        typeof v === "number" ? v > 0 : v?.count > 0,
+      );
+      return normal || spl;
+    }
+    if (processType === "varnish") {
+      const v = comp?.varnish?.varnish || {};
+      return Object.values(v).some((val) =>
+        typeof val === "number" ? val > 0 : val?.count > 0,
+      );
+    }
+    return false;
+  });
+};
+
 function EditPlan() {
   const navigate = useNavigate();
   const { design } = useLocation()?.state || {};
@@ -403,8 +437,11 @@ function EditPlan() {
   const handleSubmit = async (status) => {
     try {
       if (status === "FINAL") {
-        const hasIncomplete = Object.values(planningData).some((section) =>
-          Object.values(section).some((rows) =>
+        const activeKeys = ["coating", "printing", "varnish"].filter((k) =>
+          designHasProcess(design, k),
+        );
+        const hasIncomplete = activeKeys.some((key) =>
+          Object.values(planningData[key]).some((rows) =>
             rows.some((row) => {
               const touched = row.machine || row.startDate || row.endDate;
               const valid =
@@ -422,9 +459,15 @@ function EditPlan() {
         }
       }
 
-      const coatingBk = generateBookings(planningData.coating);
-      const printingBk = generateBookings(planningData.printing);
-      const varnishBk = generateBookings(planningData.varnish);
+      const coatingBk = designHasProcess(design, "coating")
+        ? generateBookings(planningData.coating)
+        : [];
+      const printingBk = designHasProcess(design, "printing")
+        ? generateBookings(planningData.printing)
+        : [];
+      const varnishBk = designHasProcess(design, "varnish")
+        ? generateBookings(planningData.varnish)
+        : [];
 
       if (
         status === "FINAL" &&
@@ -628,25 +671,28 @@ function EditPlan() {
           </Grid>
         </Box>
 
-        {/* Machine plan sections */}
-        {renderMachineSection(
-          "Coating Machine Plan",
-          "coating",
-          coatingBookings,
-          "coating",
-        )}
-        {renderMachineSection(
-          "Printing Machine Plan",
-          "printing",
-          printingBookings,
-          "printing",
-        )}
-        {renderMachineSection(
-          "Varnish Machine Plan",
-          "varnish",
-          varnishBookings,
-          "varnish",
-        )}
+        {/* Machine plan sections — only show if the design has that process */}
+        {designHasProcess(design, "coating") &&
+          renderMachineSection(
+            "Coating Machine Plan",
+            "coating",
+            coatingBookings,
+            "coating",
+          )}
+        {designHasProcess(design, "printing") &&
+          renderMachineSection(
+            "Printing Machine Plan",
+            "printing",
+            printingBookings,
+            "printing",
+          )}
+        {designHasProcess(design, "varnish") &&
+          renderMachineSection(
+            "Varnish Machine Plan",
+            "varnish",
+            varnishBookings,
+            "varnish",
+          )}
 
         {/* Image / artwork preview */}
         <Modal open={open} onClose={handleClose}>
