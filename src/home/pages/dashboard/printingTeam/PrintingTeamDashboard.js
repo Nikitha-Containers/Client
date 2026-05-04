@@ -56,65 +56,29 @@ const PrintingTeamDashboard = () => {
     completed: "Completed Process",
   };
 
-  // Check if a design has coating process
-  const hasCoating = (d) => {
-    if (!d?.components) return false;
-    return Object.values(d.components).some((comp) => {
-      const c = comp?.coating || {};
-      const inside = Object.values(c.insideColor || {}).some((v) =>
-        typeof v === "number" ? v > 0 : v?.count > 0,
-      );
-      const outside = Object.values(c.outsideColor || {}).some((v) =>
-        typeof v === "number" ? v > 0 : v?.count > 0,
-      );
-      return inside || outside;
-    });
-  };
-
-  // Check if a design has printing process
-  const hasPrinting = (d) => {
-    if (!d?.components) return false;
-    return Object.values(d.components).some((comp) => {
-      const p = comp?.printingColor || {};
-      const normal = Object.values(p.normalColor || {}).some((v) =>
-        typeof v === "number" ? v > 0 : v?.count > 0,
-      );
-      const spl = Object.values(p.splColor || {}).some((v) =>
-        typeof v === "number" ? v > 0 : v?.count > 0,
-      );
-      return normal || spl;
-    });
-  };
-
-  // An order is ready for Printing Team when:
-  // - It has printing process AND
-  // - If it has coating → coating must be complete (coating_status === 2)
-  // - If it has NO coating → planning must be complete (planning_status === 2)
-  const isReadyForPrinting = (d) => {
-    if (!hasPrinting(d)) return false;
-    if (hasCoating(d)) return d.coating_status === 2;
-    return d.planning_status === 2;
-  };
-
   const getStatusText = (row) => {
     if (row.printingteam_status === 2) return "COMPLETED";
     if (row.printingteam_status === 1) return "PENDING";
+    if (row.coating_status === 2) return "NEW";
+
     return "NEW";
   };
 
   // Filter Printing Team For Dashboard
   const filterDesigns = useMemo(() => {
     if (getStatus === "all") {
-      return (designs || []).filter((d) => isReadyForPrinting(d));
+      return (designs || []).filter((d) => d.coating_status === 2);
     }
+
     if (getStatus === "pending") {
       return (designs || []).filter(
-        (d) => isReadyForPrinting(d) && d.printingteam_status === 1,
+        (d) => d.coating_status === 2 && d.printingteam_status === 1,
       );
     }
+
     if (getStatus === "completed") {
       return (designs || []).filter(
-        (d) => isReadyForPrinting(d) && d.printingteam_status === 2,
+        (d) => d.coating_status === 2 && d.printingteam_status === 2,
       );
     }
     return [];
@@ -122,18 +86,18 @@ const PrintingTeamDashboard = () => {
 
   // Count for Cards
   const allCount = useMemo(() => {
-    return (designs || []).filter((d) => isReadyForPrinting(d)).length;
+    return (designs || []).filter((d) => d.coating_status === 2).length;
   }, [designs]);
 
   const pendingCount = useMemo(() => {
     return (designs || []).filter(
-      (d) => isReadyForPrinting(d) && d.printingteam_status === 1,
+      (d) => d.coating_status === 2 && d.printingteam_status === 1,
     ).length;
   }, [designs]);
 
   const completedCount = useMemo(() => {
     return (designs || []).filter(
-      (d) => isReadyForPrinting(d) && d.printingteam_status === 2,
+      (d) => d.coating_status === 2 && d.printingteam_status === 2,
     ).length;
   }, [designs]);
 

@@ -56,75 +56,29 @@ const Varnish = () => {
     completed: "Completed Process",
   };
 
-  // Process checkers
-  const hasCoating = (d) => {
-    if (!d?.components) return false;
-    return Object.values(d.components).some((comp) => {
-      const c = comp?.coating || {};
-      const inside = Object.values(c.insideColor || {}).some((v) =>
-        typeof v === "number" ? v > 0 : v?.count > 0,
-      );
-      const outside = Object.values(c.outsideColor || {}).some((v) =>
-        typeof v === "number" ? v > 0 : v?.count > 0,
-      );
-      return inside || outside;
-    });
-  };
-
-  const hasPrinting = (d) => {
-    if (!d?.components) return false;
-    return Object.values(d.components).some((comp) => {
-      const p = comp?.printingColor || {};
-      const normal = Object.values(p.normalColor || {}).some((v) =>
-        typeof v === "number" ? v > 0 : v?.count > 0,
-      );
-      const spl = Object.values(p.splColor || {}).some((v) =>
-        typeof v === "number" ? v > 0 : v?.count > 0,
-      );
-      return normal || spl;
-    });
-  };
-
-  const hasVarnish = (d) => {
-    if (!d?.components) return false;
-    return Object.values(d.components).some((comp) => {
-      const v = comp?.varnish?.varnish || {};
-      return Object.values(v).some((val) =>
-        typeof val === "number" ? val > 0 : val?.count > 0,
-      );
-    });
-  };
-
-  // Varnish dashboard: show only orders that have varnish process
-  // Previous step: printing → printingteam_status===2
-  //                no printing but coating → coating_status===2
-  //                no printing, no coating → planning_status===2
-  const isReadyForVarnish = (d) => {
-    if (!hasVarnish(d)) return false;
-    if (hasPrinting(d)) return d.printingteam_status === 2;
-    if (hasCoating(d)) return d.coating_status === 2;
-    return d.planning_status === 2;
-  };
-
   const getStatusText = (row) => {
     if (row.varnish_status === 2) return "COMPLETED";
     if (row.varnish_status === 1) return "PENDING";
+    if (row.printingteam_status === 2) return "NEW";
+
     return "NEW";
   };
 
   // Filter Varnish Team For Dashboard
   const filterDesigns = useMemo(() => {
     if (getStatus === "all") {
-      return (designs || []).filter((d) => isReadyForVarnish(d));
+      return (designs || []).filter((d) => d.printingteam_status === 2);
     }
+
     if (getStatus === "pending") {
       return (designs || []).filter(
-        (d) => isReadyForVarnish(d) && d.varnish_status === 1,
+        (d) => d.printingteam_status === 2 && d.varnish_status === 1,
       );
     }
+
     if (getStatus === "completed") {
       return (designs || []).filter(
-        (d) => isReadyForVarnish(d) && d.varnish_status === 2,
+        (d) => d.printingteam_status === 2 && d.varnish_status === 2,
       );
     }
     return [];
@@ -132,18 +86,18 @@ const Varnish = () => {
 
   // Count for Cards
   const allCount = useMemo(() => {
-    return (designs || []).filter((d) => isReadyForVarnish(d)).length;
+    return (designs || []).filter((d) => d.printingteam_status === 2).length;
   }, [designs]);
 
   const pendingCount = useMemo(() => {
     return (designs || []).filter(
-      (d) => isReadyForVarnish(d) && d.varnish_status === 1,
+      (d) => d.printingteam_status === 2 && d.varnish_status === 1,
     ).length;
   }, [designs]);
 
   const completedCount = useMemo(() => {
     return (designs || []).filter(
-      (d) => isReadyForVarnish(d) && d.varnish_status === 2,
+      (d) => d.printingteam_status === 2 && d.varnish_status === 2,
     ).length;
   }, [designs]);
 
