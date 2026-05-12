@@ -164,5 +164,17 @@ export const SIDEBAR_MENU = {
       icon: PersonAddIcon,
       key: "All",
     },
+    {
+      label: "Machine Config",
+      path: "/machine_config",
+      icon: PersonAddIcon,
+      key: "All",
+    },
+      {
+      label: "Add Employee",
+      path: "/employee_config",
+      icon: PersonAddIcon,
+      key: "All",
+    },
   ],
 };

@@ -18,6 +18,8 @@ import FlimDashboard from "./pages/dashboard/flimPlate/FlimDashboard";
 import EditFlimPlate from "./pages/dashboard/flimPlate/EditFlimPlate";
 import Fabrication from "./pages/dashboard/fabrication/Fabrication";
 import EditFabrication from "./pages/dashboard/fabrication/EditFabrication";
+import MachineConfig from "./pages/machine/MachineConfig";
+import EmployeeConfig from "./pages/user/EmployeeConfig";
 
 export const ROUTE_CONFIG = {
   Designing: [
@@ -104,5 +106,7 @@ export const ROUTE_CONFIG = {
   Admin: [
     { path: "/admin_dashboard", component: AdminDashboard, key: "All" },
     { path: "/create_user", component: CreateUser, key: "All" },
+    { path: "/machine_config", component: MachineConfig, key: "All" },
+    { path: "/employee_config", component: EmployeeConfig, key: "All" },
   ],
 };

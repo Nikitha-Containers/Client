@@ -322,6 +322,19 @@ const CoatingDashboard = () => {
                 fontWeight: 500,
               },
             }}
+            renderTopToolbarCustomActions={() => (
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  width: "65%",
+                  padding: "0px",
+                }}
+              >
+                <div className="table-title">{tableTitle[getStatus]}</div>
+              </Box>
+            )}
           />
         </Box>
       </Box>

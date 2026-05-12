@@ -67,6 +67,7 @@ const ComponentRow = ({
 
   const isFieldError = (value) =>
     component.selected && isSubmitted && (value === "" || value === null);
+
   const isFileError =
     component.selected && isSubmitted && !component.file && !component.fileObj;
 
@@ -303,8 +304,8 @@ function EditDesign() {
       Body: createComponent(),
       Bottom: createComponent(),
       "Lid & Body": createComponent(),
-      "Lid & Body & Bottom": createComponent(),
       "Body & Bottom": createComponent(),
+      "Lid & Body & Bottom": createComponent(),
     }),
     [salesOrder?.thickness],
   );
@@ -441,24 +442,32 @@ function EditDesign() {
   };
 
   const handleSubmit = async (type) => {
-    setIsSubmitted(true);
-    const fullComponents = {};
+    if (type === "FINAL") {
+      setIsSubmitted(true);
+    } else {
+      setIsSubmitted(false);
+    }
 
     const design_status = type === "PENDING" ? 1 : 2;
-
     const formDataToSend = new FormData();
-    for (const [name, data] of Object.entries(components)) {
-      if (data.selected) {
-        if (
-          !data.length ||
-          !data.breadth ||
-          !data.thickness ||
-          !data.ups ||
-          !data.sheets ||
-          (!data.file && !data.fileObj)
-        ) {
-          toast.error(`Please complete all fields and upload file for ${name}`);
-          return;
+    const fullComponents = {};
+
+    if (type === "FINAL") {
+      for (const [name, data] of Object.entries(components)) {
+        if (data.selected) {
+          if (
+            !data.length ||
+            !data.breadth ||
+            !data.thickness ||
+            !data.ups ||
+            !data.sheets ||
+            (!data.file && !data.fileObj)
+          ) {
+            toast.error(
+              `Please complete all fields and upload file for ${name}`,
+            );
+            return;
+          }
         }
       }
     }
@@ -482,7 +491,7 @@ function EditDesign() {
       }
     });
 
-    if (Object.keys(fullComponents).length === 0) {
+    if (type === "FINAL" && Object.keys(fullComponents).length === 0) {
       toast.info("Please select a component");
       return;
     }
