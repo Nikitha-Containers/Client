@@ -332,7 +332,7 @@ function EditFlimPlate() {
 
   const handleClose = () => {
     setOpen(false);
-    if (currentImage) URL.revokeObjectURL(currentImage);
+    if (currentImage?.startsWith("blob:")) URL.revokeObjectURL(currentImage);
     setCurrentImage("");
   };
 
@@ -455,7 +455,7 @@ function EditFlimPlate() {
 
   const renderFields = (data) =>
     Object.entries(data || {}).map(([key, val]) => (
-      <Grid item xs={6} key={key}>
+      <Grid size={6} key={key}>
         <Stack direction="row" spacing={1} alignItems="center">
           <Typography sx={{ minWidth: 120 }}>
             {key === "Other" ? val.name : key}

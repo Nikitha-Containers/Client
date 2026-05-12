@@ -34,10 +34,7 @@ const Topbar = ({ onToggleSidebar }) => {
           <img src={Logo} alt="Logo" className="logo-img" />
         </Box>
 
-        <button
-          className="logout-btn"
-          onClick={handleLogout}
-        >
+        <button className="logout-btn" onClick={handleLogout}>
           Logout <LogoutIcon />
         </button>
       </Toolbar>

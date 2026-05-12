@@ -32,7 +32,7 @@ import BlockIcon from "@mui/icons-material/Block";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
-import { formatDateLocal, SHIFT_CONFIG } from "./ComponentRow";
+import { formatDateLocal, SHIFT_CONFIG, EPSILON } from "./ComponentRow";
 
 // Constants
 const SHIFT_ORDER = ["General", "Shift 1", "Shift 2", "Shift 3"];
@@ -286,6 +286,7 @@ export const ShiftDialog = ({
   currentRow,
   dateRange,
   usedShiftMap,
+  crossOrderShiftMap = {},
   activeRowIndex,
   getRequiredShiftCount,
   getCurrentShiftCount,
@@ -297,6 +298,15 @@ export const ShiftDialog = ({
   const requiredCount = getRequiredShiftCount(currentRow);
   const currentCount = getCurrentShiftCount(currentRow);
   const allocatedHours = getAllocatedHours ? getAllocatedHours(currentRow) : 0;
+
+  const mergedShiftMap = React.useMemo(() => {
+    const merged = { ...usedShiftMap };
+    Object.entries(crossOrderShiftMap).forEach(([key, val]) => {
+      if (!merged[key]) merged[key] = { usedHours: 0 };
+      merged[key] = { usedHours: merged[key].usedHours + val.usedHours };
+    });
+    return merged;
+  }, [usedShiftMap, crossOrderShiftMap]);
 
   return (
     <DialogShell
@@ -370,12 +380,12 @@ export const ShiftDialog = ({
               <Box display="flex" gap={2} flexWrap="wrap">
                 {SHIFT_ORDER.map((shift) => {
                   const key = `${currentRow?.machine}_${formatted}_${shift}`;
-                  const usedEntry = usedShiftMap[key];
+                  const usedEntry = mergedShiftMap[key];
                   const usedHours = usedEntry?.usedHours || 0;
                   const shiftCapacity = SHIFT_CONFIG[shift].hours;
                   const freeHours = shiftCapacity - usedHours;
                   const isChecked = !!rowShiftsOnDate[shift];
-                  const isFullyBooked = freeHours <= 0.0001 && !isChecked;
+                  const isFullyBooked = freeHours <= EPSILON && !isChecked;
                   const generalConflict =
                     shift === "General"
                       ? Object.keys(rowShiftsOnDate).some(
@@ -392,9 +402,11 @@ export const ShiftDialog = ({
                             {usedHours > 0 && !isChecked && (
                               <Typography
                                 variant="caption"
-                                color="warning.main"
+                                color={isFullyBooked ? "error" : "warning.main"}
                               >
-                                {formatHours(freeHours)} free
+                                {isFullyBooked
+                                  ? "Fully booked"
+                                  : `${formatHours(freeHours)} free`}
                               </Typography>
                             )}
                           </Box>

@@ -6,6 +6,7 @@ import {
   clearDesignError,
 } from "../slices/Design_Slice";
 import server from "../server/server";
+import socket from "../server/socket"; // NEW
 import { useEffect } from "react";
 
 export const useDesign = () => {
@@ -28,6 +29,17 @@ export const useDesign = () => {
 
   useEffect(() => {
     fetchDesign();
+
+    const handleDesignUpdate = () => {
+      console.log("design:updated received — refreshing Design data");
+      fetchDesign();
+    };
+
+    socket.on("design:updated", handleDesignUpdate);
+
+    return () => {
+      socket.off("design:updated", handleDesignUpdate);
+    };
   }, []);
 
   return {

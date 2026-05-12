@@ -42,7 +42,7 @@ const COLUMNS = [
   { label: "No of Sheets", w: 120 },
   { label: "Source File", w: 110 },
   { label: "Machine", w: 120 },
-  { label: "Coating Type", w: 180 },
+  { label: "Varnish Type", w: 180 },
   { label: "Plan", w: 160 },
   { label: "Action", w: 110 },
   { label: "Start Time", w: 150 },
@@ -95,14 +95,11 @@ const extractKeysWithSequence = (obj) => {
   });
 };
 
-const getCoatingList = (comp) => {
-  const inside = extractKeysWithSequence(comp?.coating?.insideColor).map(
-    (label) => `In - ${label}`,
+const getVarnishList = (comp) => {
+  const varnish = extractKeysWithSequence(comp?.varnish?.varnish).map(
+    (label) => `${label}`,
   );
-  const outside = extractKeysWithSequence(comp?.coating?.outsideColor).map(
-    (label) => `Out - ${label}`,
-  );
-  return [...inside, ...outside];
+  return [...varnish];
 };
 
 const getPlanningDetails = (design, compName, process, planKey) => {
@@ -133,7 +130,7 @@ const getPlanningDetails = (design, compName, process, planKey) => {
 
 const getPlanningDatesWithShifts = (design) => {
   const bookings =
-    design?.planning_work_details?.coating_machine_plan?.bookings || [];
+    design?.planning_work_details?.varnish_machine_plan?.bookings || [];
   const map = {};
   bookings.forEach((b) => {
     const date = new Date(b.shift_from_dt)
@@ -283,15 +280,19 @@ const ComponentRow = ({
     )}:${String(seconds).padStart(2, "0")}`;
   };
 
-  const listOfCoating = getCoatingList(component);
+  const listOfVarnish = getVarnishList(component);
+
   const originalSheets =
     component.ups && totalQty
       ? Math.ceil(Number(totalQty) / Number(component.ups))
       : "";
 
+  const printingteamPrintedSheets =
+    design?.printingteam_work_details?.components?.[name]?.printed_sheets || "";
+
   return (
     <>
-      {listOfCoating.map((process, index) => {
+      {listOfVarnish.map((process, index) => {
         const timer = timers[index] ?? initTimer();
         const status = statusMap[index] || "No";
 
@@ -349,7 +350,7 @@ const ComponentRow = ({
                 fullWidth
                 type="number"
                 label={originalSheets}
-                value={component?.sheets}
+                value={printingteamPrintedSheets}
                 InputLabelProps={{ shrink: true }}
                 sx={{
                   "& .MuiInputLabel-root.Mui-disabled": { color: "green" },
@@ -386,14 +387,14 @@ const ComponentRow = ({
                     design,
                     name,
                     process,
-                    "coating_machine_plan",
+                    "varnish_machine_plan",
                   ).machine
                 }
                 disabled
               />
             </Cell>
 
-            {/* Coating Type */}
+            {/* Varnish Type */}
             <Cell colIndex={5}>
               <TextField
                 size="small"
@@ -414,7 +415,7 @@ const ComponentRow = ({
                     design,
                     name,
                     process,
-                    "coating_machine_plan",
+                    "varnish_machine_plan",
                   ).plan
                 }
                 disabled
@@ -565,16 +566,16 @@ const ComponentRow = ({
 };
 
 // Main Component Started Here
-function EditCoating() {
+function EditVarnish() {
   const navigate = useNavigate();
   const location = useLocation();
   const { design } = location?.state || {};
   const { getByType } = useEmployee();
 
-  const coatingInstructors = getByType("instructor", "coating");
-  const coatingOperators = getByType("operator", "coating");
+  const varnishInstructors = getByType("instructor", "varnish");
+  const varnishOperators = getByType("operator", "varnish");
 
-  const draftKey = `coating_draft_${design?.unique_id}`;
+  const draftKey = `varnish_draft_${design?.unique_id}`;
 
   // State
   const [instructorName, setInstructorName] = useState("");
@@ -583,7 +584,7 @@ function EditCoating() {
   const [open, setOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState("");
   const [components, setComponents] = useState({});
-  const [coatingState, setCoatingState] = useState({});
+  const [varnishState, setvarnishState] = useState({});
   const [openPending, setOpenPending] = useState(false);
   const [pendingData, setPendingData] = useState({
     reason: "",
@@ -627,11 +628,11 @@ function EditCoating() {
 
   // Build timer/statusMap from saved DB data
   const buildStateFromDB = (comp, cwdComp) => {
-    if (!cwdComp?.coating_process) return {};
+    if (!cwdComp?.varnish_process) return {};
     const timers = {};
     const statusMap = {};
-    getCoatingList(comp).forEach((processName, index) => {
-      const p = cwdComp.coating_process[processName];
+    getVarnishList(comp).forEach((processName, index) => {
+      const p = cwdComp.varnish_process[processName];
       if (!p) return;
       const start = new Date(p.start_time).getTime();
       const end = new Date(p.end_time).getTime();
@@ -655,32 +656,33 @@ function EditCoating() {
   useEffect(() => {
     if (!design) {
       toast.error("No design selected. Redirecting to dashboard.");
-      navigate("/coating_dashboard", { replace: true });
+      navigate("/varnish_dashboard", { replace: true });
     }
   }, [design, navigate]);
 
-  // Load components + coating timers
+  // Load components + Varnish timers
   useEffect(() => {
     if (!design?.components) return;
     const updatedComponents = { ...initialComponentsState };
-    const newCoatingState = {};
-    const cwdComponents = design?.coating_work_details?.components || {};
+    const newVarnishState = {};
+    const cwdComponents = design?.varnish_work_details?.components || {};
 
     Object.entries(design.components).forEach(([name, comp]) => {
       if (updatedComponents[name] !== undefined) {
         updatedComponents[name] = { ...comp };
-        newCoatingState[name] = buildStateFromDB(comp, cwdComponents[name]);
+        newVarnishState[name] = buildStateFromDB(comp, cwdComponents[name]);
       }
     });
 
     setComponents(updatedComponents);
-    setCoatingState(newCoatingState);
+    setvarnishState(newVarnishState);
   }, [design]);
 
   // Load instructor + operator map
+
   useEffect(() => {
-    if (!design?.coating_work_details) return;
-    const cwd = design.coating_work_details;
+    if (!design?.varnish_work_details) return;
+    const cwd = design.varnish_work_details;
     setInstructorName(cwd?.instructor_name || "");
     setOperatorMap(cwd?.operator_map || {});
   }, [design]);
@@ -688,7 +690,7 @@ function EditCoating() {
   // Load printed/rejected per component
   useEffect(() => {
     if (!design?.components) return;
-    const cwd = design?.coating_work_details?.components || {};
+    const cwd = design?.varnish_work_details?.components || {};
     const map = {};
     Object.keys(design.components).forEach((name) => {
       map[name] = {
@@ -701,7 +703,7 @@ function EditCoating() {
 
   // Load pending reason
   useEffect(() => {
-    const reason = design?.coating_pending_details?.pending_reason;
+    const reason = design?.varnish_pending_details?.pending_reason;
     if (!reason) return;
     setPendingData({
       reason: PENDING_REASONS.includes(reason) ? reason : "Others",
@@ -719,7 +721,7 @@ function EditCoating() {
         setInstructorName(parsed?.instructorName || "");
         setOperatorMap(parsed?.operatorMap || {});
         setOutputMap(parsed?.outputMap || {});
-        setCoatingState(parsed?.coatingState || {});
+        setvarnishState(parsed?.varnishState || {});
       } catch (error) {
         console.error("Session restore failed", error);
       }
@@ -733,10 +735,10 @@ function EditCoating() {
       instructorName,
       operatorMap,
       outputMap,
-      coatingState,
+      varnishState,
     };
     sessionStorage.setItem(draftKey, JSON.stringify(saveData));
-  }, [instructorName, operatorMap, outputMap, coatingState, design]);
+  }, [instructorName, operatorMap, outputMap, varnishState, design]);
 
   // Cleanup blob URL
   useEffect(() => {
@@ -822,10 +824,10 @@ function EditCoating() {
     return !hasError;
   };
 
-  const validateCoating = (type) => {
+  const validateVarnish = (type) => {
     if (type === "PENDING") return true;
     for (const compName of Object.keys(design?.components || {})) {
-      const { timers = {}, statusMap = {} } = coatingState[compName] || {};
+      const { timers = {}, statusMap = {} } = varnishState[compName] || {};
       if (Object.keys(timers).length === 0) return false;
       for (const index of Object.keys(timers)) {
         const t = timers[index];
@@ -847,23 +849,23 @@ function EditCoating() {
         return;
       }
 
-      if (!validateCoating(type)) {
-        toast.warning("Complete all coating processes before submitting");
+      if (!validateVarnish(type)) {
+        toast.warning("Complete all Varnish processes before submitting");
         return;
       }
 
-      // Build coating_work_details.components
+      // Build varnish_work_details.components
       const cwdComponents = {};
       Object.entries(components)
         .filter(([compName]) => design?.components?.[compName])
         .forEach(([compName, comp]) => {
-          const { timers = {}, statusMap = {} } = coatingState[compName] || {};
-          const coating_process = {};
+          const { timers = {}, statusMap = {} } = varnishState[compName] || {};
+          const varnish_process = {};
 
-          getCoatingList(comp).forEach((processName, index) => {
+          getVarnishList(comp).forEach((processName, index) => {
             const t = timers[index];
             if (!t || !t.startTime || !t.endTime) return;
-            coating_process[processName] = {
+            varnish_process[processName] = {
               start_time: new Date(t.startTime),
               end_time: new Date(t.endTime),
               co_time: Math.floor((t.coTotalMs || 0) / 1000),
@@ -875,7 +877,7 @@ function EditCoating() {
           });
 
           cwdComponents[compName] = {
-            coating_process,
+            varnish_process,
             printed_sheets: outputMap[compName]?.printed || "",
             rejected_sheets: outputMap[compName]?.rejected || "",
           };
@@ -885,8 +887,8 @@ function EditCoating() {
         unique_id: design.unique_id,
         saleorder_no: design.saleorder_no,
         item_line_no: design.item_line_no,
-        coating_status: type === "PENDING" ? 1 : 2,
-        coating_pending_details: JSON.stringify(
+        varnish_status: type === "PENDING" ? 1 : 2,
+        varnish_pending_details: JSON.stringify(
           type === "PENDING"
             ? {
                 pending_reason:
@@ -894,9 +896,9 @@ function EditCoating() {
                     ? pendingData.otherReason
                     : pendingData.reason,
               }
-            : design?.coating_pending_details || {},
+            : design?.varnish_pending_details || {},
         ),
-        coating_work_details: JSON.stringify({
+        varnish_work_details: JSON.stringify({
           instructor_name: instructorName,
           operator_map: operatorMap,
           components: cwdComponents,
@@ -906,18 +908,18 @@ function EditCoating() {
       await server.post("/design/add", payload);
       sessionStorage.removeItem(draftKey);
       toast[type === "PENDING" ? "info" : "success"](
-        type === "PENDING" ? "Moved to Pending" : "Coating Saved Successfully",
+        type === "PENDING" ? "Moved to Pending" : "Varnish Saved Successfully",
       );
-      navigate("/coating_dashboard");
+      navigate("/varnish_dashboard");
     } catch (error) {
       console.error(error);
-      toast.error("Failed to Save Coating");
+      toast.error("Failed to Save Varnish");
     }
   };
 
   const handleCancel = () => {
     sessionStorage.removeItem(draftKey);
-    navigate("/coating_dashboard");
+    navigate("/varnish_dashboard");
   };
 
   if (!design) return null;
@@ -930,12 +932,12 @@ function EditCoating() {
           <div className="main-inner-txts">
             <Link
               style={{ color: "#0a85cb", textDecoration: "none" }}
-              to="/coating_dashboard"
+              to="/varnish_dashboard"
             >
-              Coating Dashboard
+              Varnish Dashboard
             </Link>
             <KeyboardArrowRightIcon sx={{ color: "#0a85cb" }} />
-            <div>Edit Coating</div>
+            <div>Edit Varnish</div>
           </div>
         </Box>
       </Box>
@@ -1027,7 +1029,7 @@ function EditCoating() {
                   <MenuItem value="" disabled>
                     Select
                   </MenuItem>
-                  {coatingInstructors.map((emp) => (
+                  {varnishInstructors.map((emp) => (
                     <MenuItem key={emp._id} value={emp.emp_id}>
                       {emp.name}
                     </MenuItem>
@@ -1098,7 +1100,7 @@ function EditCoating() {
                                 <MenuItem value="" disabled>
                                   Select
                                 </MenuItem>
-                                {coatingOperators.map((emp) => (
+                                {varnishOperators.map((emp) => (
                                   <MenuItem key={emp._id} value={emp.emp_id}>
                                     {emp.name}
                                   </MenuItem>
@@ -1181,10 +1183,10 @@ function EditCoating() {
                   onViewFile={handleViewFile}
                   totalQty={design?.item_quantity}
                   design={design}
-                  timers={coatingState[key]?.timers || {}}
-                  statusMap={coatingState[key]?.statusMap || {}}
+                  timers={varnishState[key]?.timers || {}}
+                  statusMap={varnishState[key]?.statusMap || {}}
                   setTimers={(val) =>
-                    setCoatingState((prev) => ({
+                    setvarnishState((prev) => ({
                       ...prev,
                       [key]: {
                         ...prev[key],
@@ -1196,7 +1198,7 @@ function EditCoating() {
                     }))
                   }
                   setStatusMap={(val) =>
-                    setCoatingState((prev) => ({
+                    setvarnishState((prev) => ({
                       ...prev,
                       [key]: {
                         ...prev[key],
@@ -1484,4 +1486,4 @@ function EditCoating() {
   );
 }
 
-export default EditCoating;
+export default EditVarnish;

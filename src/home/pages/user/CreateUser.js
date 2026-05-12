@@ -187,6 +187,7 @@ const UserDialog = React.memo(
                 <MenuItem value={"Printing"}>Printing</MenuItem>
                 <MenuItem value={"Varnish"}>Varnish</MenuItem>
                 <MenuItem value={"Fabrication"}>Fabrication</MenuItem>
+                <MenuItem value={"Dispatch"}>Dispatch</MenuItem>
                 <MenuItem value={"Stores"}>Stores</MenuItem>
               </Select>
             </Grid>
@@ -349,6 +350,7 @@ const pageConfig = {
   Printing: ["Dashboard", "Sheet Taken"],
   Varnish: ["Dashboard", "Sheet Taken"],
   Fabrication: ["Dashboard", "Sheet Taken"],
+  Dispatch: ["Dashboard", "Sheet Taken"],
   Stores: ["Dashboard", "Sheet Taken"],
 };
 

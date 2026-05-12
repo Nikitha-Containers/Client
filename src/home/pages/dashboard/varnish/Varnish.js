@@ -31,7 +31,7 @@ const Item = styled(Paper)(({ theme }) => ({
   }),
 }));
 
-const Fabrication = () => {
+const Varnish = () => {
   const navigate = useNavigate();
 
   const { designs } = useDesign();
@@ -57,28 +57,28 @@ const Fabrication = () => {
   };
 
   const getStatusText = (row) => {
-    if (row.fabrication_status === 2) return "COMPLETED";
-    if (row.fabrication_status === 1) return "PENDING";
-    if (row.varnish_status === 2) return "NEW";
+    if (row.varnish_status === 2) return "COMPLETED";
+    if (row.varnish_status === 1) return "PENDING";
+    if (row.printingteam_status === 2) return "NEW";
 
     return "NEW";
   };
 
-  // Filter Fabrication Team For Dashboard
+  // Filter Varnish Team For Dashboard
   const filterDesigns = useMemo(() => {
     if (getStatus === "all") {
-      return (designs || []).filter((d) => d.varnish_status === 2);
+      return (designs || []).filter((d) => d.printingteam_status === 2);
     }
 
     if (getStatus === "pending") {
       return (designs || []).filter(
-        (d) => d.varnish_status === 2 && d.fabrication_status === 1,
+        (d) => d.printingteam_status === 2 && d.varnish_status === 1,
       );
     }
 
     if (getStatus === "completed") {
       return (designs || []).filter(
-        (d) => d.varnish_status === 2 && d.fabrication_status === 2,
+        (d) => d.printingteam_status === 2 && d.varnish_status === 2,
       );
     }
     return [];
@@ -86,23 +86,23 @@ const Fabrication = () => {
 
   // Count for Cards
   const allCount = useMemo(() => {
-    return (designs || []).filter((d) => d.varnish_status === 2).length;
+    return (designs || []).filter((d) => d.printingteam_status === 2).length;
   }, [designs]);
 
   const pendingCount = useMemo(() => {
     return (designs || []).filter(
-      (d) => d.varnish_status === 2 && d.fabrication_status === 1,
+      (d) => d.printingteam_status === 2 && d.varnish_status === 1,
     ).length;
   }, [designs]);
 
   const completedCount = useMemo(() => {
     return (designs || []).filter(
-      (d) => d.varnish_status === 2 && d.fabrication_status === 2,
+      (d) => d.printingteam_status === 2 && d.varnish_status === 2,
     ).length;
   }, [designs]);
 
   const getPendingReason = (row) => {
-    return row?.fabrication_pending_details?.pending_reason || "";
+    return row?.varnish_pending_details?.pending_reason || "";
   };
 
   const columns = useMemo(
@@ -221,7 +221,7 @@ const Fabrication = () => {
     <Box className="Dashboard-con">
       <Box className="breadcrump-con">
         <Box className="main-title">
-          <div>Fabrication Dashboard</div>
+          <div>Varnish Dashboard</div>
         </Box>
       </Box>
 
@@ -312,7 +312,7 @@ const Fabrication = () => {
             }}
             muiTableBodyRowProps={({ row }) => ({
               onClick: () => {
-                navigate(`/edit_fabrication`, {
+                navigate(`/edit_varnish`, {
                   state: { design: row.original },
                 });
               },
@@ -350,4 +350,4 @@ const Fabrication = () => {
   );
 };
 
-export default Fabrication;
+export default Varnish;
