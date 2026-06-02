@@ -421,9 +421,9 @@ function EditDesign() {
       if (fileToView.startsWith("http")) {
         imageUrl = fileToView;
       } else if (fileToView.startsWith("/")) {
-        imageUrl = `${server?.defaults?.baseURL}${fileToView}`;
+        imageUrl = `${server?.defaults?.imageURL}${fileToView}`;
       } else {
-        imageUrl = `${server?.defaults?.baseURL}/uploads/${fileToView}`;
+        imageUrl = `${server?.defaults?.imageURL}/uploads/${fileToView}`;
       }
     }
     setCurrentImage(imageUrl);
@@ -433,10 +433,11 @@ function EditDesign() {
   const handleArtworkView = () => {
     if (!salesOrder?.file_name || !salesOrder?.file_ext) return;
 
-    const imageUrl = `${server?.defaults?.baseURL}/artworkImages/${encodeURIComponent(
+    const imageUrl = `http://180.235.121.59:8001/artworkImages/${encodeURIComponent(
       salesOrder.file_name,
     )}.${salesOrder.file_ext}`;
 
+    console.log("imageUrl", imageUrl);
     setCurrentImage(imageUrl);
     setOpen(true);
   };

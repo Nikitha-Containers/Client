@@ -754,14 +754,14 @@ function EditCoating() {
         ? URL.createObjectURL(file)
         : file.startsWith("http")
           ? file
-          : `${server?.defaults?.baseURL}/uploads/${file}`;
+          : `${server?.defaults?.imageURL}/uploads/${file}`;
     setCurrentImage(imageUrl);
     setOpen(true);
   };
 
   const handleArtworkView = () => {
     if (!design?.file_name || !design?.file_ext) return;
-    const imageUrl = `${server?.defaults?.baseURL}/artworkImages/${encodeURIComponent(
+    const imageUrl = `${server?.defaults?.imageURL}/artworkImages/${encodeURIComponent(
       design.file_name,
     )}.${design.file_ext}`;
     setCurrentImage(imageUrl);

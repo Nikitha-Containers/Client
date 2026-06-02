@@ -369,14 +369,14 @@ function EditPlan() {
         ? URL.createObjectURL(file)
         : file.startsWith("http")
           ? file
-          : `${server?.defaults?.baseURL}/uploads/${file}`;
+          : `${server?.defaults?.imageURL}/uploads/${file}`;
     openImageModal(url);
   };
 
   const handleArtworkView = () => {
     if (!design?.file_name || !design?.file_ext) return;
     openImageModal(
-      `${server?.defaults?.baseURL}/artworkImages/${encodeURIComponent(design.file_name)}.${design.file_ext}`,
+      `${server?.defaults?.imageURL}/artworkImages/${encodeURIComponent(design.file_name)}.${design.file_ext}`,
     );
   };
 

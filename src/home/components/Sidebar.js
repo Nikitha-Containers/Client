@@ -77,7 +77,7 @@ const Sidebar = ({ isCollapsed }) => {
   }
 
   return (
-    <Box sx={{ backgroundColor: "#f5f7f9", height: "calc(100vh - 64px)" }}>
+    <Box sx={{ backgroundColor: "#f5f7f9",  minHeight: "100vh", }}>
       <Box className="avatar-con">
         <Stack direction="row" spacing={2}>
           <StyledBadge
